@@ -1,0 +1,157 @@
+.file-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.file-manager-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.file-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.file-manager-header h4 {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5b6cff;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.remove-file-button {
+  background: rgba(255, 82, 82, 0.2);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  color: #ff5252;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-file-button:hover {
+  background: rgba(255, 82, 82, 0.3);
+  transform: scale(1.05);
+}
+
+.file-manager-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* File Upload Field */
+.file-upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-upload-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 16px 24px;
+  background: rgba(91, 108, 255, 0.2);
+  border: 2px dashed rgba(91, 108, 255, 0.5);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.file-upload-button:hover {
+  background: rgba(91, 108, 255, 0.3);
+  border-color: rgba(91, 108, 255, 0.7);
+}
+
+.file-upload-icon,
+.file-uploaded-icon {
+  font-size: 20px;
+}
+
+.file-uploaded-icon {
+  color: #00ff88;
+}
+
+.file-name-display {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+/* Field Inputs */
+.file-manager-fields input,
+.file-manager-fields textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.file-manager-fields input::placeholder,
+.file-manager-fields textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.file-manager-fields input:focus,
+.file-manager-fields textarea:focus {
+  outline: none;
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+}
+
+.file-manager-fields textarea {
+  resize: vertical;
+}
+
+/* Add File Button */
+.add-file-button {
+  background: rgba(91, 108, 255, 0.2);
+  border: 1px dashed rgba(91, 108, 255, 0.5);
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.add-file-button:hover {
+  background: rgba(91, 108, 255, 0.3);
+  border-color: rgba(91, 108, 255, 0.7);
+}
+
+@media (max-width: 768px) {
+  .file-manager-item {
+    padding: 1.25rem;
+  }
+}
+

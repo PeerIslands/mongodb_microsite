@@ -1,0 +1,26 @@
+.case-studies-page {
+  min-height: 80vh;
+  padding: 4rem 2rem;
+  color: white;
+}
+
+.case-studies-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.case-studies-header h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.case-studies-header p {
+  font-size: 1.25rem;
+  opacity: 0.8;
+}
+
+.case-studies-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+

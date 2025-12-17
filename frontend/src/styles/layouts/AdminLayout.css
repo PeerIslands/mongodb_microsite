@@ -1,0 +1,122 @@
+.admin-layout {
+  width: 100%;
+  min-height: 100vh;
+  background: #0a0a0a;
+}
+
+.admin-header {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1.5rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.admin-header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.admin-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-image-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-image {
+  height: 32px;
+  width: auto;
+}
+
+.logo-separator {
+  display: flex;
+  align-items: center;
+}
+
+.separator-line {
+  height: 24px;
+  width: auto;
+}
+
+.admin-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.admin-badge {
+  background: #5b6cff;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-title h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.view-site-link {
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.view-site-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.admin-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 100px);
+}
+
+@media (max-width: 768px) {
+  .admin-header-content {
+    flex-wrap: wrap;
+    padding: 0 1rem;
+  }
+
+  .admin-title h1 {
+    font-size: 1rem;
+  }
+
+  .admin-main {
+    padding: 1rem;
+  }
+}
+
