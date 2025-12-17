@@ -30,6 +30,11 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str = "change-me-in-production"
+    
+    # JWT Settings
+    JWT_SECRET_KEY: str = "jwt-secret-change-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
