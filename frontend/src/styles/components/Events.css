@@ -1,0 +1,322 @@
+.events {
+  padding: 0;
+  position: relative;
+  background: #020916;
+  padding: 163.63px 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.events-container {
+  max-width: 1000px;
+  width: 100%;
+  position: relative;
+}
+
+.event-card {
+  position: relative;
+  height: 372.75px;
+  width: 1000px;
+  max-width: 100%;
+  border-radius: 48px;
+  overflow: hidden;
+}
+
+/* Background image with mix-blend-mode - matches Figma node 17:1536 exactly */
+.event-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  border-radius: 48px;
+  overflow: hidden;
+}
+
+.event-bg-image {
+  position: absolute;
+  width: 102.88%;
+  height: 100%;
+  left: -1.44%;
+  top: 0;
+  object-fit: cover;
+  object-position: center;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  max-width: none;
+}
+
+.event-content {
+  position: absolute;
+  bottom: -32.53px;
+  left: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding-bottom: 90px;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  z-index: 2;
+}
+
+.event-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 450px;
+  height: 230px;
+  margin-bottom: -10px;
+  overflow: hidden;
+  padding-bottom: 45px;
+  padding-top: 0;
+}
+
+.event-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 56px;
+  font-weight: 300;
+  font-style: normal;
+  line-height: normal;
+  margin: 0;
+  white-space: nowrap;
+  background: linear-gradient(175.459deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+  margin-bottom: -45px;
+}
+
+.event-spacer {
+  height: 98.75px;
+  width: 420px;
+  margin-bottom: -45px;
+}
+
+.event-details {
+  height: 113.154px;
+  width: 363.83px;
+  margin-bottom: -45px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0px;
+}
+
+.event-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 24px;
+  margin: 0 0 0 0;
+}
+
+.event-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 24px;
+  margin: 0;
+}
+
+.event-register-btn {
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5.63px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 16px;
+  margin-top: -10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.event-register-btn:hover {
+  opacity: 0.9;
+}
+
+.event-arrow {
+  width: 8px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.event-image-container {
+  position: absolute;
+  bottom: 0;
+  left: 532px;
+  width: 370px;
+  height: 267px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  overflow: hidden;
+}
+
+.event-image {
+  width: 100%;
+  height: 102.58%;
+  object-fit: cover;
+  object-position: center;
+  margin-top: -1.29%;
+  border-radius: 16px 16px 0 0;
+  pointer-events: none;
+  max-width: none;
+}
+
+/* Browser icons overlay - matches Figma exactly */
+.event-icons {
+  position: absolute;
+  bottom: 159.47px;
+  left: 629px;
+  top: 189.28px;
+  width: 24px;
+  height: 29.72px;
+  overflow: hidden;
+}
+
+.event-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.event-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  max-width: none;
+}
+
+.event-icon-1 {
+  inset: 4.03px 3.94px 3.97px 5.06px;
+  width: 15px;
+  height: 16px;
+}
+
+.event-icon-2 {
+  inset: 3.03px 2.94px 2.97px 4.06px;
+  width: 17px;
+  height: 18px;
+}
+
+.event-icon-3 {
+  inset: 12.59px 7.12px 6.41px 15.88px;
+  width: 1px;
+  height: 5px;
+}
+
+.event-icon-4 {
+  inset: 12.59px 9.12px 6.41px 13.88px;
+  width: 1px;
+  height: 5px;
+}
+
+.event-icon-5 {
+  inset: 12.59px 11.12px 6.41px 11.88px;
+  width: 1px;
+  height: 5px;
+}
+
+/* Floating screenshot image - matches Figma node 17:1574 exactly */
+.event-screenshot {
+  position: absolute;
+  left: 1000px;
+  top: 400px;
+  width: 297px;
+  height: 255px;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0px 4px 34px 0px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  background-color: lightgray;
+}
+
+.event-screenshot-image {
+  position: absolute;
+  width: 152.64%;
+  height: 100%;
+  left: -50%;
+  top: 0;
+  object-fit: cover;
+  object-position: center;
+  max-width: none;
+  border-radius: 30px;
+}
+
+@media (max-width: 1200px) {
+  .events {
+    padding: 4rem 2rem;
+  }
+
+  .event-card {
+    width: 100%;
+    max-width: 1000px;
+    height: auto;
+    min-height: 372.75px;
+  }
+
+  .event-content {
+    position: relative;
+    bottom: 0;
+    left: 0;
+    padding: 2rem;
+  }
+
+  .event-image-container {
+    position: relative;
+    left: 0;
+    width: 100%;
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .events {
+    padding: 2rem 1rem;
+  }
+
+  .event-title {
+    font-size: 36px;
+  }
+
+  .event-name {
+    font-size: 20px;
+  }
+
+  .event-date {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .events {
+    padding: 4rem 1rem;
+  }
+
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

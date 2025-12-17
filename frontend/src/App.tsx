@@ -1,12 +1,24 @@
-import './App.css'
+import '@/styles/App.css'
+import Header from './components/Header'
+import Hero from './components/Hero'
+import Statistics from './components/Statistics'
+import Capabilities from './components/Capabilities'
+import CaseStudies from './components/CaseStudies'
+import Events from './components/Events'
+import Testimonials from './components/Testimonials'
+import Footer from './components/Footer'
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>MongoDB Microsite</h1>
-        <p>Welcome to your React + TypeScript + Vite application</p>
-      </header>
+      <Header />
+      <Hero />
+      <Statistics />
+      <Capabilities />
+      <CaseStudies />
+      <Events />
+      <Testimonials />
+      <Footer />
     </div>
   )
 }
