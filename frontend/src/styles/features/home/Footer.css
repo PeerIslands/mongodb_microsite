@@ -47,8 +47,9 @@
   grid-template-columns: max-content;
   grid-template-rows: max-content;
   position: relative;
-  width: 100%;
-  padding-right: 394px;
+  width: 266.372px;
+  height: 37.138px;
+  padding-right: 0;
   line-height: 0;
   place-items: start;
 }
@@ -65,35 +66,40 @@
 .footer-logo-image-2 {
   width: 112.607px;
   height: 33.131px;
-  top: 4.01px;
+  top: 4.007px;
   left: 0;
 }
 
 .footer-logo-separator {
   position: absolute;
-  width: 0;
+  width: 35.215px;
   height: 35.215px;
-  left: 120.8px;
+  left: 117px;
   top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(90deg);
   flex: none;
+  margin: 0 -10px;
+}
+
+.footer-separator-wrapper {
+  display: block;
+  height: 35.215px;
+  transform-origin: center center;
 }
 
 .footer-separator-line {
-  width: 35.215px;
-  height: 0;
+  width: 100%;
+  height: auto;
   display: block;
-  max-width: none;
 }
 
 .footer-logo-image-3 {
   width: 130.484px;
   height: 32.917px;
-  top: 2.3px;
-  left: 135.89px;
+  top: 2.298px;
+  left: 135.888px;
 }
 
 .footer-social-media {

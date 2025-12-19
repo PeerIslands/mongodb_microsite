@@ -176,3 +176,4 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
 
 export default CaseStudyList;
 
+

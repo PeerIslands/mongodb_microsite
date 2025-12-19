@@ -47,3 +47,4 @@ const BenefitsSection = ({ benefits }: BenefitsSectionProps) => {
 
 export default BenefitsSection;
 
+
