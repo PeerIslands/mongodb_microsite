@@ -208,3 +208,4 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
 
 export default AcceleratorList;
 
+

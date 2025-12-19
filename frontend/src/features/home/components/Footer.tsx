@@ -1,7 +1,7 @@
 import '@/styles/features/home/Footer.css';
 import image2 from '@/assets/image 2.png';
 import image3 from '@/assets/image 3.png';
-import line1 from '@/assets/012b6c0e3ac25a90c78ce51c6fd2f886eb353e68.svg';
+import line1 from '@/assets/Line 1.png';
 import discordIcon from '@/assets/discord-icon.svg';
 import twitterIcon from '@/assets/twitter-icon.svg';
 
@@ -14,7 +14,9 @@ const Footer = () => {
             <div className="logo-with-name">
               <img src={image2} alt="PeerAI" className="footer-logo-image footer-logo-image-2" />
               <div className="footer-logo-separator">
-                <img src={line1} alt="" className="footer-separator-line" />
+                <div className="footer-separator-wrapper">
+                  <img src={line1} alt="" className="footer-separator-line" />
+                </div>
               </div>
               <img src={image3} alt="MongoDB" className="footer-logo-image footer-logo-image-3" />
             </div>
