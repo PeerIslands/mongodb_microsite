@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "jwt-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # MongoDB Settings
+    MONGODB_URL: str = "mongodb://localhost:27017"
+    MONGODB_DB_NAME: str = "microsite"
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
