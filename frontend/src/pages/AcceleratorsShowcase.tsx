@@ -2,8 +2,8 @@ import { useState } from 'react';
 import '@/styles/pages/AcceleratorsShowcase.css';
 import Header from '@/features/home/components/Header';
 import Footer from '@/features/home/components/Footer';
-import AcceleratorCard from '../components/accelerators/AcceleratorCard';
-import AcceleratorFilters from '../components/accelerators/AcceleratorFilters';
+import AcceleratorCard from '@/features/accelerators/components/AcceleratorCard';
+import AcceleratorFilters from '@/features/accelerators/components/AcceleratorFilters';
 
 interface FilterState {
   search: string;
