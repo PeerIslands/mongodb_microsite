@@ -1,0 +1,201 @@
+/* CaseStudyGrid - Grid section for case study cards */
+.case-study-grid-section {
+  position: relative;
+  width: 100%;
+  background: #020916;
+  padding: 4rem 2rem 5rem;
+}
+
+/* Container */
+.case-study-grid__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ============================================
+ * FILTER STYLES - READY FOR FUTURE USE
+ * ============================================ */
+.case-study-grid__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.case-study-grid__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4375rem 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  background-image: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.case-study-grid__filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.case-study-grid__filter-btn--active {
+  background: rgba(91, 108, 255, 0.2);
+  border-color: rgba(91, 108, 255, 0.5);
+  color: #ffffff;
+}
+
+/* Grid layout */
+.case-study-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* CTA container */
+.case-study-grid__cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+/* View all button */
+.case-study-grid__view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4375rem 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  background-image: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.case-study-grid__view-all-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* View all text */
+.case-study-grid__view-all-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.3) 8.85%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Large screens (1440px+) */
+@media (min-width: 1440px) {
+  .case-study-grid-section {
+    padding: 5rem 2rem 6rem;
+  }
+
+  .case-study-grid {
+    gap: 2rem;
+  }
+}
+
+/* Desktop (1024px - 1439px) */
+@media (max-width: 1439px) {
+  .case-study-grid {
+    gap: 1.25rem;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .case-study-grid-section {
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .case-study-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .case-study-grid__filters {
+    gap: 0.5rem;
+  }
+
+  .case-study-grid__filter-btn {
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) {
+  .case-study-grid-section {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .case-study-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .case-study-grid__cta {
+    margin-top: 2rem;
+  }
+
+  .case-study-grid__filters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .case-study-grid__filter-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* Small mobile (< 480px) */
+@media (max-width: 479px) {
+  .case-study-grid-section {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .case-study-grid {
+    gap: 1rem;
+  }
+
+  .case-study-grid__view-all-btn {
+    padding: 0.375rem 1.25rem;
+  }
+
+  .case-study-grid__view-all-text {
+    font-size: 0.8125rem;
+  }
+}
+
+
