@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@/styles/pages/AcceleratorDetail.css';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Header from '@/features/home/components/Header';
+import Footer from '@/features/home/components/Footer';
 import FeaturesSection from '../components/accelerators/FeaturesSection';
 import BenefitsSection from '../components/accelerators/BenefitsSection';
 import DemoVideoSection from '../components/accelerators/DemoVideoSection';

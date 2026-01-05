@@ -32,3 +32,8 @@ const FeaturesSection = ({ features }: FeaturesSectionProps) => {
 export default FeaturesSection;
 
 
+
+
+
+
+

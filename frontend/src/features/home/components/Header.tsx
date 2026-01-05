@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/constants';
 import '@/styles/features/home/Header.css';
 import image2 from '@/assets/image 2.png';
 import image3 from '@/assets/image 3.png';
@@ -7,6 +9,7 @@ import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
@@ -21,6 +24,11 @@ const Header = () => {
 
   const handleSwitchToLogin = () => {
     setIsLoginModalOpen(true);
+  };
+
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    e.preventDefault();
+    navigate(path);
   };
 
   return (
@@ -47,17 +55,20 @@ const Header = () => {
               <span className="dropdown-arrow"></span>
             </a>
             <a 
-              href="/accelerators" 
+              href={ROUTES.ACCELERATORS} 
               className="nav-link with-dropdown"
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/accelerators';
-              }}
+              onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS)}
             >
               Accelerators
               <span className="dropdown-arrow"></span>
             </a>
-            <a href="#success-stories" className="nav-link">Success Stories</a>
+            <a 
+              href={ROUTES.SUCCESS_STORIES} 
+              className="nav-link"
+              onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES)}
+            >
+              Success Stories
+            </a>
             <a href="#resources" className="nav-link">
               Resources
               <span className="dropdown-arrow"></span>
