@@ -10,6 +10,7 @@ export const ROUTES = {
   ACCELERATOR_DETAIL: '/accelerators/:slug',
   CASE_STUDIES: '/case-studies',
   CASE_STUDY_DETAIL: '/case-studies/:slug',
+  SUCCESS_STORIES: '/success-stories',
   ADMIN: '/admin',
   ADMIN_ACCELERATORS: '/admin/accelerators',
   ADMIN_CASE_STUDIES: '/admin/case-studies',

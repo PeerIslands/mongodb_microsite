@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import '@/styles/pages/AcceleratorsSingle.css';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Header from '@/features/home/components/Header';
+import Footer from '@/features/home/components/Footer';
 
 const acceleratorsData = [
   {

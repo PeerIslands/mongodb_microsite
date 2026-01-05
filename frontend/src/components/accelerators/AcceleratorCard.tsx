@@ -102,3 +102,8 @@ const AcceleratorCard = ({ accelerator }: AcceleratorCardProps) => {
 export default AcceleratorCard;
 
 
+
+
+
+
+

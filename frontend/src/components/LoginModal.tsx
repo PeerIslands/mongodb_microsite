@@ -97,3 +97,5 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) => {
 
 export default LoginModal;
 
+
+

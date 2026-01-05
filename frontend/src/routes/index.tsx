@@ -68,6 +68,14 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.SUCCESS_STORIES,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <CaseStudiesPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.CASE_STUDY_DETAIL,
             element: (
               <Suspense fallback={<PageLoader />}>
