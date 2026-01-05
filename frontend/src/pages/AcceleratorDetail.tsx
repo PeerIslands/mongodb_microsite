@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import '@/styles/pages/AcceleratorDetail.css';
 import Header from '@/features/home/components/Header';
 import Footer from '@/features/home/components/Footer';
-import FeaturesSection from '../components/accelerators/FeaturesSection';
-import BenefitsSection from '../components/accelerators/BenefitsSection';
-import DemoVideoSection from '../components/accelerators/DemoVideoSection';
-import DownloadSection from '../components/accelerators/DownloadSection';
+import FeaturesSection from '@/features/accelerators/components/FeaturesSection';
+import BenefitsSection from '@/features/accelerators/components/BenefitsSection';
+import DemoVideoSection from '@/features/accelerators/components/DemoVideoSection';
+import DownloadSection from '@/features/accelerators/components/DownloadSection';
 
 // Mock data
 const mockAcceleratorData = {
