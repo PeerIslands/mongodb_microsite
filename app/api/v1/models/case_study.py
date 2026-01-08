@@ -1,6 +1,8 @@
 """
 Case Study Pydantic models.
 Includes request/response models for case study operations.
+
+Field naming convention: snake_case (matching frontend requirements)
 """
 
 from datetime import datetime, timezone
@@ -12,27 +14,11 @@ from pydantic import BaseModel, Field
 # NESTED MODELS
 # =============================================================================
 
-class CaseStudyChallenge(BaseModel):
-    """A challenge faced by the client."""
-    text: str = Field(..., description="Description of the challenge")
-
-
-class CaseStudyMetric(BaseModel):
-    """A metric showing value delivered."""
-    label: str = Field(..., description="Metric label (e.g., 'Performance Improvement')")
-    value: str = Field(..., description="Metric value (e.g., '40%')")
-
-
-class CaseStudyOutcome(BaseModel):
-    """A business outcome achieved."""
-    text: str = Field(..., description="Description of the outcome")
-
-
-class CaseStudyCodeSnippet(BaseModel):
-    """A code snippet showcasing the solution."""
-    language: str = Field(..., description="Programming language")
-    code: str = Field(..., description="The code content")
-    description: Optional[str] = Field(None, description="Description of what the code does")
+class Metrics(BaseModel):
+    """Metrics object with specific performance indicators."""
+    time_reduction: Optional[str] = Field(None, description="Time reduction achieved")
+    ingestion_speed: Optional[str] = Field(None, description="Data ingestion speed")
+    data_accuracy: Optional[str] = Field(None, description="Data accuracy improvement")
 
 
 # =============================================================================
@@ -42,49 +28,44 @@ class CaseStudyCodeSnippet(BaseModel):
 class CreateCaseStudyRequest(BaseModel):
     """
     Request model for creating a new case study.
+    Uses snake_case field names to match frontend requirements.
     """
     # Basic Info
     title: str = Field(..., min_length=1, description="Case study title")
-    slug: str = Field(..., min_length=1, description="URL-friendly slug")
+    slug: str = Field(..., min_length=1, description="URL-friendly slug (unique)")
+    featured: bool = Field(default=False, description="Whether case study is featured")
+    status: str = Field(default="draft", description="Status: 'published' or 'draft'")
     industry: str = Field(..., min_length=1, description="Industry sector")
-    migrationType: str = Field(..., min_length=1, description="Type of migration")
-    techStack: List[str] = Field(default=[], description="Technologies used")
+    tech_stack: List[str] = Field(default=[], description="Array of technologies used")
+    migration_type: Optional[str] = Field(None, description="Type of migration (nullable)")
     
     # Company Info
-    companyName: str = Field(..., min_length=1, description="Client company name")
-    companyLogo: str = Field(default="", description="URL to company logo")
+    company_name: str = Field(..., min_length=1, description="Client company name")
+    company_logo: str = Field(default="", description="Company logo file path/URL")
     
     # Content
-    summary: str = Field(default="", description="Brief summary")
-    description: str = Field(default="", description="Full description of the client")
-    industryDetails: Optional[str] = Field(None, description="Detailed industry information")
+    description: str = Field(default="", description="Full description")
+    industry_details: Optional[str] = Field(None, description="Detailed industry information (nullable)")
     
     # Problem Statement
-    challenges: List[CaseStudyChallenge] = Field(default=[], description="List of challenges")
-    businessImpact: str = Field(default="", description="Impact on business before solution")
-    technicalConstraints: Optional[str] = Field(None, description="Technical limitations")
+    challenges: str = Field(default="", description="Challenges faced (as string)")
+    technical_constraints: Optional[str] = Field(None, description="Technical limitations (nullable)")
     
     # Solution & Architecture
-    solutionApproach: str = Field(default="", description="How the solution was approached")
-    architectureDiagram: str = Field(default="", description="URL to architecture diagram")
-    implementationDetails: str = Field(default="", description="Details of implementation")
-    codeSnippets: Optional[List[CaseStudyCodeSnippet]] = Field(None, description="Code examples")
+    approach: str = Field(default="", description="Solution approach")
+    architecture_diagram: Optional[str] = Field(None, description="Architecture diagram file path/URL (nullable)")
+    implementation_details: str = Field(default="", description="Details of implementation")
     
     # Value Delivered
-    metrics: List[CaseStudyMetric] = Field(default=[], description="Key metrics")
-    businessOutcomes: List[CaseStudyOutcome] = Field(default=[], description="Business outcomes")
-    testimonialQuote: Optional[str] = Field(None, description="Client testimonial quote")
-    testimonialAuthor: Optional[str] = Field(None, description="Testimonial author name")
-    testimonialPosition: Optional[str] = Field(None, description="Testimonial author position")
+    metrics: Metrics = Field(default_factory=Metrics, description="Performance metrics")
+    business_outcomes: str = Field(default="", description="Business outcomes (as string)")
+    testimonial_quote: Optional[str] = Field(None, description="Client testimonial quote (nullable)")
+    testimonial_author: Optional[str] = Field(None, description="Testimonial author name (nullable)")
+    testimonial_position: Optional[str] = Field(None, description="Testimonial author position (nullable)")
     
     # Media & Files
-    heroImage: str = Field(default="", description="URL to hero image")
-    galleryImages: Optional[List[str]] = Field(None, description="Gallery image URLs")
-    pdfUrl: Optional[str] = Field(None, description="URL to PDF download")
-    
-    # Status
-    status: str = Field(default="draft", description="Publication status: 'published' or 'draft'")
-    featured: bool = Field(default=False, description="Whether case study is featured")
+    hero_image: str = Field(default="", description="Hero image file path/URL")
+    pdf_url: str = Field(default="", description="PDF file path/URL")
 
 
 # =============================================================================
@@ -96,51 +77,46 @@ class CaseStudyResponse(BaseModel):
     Response model for case study list items.
     """
     id: str = Field(..., description="Unique case study ID")
-    slug: str = Field(..., description="URL-friendly slug")
     title: str = Field(..., description="Case study title")
-    industry: str = Field(..., description="Industry sector")
-    migrationType: str = Field(..., description="Type of migration")
-    techStack: List[str] = Field(default=[], description="Technologies used")
-    status: str = Field(..., description="Publication status")
+    slug: str = Field(..., description="URL-friendly slug")
     featured: bool = Field(default=False, description="Whether case study is featured")
-    views: int = Field(default=0, description="View count")
-    createdAt: str = Field(..., description="Creation timestamp")
-    updatedAt: str = Field(..., description="Last update timestamp")
-    companyName: str = Field(..., description="Client company name")
-    companyLogo: str = Field(default="", description="URL to company logo")
-    heroImage: str = Field(default="", description="URL to hero image")
-    summary: str = Field(default="", description="Brief summary")
+    status: str = Field(default="draft", description="Status: 'published' or 'draft'")
+    industry: str = Field(..., description="Industry sector")
+    tech_stack: List[str] = Field(default=[], description="Technologies used")
+    migration_type: Optional[str] = Field(None, description="Type of migration")
+    company_name: str = Field(..., description="Client company name")
+    company_logo: str = Field(default="", description="Company logo URL")
+    hero_image: str = Field(default="", description="Hero image URL")
+    description: str = Field(default="", description="Brief description")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
 
 
 class CaseStudyDetailResponse(CaseStudyResponse):
     """
     Response model for full case study detail.
     """
-    # Client Background
-    description: str = Field(default="", description="Full description")
-    industryDetails: Optional[str] = Field(None, description="Industry details")
-
+    # Additional Details
+    industry_details: Optional[str] = Field(None, description="Industry details")
+    
     # Problem Statement
-    challenges: List[CaseStudyChallenge] = Field(default=[], description="Challenges")
-    businessImpact: str = Field(default="", description="Business impact")
-    technicalConstraints: Optional[str] = Field(None, description="Technical constraints")
-
+    challenges: str = Field(default="", description="Challenges")
+    technical_constraints: Optional[str] = Field(None, description="Technical constraints")
+    
     # Solution & Architecture
-    solutionApproach: str = Field(default="", description="Solution approach")
-    architectureDiagram: str = Field(default="", description="Architecture diagram URL")
-    implementationDetails: str = Field(default="", description="Implementation details")
-    codeSnippets: Optional[List[CaseStudyCodeSnippet]] = Field(None, description="Code snippets")
-
+    approach: str = Field(default="", description="Solution approach")
+    architecture_diagram: Optional[str] = Field(None, description="Architecture diagram URL")
+    implementation_details: str = Field(default="", description="Implementation details")
+    
     # Value Delivered
-    metrics: List[CaseStudyMetric] = Field(default=[], description="Metrics")
-    businessOutcomes: List[CaseStudyOutcome] = Field(default=[], description="Outcomes")
-    testimonialQuote: Optional[str] = Field(None)
-    testimonialAuthor: Optional[str] = Field(None)
-    testimonialPosition: Optional[str] = Field(None)
-
+    metrics: Metrics = Field(default_factory=Metrics, description="Performance metrics")
+    business_outcomes: str = Field(default="", description="Business outcomes")
+    testimonial_quote: Optional[str] = Field(None)
+    testimonial_author: Optional[str] = Field(None)
+    testimonial_position: Optional[str] = Field(None)
+    
     # Media & Files
-    galleryImages: Optional[List[str]] = Field(None)
-    pdfUrl: Optional[str] = Field(None)
+    pdf_url: str = Field(default="", description="PDF URL")
 
 
 class CreateCaseStudyResponse(BaseModel):
@@ -158,45 +134,39 @@ class UpdateCaseStudyRequest(BaseModel):
     # Basic Info
     title: Optional[str] = Field(None, min_length=1, description="Case study title")
     slug: Optional[str] = Field(None, min_length=1, description="URL-friendly slug")
+    featured: Optional[bool] = Field(None, description="Whether case study is featured")
+    status: Optional[str] = Field(None, description="Status: 'published' or 'draft'")
     industry: Optional[str] = Field(None, min_length=1, description="Industry sector")
-    migrationType: Optional[str] = Field(None, min_length=1, description="Type of migration")
-    techStack: Optional[List[str]] = Field(None, description="Technologies used")
+    tech_stack: Optional[List[str]] = Field(None, description="Technologies used")
+    migration_type: Optional[str] = Field(None, description="Type of migration")
     
     # Company Info
-    companyName: Optional[str] = Field(None, min_length=1, description="Client company name")
-    companyLogo: Optional[str] = Field(None, description="URL to company logo")
+    company_name: Optional[str] = Field(None, min_length=1, description="Client company name")
+    company_logo: Optional[str] = Field(None, description="Company logo URL")
     
     # Content
-    summary: Optional[str] = Field(None, description="Brief summary")
-    description: Optional[str] = Field(None, description="Full description of the client")
-    industryDetails: Optional[str] = Field(None, description="Detailed industry information")
+    description: Optional[str] = Field(None, description="Full description")
+    industry_details: Optional[str] = Field(None, description="Detailed industry information")
     
     # Problem Statement
-    challenges: Optional[List[CaseStudyChallenge]] = Field(None, description="List of challenges")
-    businessImpact: Optional[str] = Field(None, description="Impact on business before solution")
-    technicalConstraints: Optional[str] = Field(None, description="Technical limitations")
+    challenges: Optional[str] = Field(None, description="Challenges faced")
+    technical_constraints: Optional[str] = Field(None, description="Technical limitations")
     
     # Solution & Architecture
-    solutionApproach: Optional[str] = Field(None, description="How the solution was approached")
-    architectureDiagram: Optional[str] = Field(None, description="URL to architecture diagram")
-    implementationDetails: Optional[str] = Field(None, description="Details of implementation")
-    codeSnippets: Optional[List[CaseStudyCodeSnippet]] = Field(None, description="Code examples")
+    approach: Optional[str] = Field(None, description="Solution approach")
+    architecture_diagram: Optional[str] = Field(None, description="Architecture diagram URL")
+    implementation_details: Optional[str] = Field(None, description="Details of implementation")
     
     # Value Delivered
-    metrics: Optional[List[CaseStudyMetric]] = Field(None, description="Key metrics")
-    businessOutcomes: Optional[List[CaseStudyOutcome]] = Field(None, description="Business outcomes")
-    testimonialQuote: Optional[str] = Field(None, description="Client testimonial quote")
-    testimonialAuthor: Optional[str] = Field(None, description="Testimonial author name")
-    testimonialPosition: Optional[str] = Field(None, description="Testimonial author position")
+    metrics: Optional[Metrics] = Field(None, description="Performance metrics")
+    business_outcomes: Optional[str] = Field(None, description="Business outcomes")
+    testimonial_quote: Optional[str] = Field(None, description="Client testimonial quote")
+    testimonial_author: Optional[str] = Field(None, description="Testimonial author name")
+    testimonial_position: Optional[str] = Field(None, description="Testimonial author position")
     
     # Media & Files
-    heroImage: Optional[str] = Field(None, description="URL to hero image")
-    galleryImages: Optional[List[str]] = Field(None, description="Gallery image URLs")
-    pdfUrl: Optional[str] = Field(None, description="URL to PDF download")
-    
-    # Status
-    status: Optional[str] = Field(None, description="Publication status: 'published' or 'draft'")
-    featured: Optional[bool] = Field(None, description="Whether case study is featured")
+    hero_image: Optional[str] = Field(None, description="Hero image URL")
+    pdf_url: Optional[str] = Field(None, description="PDF URL")
 
 
 class UpdateCaseStudyResponse(BaseModel):
@@ -205,3 +175,8 @@ class UpdateCaseStudyResponse(BaseModel):
     slug: str = Field(..., description="Case study slug")
     message: str = Field(..., description="Success message")
 
+
+class DeleteCaseStudyResponse(BaseModel):
+    """Response model for successful case study deletion."""
+    id: str = Field(..., description="Deleted case study ID")
+    message: str = Field(..., description="Success message")

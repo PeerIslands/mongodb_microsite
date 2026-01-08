@@ -2,15 +2,24 @@
 Case Studies Endpoints - API endpoints for case study operations.
 
 Endpoints:
-- POST /case-studies - Create case study with file uploads (stored as BSON Binary in MongoDB)
+- POST /case-studies - Create case study with file uploads (stored in Azure Blob Storage)
 - GET /case-studies - Get all case studies with filters
-- PUT /case-studies/{id} - Update a case study
+- GET /case-studies/{case_id} - Get a single case study by ID
+- PUT /case-studies/{case_id} - Update a case study
+- DELETE /case-studies/{case_id} - Delete a case study
+
+Field naming convention: snake_case (matching frontend requirements)
+
+File Storage:
+- Images and PDFs are uploaded to Azure Blob Storage
+- Folder structure: {slug}/{field_name}.{ext}
+- MongoDB stores the blob path, full URL is constructed at retrieval time
 """
 
+import json
 import mimetypes
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form
-from bson import Binary
 
 from app.api.v1.models.case_study import (
     CreateCaseStudyRequest,
@@ -18,8 +27,12 @@ from app.api.v1.models.case_study import (
     UpdateCaseStudyRequest,
     UpdateCaseStudyResponse,
     CaseStudyResponse,
+    CaseStudyDetailResponse,
+    DeleteCaseStudyResponse,
+    Metrics,
 )
 from app.api.v1.services.case_study_service import CaseStudyService
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService
 from app.api.v1.dependencies.services import get_case_study_service
 
 router = APIRouter(prefix="/case-studies")
@@ -29,40 +42,46 @@ router = APIRouter(prefix="/case-studies")
 # HELPER FUNCTIONS
 # =============================================================================
 
-async def file_to_binary_dict(file: UploadFile) -> Dict[str, Any]:
+def is_valid_file(f) -> bool:
+    """Check if an uploaded file is valid."""
+    return f is not None and hasattr(f, 'filename') and f.filename and f.filename != ""
+
+
+async def upload_file_to_blob(
+    file: UploadFile,
+    slug: str,
+    field_name: str,
+    blob_service: AzureBlobService,
+) -> str:
     """
-    Convert an uploaded file to a BSON Binary dictionary.
+    Upload a file to Azure Blob Storage and return the blob path.
     
-    Stores raw binary data in MongoDB with metadata.
-    Returns a dict with:
-    - data: BSON Binary (raw bytes)
-    - filename: Original filename
-    - content_type: MIME type
-    - size: File size in bytes
+    Args:
+        file: The uploaded file
+        slug: Case study slug (used in folder name)
+        field_name: Field name (hero_image, company_logo, etc.)
+        blob_service: Azure Blob Service instance
+        
+    Returns:
+        Blob path to store in MongoDB
     """
-    # Read file content
     content = await file.read()
     
-    # Get MIME type
     mime_type = file.content_type
     if not mime_type:
-        # Guess from filename
         mime_type, _ = mimetypes.guess_type(file.filename)
         if not mime_type:
             mime_type = "application/octet-stream"
     
-    # Return dict with Binary data
-    return {
-        "data": Binary(content),  # Raw binary data stored in MongoDB
-        "filename": file.filename,
-        "content_type": mime_type,
-        "size": len(content)
-    }
-
-
-def is_valid_file(f) -> bool:
-    """Check if an uploaded file is valid."""
-    return f is not None and hasattr(f, 'filename') and f.filename and f.filename != ""
+    blob_path = await blob_service.upload_file(
+        file_content=content,
+        slug=slug,
+        field_name=field_name,
+        original_filename=file.filename,
+        content_type=mime_type,
+    )
+    
+    return blob_path
 
 
 # =============================================================================
@@ -77,104 +96,131 @@ def is_valid_file(f) -> bool:
     description="""
     Create a new case study with file uploads.
     
-    **Files are stored as base64 data directly in MongoDB.**
-    Frontend can use them directly in img src or download links.
+    **Files are stored in Azure Blob Storage.**
     
     **File fields:** Uncheck 'Send empty value' to see file picker.
     
     **Supported files:**
-    - heroImage: PNG/JPG (max 5MB)
-    - companyLogo: PNG/JPG/SVG (max 2MB)  
-    - pdfFile: PDF only (max 10MB)
-    - architectureDiagram: PNG/JPG/SVG (max 5MB)
+    - hero_image: PNG/JPG (max 5MB)
+    - company_logo: PNG/JPG/SVG (max 2MB)  
+    - pdf_file: PDF only (max 10MB)
+    - architecture_diagram: PNG/JPG/SVG (max 5MB)
+    
+    **Storage format:** Files are uploaded to Azure Blob with folder structure:
+    `{slug}/{field_name}.{ext}`
     """,
 )
-async def create_case_study_with_files(
+async def create_case_study(
     # Required text fields
     title: str = Form(..., description="Case study title"),
-    slug: str = Form(..., description="URL-friendly slug"),
+    slug: str = Form(..., description="URL-friendly slug (unique)"),
     industry: str = Form(..., description="Industry sector"),
-    migrationType: str = Form(..., description="Type of migration"),
-    companyName: str = Form(..., description="Client company name"),
+    company_name: str = Form(..., description="Client company name"),
     
     # Optional text fields
-    summary: str = Form(default="", description="Brief summary"),
-    cs_description: str = Form(default="", alias="description", description="Full description"),
-    industryDetails: str = Form(default="", description="Industry details"),
-    businessImpact: str = Form(default="", description="Business impact"),
-    technicalConstraints: str = Form(default="", description="Technical constraints"),
-    solutionApproach: str = Form(default="", description="Solution approach"),
-    implementationDetails: str = Form(default="", description="Implementation details"),
-    testimonialQuote: str = Form(default="", description="Testimonial quote"),
-    testimonialAuthor: str = Form(default="", description="Testimonial author"),
-    testimonialPosition: str = Form(default="", description="Testimonial position"),
-    techStack: str = Form(default="", description="Comma-separated: MongoDB,Python,AWS"),
+    featured: bool = Form(default=False, description="Whether case study is featured"),
+    status: str = Form(default="draft", description="Status: 'published' or 'draft'"),
+    tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
+    migration_type: str = Form(default="", description="Type of migration (nullable)"),
+    description: str = Form(default="", description="Full description"),
+    industry_details: str = Form(default="", description="Industry details (nullable)"),
+    challenges: str = Form(default="", description="Challenges faced"),
+    technical_constraints: str = Form(default="", description="Technical constraints (nullable)"),
+    approach: str = Form(default="", description="Solution approach"),
+    implementation_details: str = Form(default="", description="Implementation details"),
+    business_outcomes: str = Form(default="", description="Business outcomes"),
+    testimonial_quote: str = Form(default="", description="Testimonial quote (nullable)"),
+    testimonial_author: str = Form(default="", description="Testimonial author (nullable)"),
+    testimonial_position: str = Form(default="", description="Testimonial position (nullable)"),
     
-    # Status fields
-    cs_status: str = Form(default="draft", alias="status", description="published or draft"),
-    featured: bool = Form(default=False, description="Featured flag"),
+    # Metrics fields
+    time_reduction: str = Form(default="", description="Time reduction metric"),
+    ingestion_speed: str = Form(default="", description="Ingestion speed metric"),
+    data_accuracy: str = Form(default="", description="Data accuracy metric"),
     
-    # File uploads - stored as BSON Binary in MongoDB
-    heroImage: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
-    companyLogo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
-    pdfFile: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
-    architectureDiagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
+    # File uploads - stored in Azure Blob Storage
+    hero_image: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
+    company_logo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
+    pdf_file: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
+    architecture_diagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
     
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> CreateCaseStudyResponse:
-    """Create a case study with files stored as raw binary in MongoDB."""
+    """Create a case study with files stored in Azure Blob Storage."""
     
-    # Convert files to BSON Binary dicts for MongoDB storage
-    file_data: Dict[str, Any] = {}
+    # Get Azure Blob Service
+    blob_service = get_azure_blob_service()
     
-    if is_valid_file(heroImage):
-        file_data["heroImage"] = await file_to_binary_dict(heroImage)
+    # Upload files to Azure Blob Storage and get blob paths
+    blob_paths: Dict[str, str] = {}
     
-    if is_valid_file(companyLogo):
-        file_data["companyLogo"] = await file_to_binary_dict(companyLogo)
+    if is_valid_file(hero_image):
+        blob_paths["hero_image"] = await upload_file_to_blob(
+            hero_image, slug, "hero_image", blob_service
+        )
     
-    if is_valid_file(pdfFile):
-        file_data["pdfUrl"] = await file_to_binary_dict(pdfFile)
+    if is_valid_file(company_logo):
+        blob_paths["company_logo"] = await upload_file_to_blob(
+            company_logo, slug, "company_logo", blob_service
+        )
     
-    if is_valid_file(architectureDiagram):
-        file_data["architectureDiagram"] = await file_to_binary_dict(architectureDiagram)
+    if is_valid_file(pdf_file):
+        blob_paths["pdf_url"] = await upload_file_to_blob(
+            pdf_file, slug, "pdf_url", blob_service
+        )
     
-    # Parse tech stack
-    tech_stack_list = [t.strip() for t in techStack.split(",") if t.strip()] if techStack else []
+    if is_valid_file(architecture_diagram):
+        blob_paths["architecture_diagram"] = await upload_file_to_blob(
+            architecture_diagram, slug, "architecture_diagram", blob_service
+        )
     
-    # Create request object (without file data - those go separately)
+    # Parse tech stack (accepts JSON array string)
+    tech_stack_list = []
+    if tech_stack:
+        try:
+            parsed = json.loads(tech_stack)
+            if isinstance(parsed, list):
+                tech_stack_list = [str(t).strip() for t in parsed if t]
+        except json.JSONDecodeError:
+            # Fallback to comma-separated for backwards compatibility
+            tech_stack_list = [t.strip() for t in tech_stack.split(",") if t.strip()]
+    
+    # Build metrics object
+    metrics = Metrics(
+        time_reduction=time_reduction if time_reduction else None,
+        ingestion_speed=ingestion_speed if ingestion_speed else None,
+        data_accuracy=data_accuracy if data_accuracy else None,
+    )
+    
+    # Create request object with blob paths
     request = CreateCaseStudyRequest(
         title=title,
         slug=slug,
-        industry=industry,
-        migrationType=migrationType,
-        companyName=companyName,
-        companyLogo="",  # Will be replaced with binary data
-        summary=summary,
-        description=cs_description,
-        industryDetails=industryDetails if industryDetails else None,
-        businessImpact=businessImpact,
-        technicalConstraints=technicalConstraints if technicalConstraints else None,
-        solutionApproach=solutionApproach,
-        implementationDetails=implementationDetails,
-        heroImage="",  # Will be replaced with binary data
-        architectureDiagram="",  # Will be replaced with binary data
-        pdfUrl=None,  # Will be replaced with binary data
-        testimonialQuote=testimonialQuote if testimonialQuote else None,
-        testimonialAuthor=testimonialAuthor if testimonialAuthor else None,
-        testimonialPosition=testimonialPosition if testimonialPosition else None,
-        techStack=tech_stack_list,
-        status=cs_status,
         featured=featured,
-        challenges=[],
-        metrics=[],
-        businessOutcomes=[],
-        galleryImages=None,
-        codeSnippets=None,
+        status=status,
+        industry=industry,
+        tech_stack=tech_stack_list,
+        migration_type=migration_type if migration_type else None,
+        company_name=company_name,
+        company_logo=blob_paths.get("company_logo", ""),
+        description=description,
+        industry_details=industry_details if industry_details else None,
+        challenges=challenges,
+        technical_constraints=technical_constraints if technical_constraints else None,
+        approach=approach,
+        architecture_diagram=blob_paths.get("architecture_diagram"),
+        implementation_details=implementation_details,
+        metrics=metrics,
+        business_outcomes=business_outcomes,
+        testimonial_quote=testimonial_quote if testimonial_quote else None,
+        testimonial_author=testimonial_author if testimonial_author else None,
+        testimonial_position=testimonial_position if testimonial_position else None,
+        hero_image=blob_paths.get("hero_image", ""),
+        pdf_url=blob_paths.get("pdf_url", ""),
     )
     
-    # Create with file data
-    return await service.create_case_study_with_files(request, file_data)
+    # Create case study (no file_data needed, blob paths are in request)
+    return await service.create_case_study(request)
 
 
 @router.get(
@@ -186,16 +232,16 @@ async def create_case_study_with_files(
     
     **Filters:**
     - `industry`: Filter by industry sector
-    - `status`: Filter by status ("published" or "draft")
+    - `status`: Filter by status ('published' or 'draft')
     - `featured`: Filter by featured status (true/false)
     
     **Returns:** List of case studies with summary information.
     """,
 )
 async def get_all_case_studies(
-    industry: Optional[str] = Query(None, description="Filter by industry"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    featured: Optional[bool] = Query(None, description="Filter by featured"),
+    industry: Optional[str] = Query(default=None, description="Filter by industry"),
+    status: Optional[str] = Query(default=None, description="Filter by status ('published' or 'draft')"),
+    featured: Optional[bool] = Query(default=None, description="Filter by featured status (boolean)"),
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> List[CaseStudyResponse]:
     """Get all case studies with optional filters."""
@@ -206,6 +252,28 @@ async def get_all_case_studies(
     )
 
 
+@router.get(
+    "/{case_id}",
+    response_model=CaseStudyDetailResponse,
+    summary="Get Case Study by ID",
+    description="""
+    Retrieve a single case study by its unique ID.
+    
+    **Returns:** Full case study details including all fields.
+    """,
+    responses={
+        200: {"description": "Case study found"},
+        404: {"description": "Case study not found"},
+    },
+)
+async def get_case_study_by_id(
+    case_id: str,
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> CaseStudyDetailResponse:
+    """Get a single case study by its unique ID."""
+    return await service.get_case_study_by_id(case_id)
+
+
 @router.put(
     "/{case_id}",
     response_model=UpdateCaseStudyResponse,
@@ -213,17 +281,12 @@ async def get_all_case_studies(
     description="""
     Update an existing case study with file uploads.
     
-    **Files are stored as base64 data directly in MongoDB.**
-    
     **All fields are optional** - only provided fields will be updated.
     
     **File fields:** Uncheck 'Send empty value' to see file picker.
     
-    **Supported files:**
-    - heroImage: PNG/JPG (max 5MB)
-    - companyLogo: PNG/JPG/SVG (max 2MB)  
-    - pdfFile: PDF only (max 10MB)
-    - architectureDiagram: PNG/JPG/SVG (max 5MB)
+    **Note:** When uploading new files, the old files in Azure Blob Storage
+    will be automatically deleted and replaced with the new ones.
     """,
     responses={
         200: {"description": "Case study updated successfully"},
@@ -237,36 +300,48 @@ async def update_case_study(
     title: str = Form(default="", description="Case study title"),
     slug: str = Form(default="", description="URL-friendly slug"),
     industry: str = Form(default="", description="Industry sector"),
-    migrationType: str = Form(default="", description="Type of migration"),
-    companyName: str = Form(default="", description="Client company name"),
-    summary: str = Form(default="", description="Brief summary"),
-    cs_description: str = Form(default="", alias="description", description="Full description"),
-    industryDetails: str = Form(default="", description="Industry details"),
-    businessImpact: str = Form(default="", description="Business impact"),
-    technicalConstraints: str = Form(default="", description="Technical constraints"),
-    solutionApproach: str = Form(default="", description="Solution approach"),
-    implementationDetails: str = Form(default="", description="Implementation details"),
-    testimonialQuote: str = Form(default="", description="Testimonial quote"),
-    testimonialAuthor: str = Form(default="", description="Testimonial author"),
-    testimonialPosition: str = Form(default="", description="Testimonial position"),
-    techStack: str = Form(default="", description="Comma-separated: MongoDB,Python,AWS"),
-    cs_status: str = Form(default="", alias="status", description="published or draft"),
+    company_name: str = Form(default="", description="Client company name"),
     featured: str = Form(default="", description="true or false"),
+    status: str = Form(default="", description="Status: 'published' or 'draft'"),
+    tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
+    migration_type: str = Form(default="", description="Type of migration"),
+    description: str = Form(default="", description="Full description"),
+    industry_details: str = Form(default="", description="Industry details"),
+    challenges: str = Form(default="", description="Challenges faced"),
+    technical_constraints: str = Form(default="", description="Technical constraints"),
+    approach: str = Form(default="", description="Solution approach"),
+    implementation_details: str = Form(default="", description="Implementation details"),
+    business_outcomes: str = Form(default="", description="Business outcomes"),
+    testimonial_quote: str = Form(default="", description="Testimonial quote"),
+    testimonial_author: str = Form(default="", description="Testimonial author"),
+    testimonial_position: str = Form(default="", description="Testimonial position"),
     
-    # File uploads - stored as BSON Binary in MongoDB
-    heroImage: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
-    companyLogo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
-    pdfFile: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
-    architectureDiagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
+    # Metrics fields
+    time_reduction: str = Form(default="", description="Time reduction metric"),
+    ingestion_speed: str = Form(default="", description="Ingestion speed metric"),
+    data_accuracy: str = Form(default="", description="Data accuracy metric"),
+    
+    # File uploads - stored in Azure Blob Storage
+    hero_image: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
+    company_logo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
+    pdf_file: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
+    architecture_diagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
     
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> UpdateCaseStudyResponse:
-    """
-    Update an existing case study with files stored as raw binary in MongoDB.
-    Only the fields provided will be updated.
-    """
+    """Update an existing case study. Only provided fields will be updated."""
+    
+    # Get Azure Blob Service
+    blob_service = get_azure_blob_service()
+    
+    # Get existing case study to retrieve old blob paths for deletion
+    # We need to get raw document to access blob paths (not full URLs)
+    existing_detail = await service.get_case_study_by_id(case_id)
+    existing_slug = existing_detail.slug
+    existing_blob_paths = await service.get_blob_paths(case_id)
+    
     # Build update data dictionary (only include non-empty fields)
-    update_data = {}
+    update_data: Dict[str, Any] = {}
     
     if title:
         update_data["title"] = title
@@ -274,54 +349,115 @@ async def update_case_study(
         update_data["slug"] = slug
     if industry:
         update_data["industry"] = industry
-    if migrationType:
-        update_data["migrationType"] = migrationType
-    if companyName:
-        update_data["companyName"] = companyName
-    if summary:
-        update_data["summary"] = summary
-    if cs_description:
-        update_data["description"] = cs_description
-    if industryDetails:
-        update_data["industryDetails"] = industryDetails
-    if businessImpact:
-        update_data["businessImpact"] = businessImpact
-    if technicalConstraints:
-        update_data["technicalConstraints"] = technicalConstraints
-    if solutionApproach:
-        update_data["solutionApproach"] = solutionApproach
-    if implementationDetails:
-        update_data["implementationDetails"] = implementationDetails
-    if testimonialQuote:
-        update_data["testimonialQuote"] = testimonialQuote
-    if testimonialAuthor:
-        update_data["testimonialAuthor"] = testimonialAuthor
-    if testimonialPosition:
-        update_data["testimonialPosition"] = testimonialPosition
-    if techStack:
-        update_data["techStack"] = [t.strip() for t in techStack.split(",") if t.strip()]
-    if cs_status:
-        update_data["status"] = cs_status
+    if company_name:
+        update_data["company_name"] = company_name
     if featured:
         update_data["featured"] = featured.lower() == "true"
+    if status:
+        update_data["status"] = status
+    if tech_stack:
+        # Parse tech stack (accepts JSON array string)
+        try:
+            parsed = json.loads(tech_stack)
+            if isinstance(parsed, list):
+                update_data["tech_stack"] = [str(t).strip() for t in parsed if t]
+        except json.JSONDecodeError:
+            # Fallback to comma-separated for backwards compatibility
+            update_data["tech_stack"] = [t.strip() for t in tech_stack.split(",") if t.strip()]
+    if migration_type:
+        update_data["migration_type"] = migration_type
+    if description:
+        update_data["description"] = description
+    if industry_details:
+        update_data["industry_details"] = industry_details
+    if challenges:
+        update_data["challenges"] = challenges
+    if technical_constraints:
+        update_data["technical_constraints"] = technical_constraints
+    if approach:
+        update_data["approach"] = approach
+    if implementation_details:
+        update_data["implementation_details"] = implementation_details
+    if business_outcomes:
+        update_data["business_outcomes"] = business_outcomes
+    if testimonial_quote:
+        update_data["testimonial_quote"] = testimonial_quote
+    if testimonial_author:
+        update_data["testimonial_author"] = testimonial_author
+    if testimonial_position:
+        update_data["testimonial_position"] = testimonial_position
     
-    # Convert files to BSON Binary for MongoDB storage
-    file_data: Dict[str, Any] = {}
+    # Handle metrics
+    if time_reduction or ingestion_speed or data_accuracy:
+        update_data["metrics"] = Metrics(
+            time_reduction=time_reduction if time_reduction else None,
+            ingestion_speed=ingestion_speed if ingestion_speed else None,
+            data_accuracy=data_accuracy if data_accuracy else None,
+        )
     
-    if is_valid_file(heroImage):
-        file_data["heroImage"] = await file_to_binary_dict(heroImage)
+    # Use new slug if provided, otherwise use existing slug for file uploads
+    upload_slug = slug if slug else existing_slug
     
-    if is_valid_file(companyLogo):
-        file_data["companyLogo"] = await file_to_binary_dict(companyLogo)
+    # Upload new files to Azure Blob Storage (delete old files first)
+    if is_valid_file(hero_image):
+        # Delete old file if exists
+        if existing_blob_paths.get("hero_image"):
+            await blob_service.delete_file(existing_blob_paths["hero_image"])
+        # Upload new file
+        update_data["hero_image"] = await upload_file_to_blob(
+            hero_image, upload_slug, "hero_image", blob_service
+        )
     
-    if is_valid_file(pdfFile):
-        file_data["pdfUrl"] = await file_to_binary_dict(pdfFile)
+    if is_valid_file(company_logo):
+        # Delete old file if exists
+        if existing_blob_paths.get("company_logo"):
+            await blob_service.delete_file(existing_blob_paths["company_logo"])
+        # Upload new file
+        update_data["company_logo"] = await upload_file_to_blob(
+            company_logo, upload_slug, "company_logo", blob_service
+        )
     
-    if is_valid_file(architectureDiagram):
-        file_data["architectureDiagram"] = await file_to_binary_dict(architectureDiagram)
+    if is_valid_file(pdf_file):
+        # Delete old file if exists
+        if existing_blob_paths.get("pdf_url"):
+            await blob_service.delete_file(existing_blob_paths["pdf_url"])
+        # Upload new file
+        update_data["pdf_url"] = await upload_file_to_blob(
+            pdf_file, upload_slug, "pdf_url", blob_service
+        )
+    
+    if is_valid_file(architecture_diagram):
+        # Delete old file if exists
+        if existing_blob_paths.get("architecture_diagram"):
+            await blob_service.delete_file(existing_blob_paths["architecture_diagram"])
+        # Upload new file
+        update_data["architecture_diagram"] = await upload_file_to_blob(
+            architecture_diagram, upload_slug, "architecture_diagram", blob_service
+        )
     
     # Create update request
     request = UpdateCaseStudyRequest(**update_data)
     
-    return await service.update_case_study(case_id, request, file_data)
+    return await service.update_case_study(case_id, request)
 
+
+@router.delete(
+    "/{case_id}",
+    response_model=DeleteCaseStudyResponse,
+    summary="Delete Case Study",
+    description="""
+    Delete a case study by its unique ID.
+    
+    **Warning:** This action is irreversible.
+    """,
+    responses={
+        200: {"description": "Case study deleted successfully"},
+        404: {"description": "Case study not found"},
+    },
+)
+async def delete_case_study(
+    case_id: str,
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> DeleteCaseStudyResponse:
+    """Delete a case study by its unique ID."""
+    return await service.delete_case_study(case_id)

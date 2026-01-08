@@ -1,4 +1,4 @@
-import '@/styles/components/case-studies/CaseStudyHero.css';
+import '@/styles/features/case-studies/CaseStudyHero.css';
 
 export interface CaseStudyHeroData {
   category: string;

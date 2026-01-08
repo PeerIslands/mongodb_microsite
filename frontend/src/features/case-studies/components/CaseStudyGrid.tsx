@@ -1,7 +1,7 @@
 import { /* useState, */ useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import CaseStudyCard, { CaseStudyCardData } from './CaseStudyCard';
-import '@/styles/components/case-studies/CaseStudyGrid.css';
+import '@/styles/features/case-studies/CaseStudyGrid.css';
 
 interface CaseStudyGridProps {
   caseStudies: CaseStudyCardData[];
@@ -94,5 +94,4 @@ const CaseStudyGrid = ({ caseStudies, showViewAllButton = true }: CaseStudyGridP
 };
 
 export default CaseStudyGrid;
-
 

@@ -2,6 +2,8 @@
 MongoDB Initialization Script.
 Creates collections, indexes, and optionally seeds initial data.
 
+Field naming convention: snake_case (matching frontend requirements)
+
 Usage:
     python -m app.core.mongodb_init
 """
@@ -38,16 +40,16 @@ async def create_indexes(db) -> None:
     print("  ✅ case_studies.featured")
     
     # Index for sorting by date
-    await case_studies.create_index([("createdAt", -1)])
-    print("  ✅ case_studies.createdAt (descending)")
+    await case_studies.create_index([("created_at", -1)])
+    print("  ✅ case_studies.created_at (descending)")
     
     # Compound index for common queries
     await case_studies.create_index([
         ("status", 1),
         ("featured", 1),
-        ("createdAt", -1)
+        ("created_at", -1)
     ])
-    print("  ✅ case_studies.status+featured+createdAt (compound)")
+    print("  ✅ case_studies.status+featured+created_at (compound)")
     
     # ==========================================================================
     # USERS COLLECTION
@@ -122,56 +124,45 @@ async def seed_sample_data(db) -> None:
         print(f"  ⏭️  Skipping: {count} case studies already exist")
         return
     
-    # Sample case study data
+    # Sample case study data with new snake_case field structure
     from datetime import datetime, timezone
     import uuid
     
     sample_case_study = {
         "_id": str(uuid.uuid4()),
-        "id": str(uuid.uuid4()),
         "title": "Sample MongoDB Migration Case Study",
         "slug": "sample-mongodb-migration",
-        "industry": "Technology",
-        "migrationType": "Oracle to MongoDB",
-        "techStack": ["MongoDB", "Python", "FastAPI", "Docker"],
-        "companyName": "Sample Tech Corp",
-        "companyLogo": "",
-        "summary": "A sample case study demonstrating MongoDB migration best practices.",
-        "description": "This is a sample case study created during database initialization.",
-        "industryDetails": "Technology sector focusing on cloud solutions.",
-        "challenges": [
-            {"text": "Legacy system complexity"},
-            {"text": "Data migration at scale"},
-            {"text": "Zero downtime requirement"}
-        ],
-        "businessImpact": "Significant cost savings and performance improvements.",
-        "technicalConstraints": "Must maintain backward compatibility.",
-        "solutionApproach": "Phased migration with parallel running systems.",
-        "architectureDiagram": "",
-        "implementationDetails": "Implemented using MongoDB Atlas with Python drivers.",
-        "codeSnippets": None,
-        "metrics": [
-            {"label": "Cost Reduction", "value": "40%"},
-            {"label": "Performance Improvement", "value": "3x"},
-            {"label": "Migration Time", "value": "3 months"}
-        ],
-        "businessOutcomes": [
-            {"text": "Reduced operational costs"},
-            {"text": "Improved query performance"},
-            {"text": "Better scalability"}
-        ],
-        "testimonialQuote": "The migration exceeded our expectations.",
-        "testimonialAuthor": "John Doe",
-        "testimonialPosition": "CTO, Sample Tech Corp",
-        "heroImage": "",
-        "galleryImages": None,
-        "pdfUrl": None,
-        "status": "published",
         "featured": True,
-        "views": 0,
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "status": "published",
+        "industry": "Technology",
+        "tech_stack": ["MongoDB", "Python", "FastAPI", "Docker"],
+        "migration_type": "Oracle to MongoDB",
+        "company_name": "Sample Tech Corp",
+        "company_logo": "",
+        "description": "This is a sample case study demonstrating MongoDB migration best practices.",
+        "industry_details": "Technology sector focusing on cloud solutions.",
+        "challenges": "Legacy system complexity. Data migration at scale. Zero downtime requirement.",
+        "technical_constraints": "Must maintain backward compatibility.",
+        "approach": "Phased migration with parallel running systems.",
+        "architecture_diagram": None,
+        "implementation_details": "Implemented using MongoDB Atlas with Python drivers.",
+        "metrics": {
+            "time_reduction": "60%",
+            "ingestion_speed": "3x faster",
+            "data_accuracy": "99.9%"
+        },
+        "business_outcomes": "Reduced operational costs. Improved query performance. Better scalability.",
+        "testimonial_quote": "The migration exceeded our expectations.",
+        "testimonial_author": "John Doe",
+        "testimonial_position": "CTO, Sample Tech Corp",
+        "hero_image": "",
+        "pdf_url": "",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    
+    # Set id to match _id
+    sample_case_study["id"] = sample_case_study["_id"]
     
     await case_studies.insert_one(sample_case_study)
     print("  ✅ Inserted sample case study")
@@ -188,12 +179,12 @@ async def init_mongodb(seed_data: bool = False) -> None:
     print("=" * 60)
     print("🚀 MongoDB Initialization")
     print("=" * 60)
-    print(f"Database URL: {settings.MONGODB_URL}")
+    print(f"Database URL: {settings.MONGODB_URI}")
     print(f"Database Name: {settings.MONGODB_DB_NAME}")
     print("=" * 60)
     
     # Connect to MongoDB
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    client = AsyncIOMotorClient(settings.MONGODB_URI)
     db = client[settings.MONGODB_DB_NAME]
     
     try:
@@ -243,4 +234,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

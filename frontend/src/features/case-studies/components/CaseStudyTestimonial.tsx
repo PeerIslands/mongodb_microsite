@@ -1,4 +1,4 @@
-import '@/styles/components/case-studies/CaseStudyTestimonial.css';
+import '@/styles/features/case-studies/CaseStudyTestimonial.css';
 
 export interface CaseStudyTestimonialData {
   quote: string;
@@ -57,5 +57,4 @@ const CaseStudyTestimonial = ({ data }: CaseStudyTestimonialProps) => {
 };
 
 export default CaseStudyTestimonial;
-
 

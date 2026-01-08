@@ -157,11 +157,10 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess }: CaseStudyFormProps) =
             </div>
 
             <div className="form-field">
-              <label>Migration Type *</label>
+              <label>Migration Type</label>
               <select
                 value={formData.migrationType}
                 onChange={(e) => handleInputChange('migrationType', e.target.value)}
-                required
               >
                 <option value="">Select Type</option>
                 {migrationTypes.map(type => (

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import '@/styles/components/case-studies/CaseStudyCard.css';
+import '@/styles/features/case-studies/CaseStudyCard.css';
 
 export interface CaseStudyCardData {
   id: string;
@@ -90,5 +90,4 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
 };
 
 export default CaseStudyCard;
-
 

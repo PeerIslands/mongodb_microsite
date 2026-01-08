@@ -1,62 +1,102 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '@/styles/features/admin/CaseStudyList.css';
+import { caseStudiesService } from '@/api/services/case-studies.service';
 
 interface CaseStudyListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
 }
 
-// Mock data - will be replaced with API calls
-const mockCaseStudies = [
-  {
-    id: '1',
-    title: 'Healthcare Provider Migration',
-    industry: 'Healthcare',
-    techStack: ['MongoDB', 'Node.js', 'React'],
-    migrationType: 'SQL to MongoDB',
-    published: true,
-    featured: true,
-    createdAt: '2024-01-15',
-    views: 1234
-  },
-  {
-    id: '2',
-    title: 'E-commerce Platform Modernization',
-    industry: 'E-commerce',
-    techStack: ['MongoDB', 'Python', 'Vue.js'],
-    migrationType: 'Cloud Migration',
-    published: true,
-    featured: false,
-    createdAt: '2024-02-20',
-    views: 856
-  },
-  {
-    id: '3',
-    title: 'Financial Services Data Lake',
-    industry: 'Finance',
-    techStack: ['MongoDB', 'Kafka', 'Spark'],
-    migrationType: 'Modernization',
-    published: false,
-    featured: false,
-    createdAt: '2024-03-10',
-    views: 0
-  }
-];
+// Interface for API response (snake_case from backend)
+interface CaseStudyApiResponse {
+  id: string;
+  title: string;
+  slug: string;
+  industry: string;
+  tech_stack: string[];
+  migration_type?: string;
+  status: 'published' | 'draft';
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
+  company_name: string;
+  company_logo: string;
+  hero_image: string;
+  description: string;
+}
 
 const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
-  const [caseStudies] = useState(mockCaseStudies);
+  const [caseStudies, setCaseStudies] = useState<CaseStudyApiResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this case study?')) {
-      // API call to delete
-      console.log('Delete case study:', id);
+  // Fetch case studies on component mount
+  useEffect(() => {
+    fetchCaseStudies();
+  }, []);
+
+  const fetchCaseStudies = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await caseStudiesService.getAll();
+      // API returns snake_case, cast to our interface
+      setCaseStudies(data as unknown as CaseStudyApiResponse[]);
+    } catch (err) {
+      console.error('Failed to fetch case studies:', err);
+      setError('Failed to load case studies. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleTogglePublish = (id: string) => {
-    // API call to toggle published status
-    console.log('Toggle publish status:', id);
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this case study?')) {
+      try {
+        await caseStudiesService.delete(id);
+        // Refresh the list after deletion
+        fetchCaseStudies();
+      } catch (err) {
+        console.error('Failed to delete case study:', err);
+        alert('Failed to delete case study. Please try again.');
+      }
+    }
   };
+
+  const handleTogglePublish = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      await caseStudiesService.update(id, formData);
+      // Refresh the list after update
+      fetchCaseStudies();
+    } catch (err) {
+      console.error('Failed to toggle publish status:', err);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="case-study-list">
+        <div className="loading-state">Loading case studies...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="case-study-list">
+        <div className="error-state">
+          <p>{error}</p>
+          <button onClick={fetchCaseStudies} className="retry-button">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="case-study-list">
@@ -84,7 +124,7 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <div className="stat-value">{caseStudies.filter(cs => cs.published).length}</div>
+            <div className="stat-value">{caseStudies.filter(cs => cs.status === 'published').length}</div>
             <div className="stat-label">Published</div>
           </div>
         </div>
@@ -96,10 +136,10 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">👁️</div>
+          <div className="stat-icon">📝</div>
           <div className="stat-content">
-            <div className="stat-value">{caseStudies.reduce((sum, cs) => sum + cs.views, 0)}</div>
-            <div className="stat-label">Total Views</div>
+            <div className="stat-value">{caseStudies.filter(cs => cs.status === 'draft').length}</div>
+            <div className="stat-label">Drafts</div>
           </div>
         </div>
       </div>
@@ -115,58 +155,64 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
               <th>Migration Type</th>
               <th>Status</th>
               <th>Created</th>
-              <th>Views</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {caseStudies.map((caseStudy) => (
-              <tr key={caseStudy.id}>
-                <td>
-                  <div className="title-cell">
-                    {caseStudy.title}
-                    {caseStudy.featured && <span className="featured-badge">Featured</span>}
-                  </div>
-                </td>
-                <td>{caseStudy.industry}</td>
-                <td>
-                  <div className="tech-tags">
-                    {caseStudy.techStack.map((tech, idx) => (
-                      <span key={idx} className="tech-tag">{tech}</span>
-                    ))}
-                  </div>
-                </td>
-                <td>{caseStudy.migrationType}</td>
-                <td>
-                  <button 
-                    className={`status-badge ${caseStudy.published ? 'published' : 'draft'}`}
-                    onClick={() => handleTogglePublish(caseStudy.id)}
-                  >
-                    {caseStudy.published ? 'Published' : 'Draft'}
-                  </button>
-                </td>
-                <td>{new Date(caseStudy.createdAt).toLocaleDateString()}</td>
-                <td>{caseStudy.views.toLocaleString()}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="action-button edit"
-                      onClick={() => onEdit(caseStudy.id)}
-                      title="Edit"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="action-button delete"
-                      onClick={() => handleDelete(caseStudy.id)}
-                      title="Delete"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+            {caseStudies.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="empty-state">
+                  No case studies found. Click "Add New Case Study" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              caseStudies.map((caseStudy) => (
+                <tr key={caseStudy.id}>
+                  <td>
+                    <div className="title-cell">
+                      {caseStudy.title}
+                      {caseStudy.featured && <span className="featured-badge">Featured</span>}
+                    </div>
+                  </td>
+                  <td>{caseStudy.industry}</td>
+                  <td>
+                    <div className="tech-tags">
+                      {caseStudy.tech_stack?.map((tech, idx) => (
+                        <span key={idx} className="tech-tag">{tech}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>{caseStudy.migration_type || '-'}</td>
+                  <td>
+                    <button 
+                      className={`status-badge ${caseStudy.status === 'published' ? 'published' : 'draft'}`}
+                      onClick={() => handleTogglePublish(caseStudy.id, caseStudy.status)}
+                    >
+                      {caseStudy.status === 'published' ? 'Published' : 'Draft'}
+                    </button>
+                  </td>
+                  <td>{new Date(caseStudy.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="action-button edit"
+                        onClick={() => onEdit(caseStudy.id)}
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="action-button delete"
+                        onClick={() => handleDelete(caseStudy.id)}
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

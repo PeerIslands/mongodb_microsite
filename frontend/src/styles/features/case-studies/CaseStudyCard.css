@@ -189,7 +189,7 @@
 /* Large screens (1440px+) */
 @media (min-width: 1440px) {
   .case-study-card {
-    padding: 6rem 3rem 3rem;
+    padding: 3rem;
   }
 }
 
@@ -250,5 +250,4 @@
     border-radius: 16px;
   }
 }
-
 

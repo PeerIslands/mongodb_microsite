@@ -1,89 +1,91 @@
+// Metrics structure with fixed fields (snake_case to match API)
+export interface CaseStudyMetrics {
+  time_reduction: string;
+  ingestion_speed: string;
+  data_accuracy: string;
+}
+
+// Base Case Study (for list view) - snake_case to match API response
 export interface CaseStudy {
   id: string;
   slug: string;
   title: string;
   industry: string;
-  migrationType: string;
-  techStack: string[];
+  migration_type?: string;
+  tech_stack: string[];
   status: 'published' | 'draft';
   featured: boolean;
-  views: number;
-  createdAt: string;
-  updatedAt: string;
-  companyName: string;
-  companyLogo: string;
-  heroImage: string;
-  summary: string;
+  created_at: string;
+  updated_at: string;
+  company_name: string;
+  company_logo: string;
+  hero_image: string;
+  description: string;
 }
 
-export interface CaseStudyChallenge {
-  text: string;
-}
-
-export interface CaseStudyMetric {
-  label: string;
-  value: string;
-}
-
-export interface CaseStudyOutcome {
-  text: string;
-}
-
-export interface CaseStudyCodeSnippet {
-  language: string;
-  code: string;
-  description?: string;
-}
-
+// Full Case Study Detail (for single view) - snake_case to match API response
 export interface CaseStudyDetail extends CaseStudy {
   // Client Background
-  description: string;
-  industryDetails?: string;
+  industry_details?: string;
 
   // Problem Statement
-  challenges: CaseStudyChallenge[];
-  businessImpact: string;
-  technicalConstraints?: string;
+  challenges: string;
+  technical_constraints?: string;
 
   // Solution & Architecture
-  solutionApproach: string;
-  architectureDiagram: string;
-  implementationDetails: string;
-  codeSnippets?: CaseStudyCodeSnippet[];
+  approach: string;
+  architecture_diagram?: string;
+  implementation_details: string;
 
   // Value Delivered
-  metrics: CaseStudyMetric[];
-  businessOutcomes: CaseStudyOutcome[];
-  testimonialQuote?: string;
-  testimonialAuthor?: string;
-  testimonialPosition?: string;
+  metrics: CaseStudyMetrics;
+  business_outcomes: string;
+  testimonial_quote?: string;
+  testimonial_author?: string;
+  testimonial_position?: string;
 
   // Media & Files
-  galleryImages?: string[];
-  pdfUrl?: string;
+  pdf_url: string;
 }
 
+// DTO for creating a case study - snake_case to match API
 export interface CreateCaseStudyDto {
+  // Basic Info
   title: string;
   slug: string;
   industry: string;
-  migrationType: string;
-  techStack: string[];
-  companyName: string;
-  companyLogo: string;
-  description: string;
-  challenges: CaseStudyChallenge[];
-  businessImpact: string;
-  solutionApproach: string;
-  architectureDiagram: string;
-  implementationDetails: string;
-  metrics: CaseStudyMetric[];
-  businessOutcomes: CaseStudyOutcome[];
-  heroImage: string;
-  pdfUrl: string;
+  migration_type?: string;
+  tech_stack: string[];
   status?: 'published' | 'draft';
   featured?: boolean;
+
+  // Client Background
+  company_name: string;
+  company_logo: string;
+  description: string;
+  industry_details?: string;
+
+  // Problem Statement
+  challenges: string;
+  technical_constraints?: string;
+
+  // Solution & Architecture
+  approach: string;
+  architecture_diagram?: string;
+  implementation_details: string;
+
+  // Value Delivered
+  metrics: CaseStudyMetrics;
+  business_outcomes: string;
+  testimonial_quote?: string;
+  testimonial_author?: string;
+  testimonial_position?: string;
+
+  // Media & Files
+  hero_image: string;
+  pdf_url: string;
 }
 
+// DTO for updating a case study
 export interface UpdateCaseStudyDto extends Partial<CreateCaseStudyDto> {}
 
