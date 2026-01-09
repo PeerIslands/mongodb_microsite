@@ -64,10 +64,14 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess }: CaseStudyFormProps) =
   };
 
   const handleArrayItemChange = (field: string, index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field as keyof typeof prev].map((item: any, i: number) => i === index ? value : item)
-    }));
+    setFormData(prev => {
+      const fieldValue = prev[field as keyof typeof prev];
+      if (!Array.isArray(fieldValue)) return prev;
+      return {
+        ...prev,
+        [field]: fieldValue.map((item: any, i: number) => i === index ? value : item)
+      };
+    });
   };
 
   const handleArrayItemAdd = (field: string) => {

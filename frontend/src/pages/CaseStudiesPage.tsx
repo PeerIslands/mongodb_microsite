@@ -100,11 +100,20 @@ const CaseStudiesPage = () => {
 
   /**
    * Handle when a user clicks on a case study card
-   * Updates the URL and fetches the case study details
+   * Closes any existing detail section, then loads and displays the new one
    */
   const handleCardClick = async (caseStudyId: string) => {
     // Update URL with the case study ID for consistency and shareability
     setSearchParams({ id: caseStudyId });
+    
+    // If detail section is already visible, close it first with a brief delay
+    // to create a visual "reload" effect
+    if (isDetailVisible) {
+      setIsDetailVisible(false);
+      // Small delay to allow the close animation before reopening
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    
     await fetchCaseStudyDetails(caseStudyId);
   };
 

@@ -15,12 +15,12 @@ interface CaseStudyDetailSectionProps {
 const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: CaseStudyDetailSectionProps) => {
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Scroll to this section when it becomes visible
+  // Scroll to this section when it becomes visible or when the case study changes
   useEffect(() => {
     if (isVisible && sectionRef.current) {
       sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [isVisible]);
+  }, [isVisible, caseStudy?.id]);
 
   // Handle PDF download
   const handleDownloadPdf = () => {

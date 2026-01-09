@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import type { CaseStudy, CaseStudyDetail } from '@/types/models/case-study';
+import type { CaseStudyDetail } from '@/types/models/case-study';
 
 // Response type for create/update operations
 export interface CaseStudyResponse {
