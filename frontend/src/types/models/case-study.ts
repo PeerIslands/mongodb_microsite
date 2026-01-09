@@ -1,11 +1,12 @@
 // Metrics structure with fixed fields (snake_case to match API)
 export interface CaseStudyMetrics {
-  time_reduction: string;
-  ingestion_speed: string;
-  data_accuracy: string;
+  time_reduction?: string | null;
+  ingestion_speed?: string | null;
+  data_accuracy?: string | null;
 }
 
 // Base Case Study (for list view) - snake_case to match API response
+// Note: API returns CaseStudyDetailResponse which includes metrics
 export interface CaseStudy {
   id: string;
   slug: string;
@@ -21,6 +22,8 @@ export interface CaseStudy {
   company_logo: string;
   hero_image: string;
   description: string;
+  // Metrics included since API returns CaseStudyDetailResponse
+  metrics?: CaseStudyMetrics;
 }
 
 // Full Case Study Detail (for single view) - snake_case to match API response

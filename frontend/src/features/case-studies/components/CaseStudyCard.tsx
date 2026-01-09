@@ -1,14 +1,19 @@
-import { Link } from 'react-router-dom';
 import '@/styles/features/case-studies/CaseStudyCard.css';
+
+// Metrics structure matching backend
+export interface CaseStudyMetrics {
+  time_reduction?: string | null;
+  ingestion_speed?: string | null;
+  data_accuracy?: string | null;
+}
 
 export interface CaseStudyCardData {
   id: string;
   slug: string;
-  category: string;
+  industry: string; // Maps to category display
   title: string;
-  highlightMetric: string;
   description: string;
-  subMetrics: string[];
+  metrics: CaseStudyMetrics;
 }
 
 interface CaseStudyCardProps {
@@ -17,17 +22,24 @@ interface CaseStudyCardProps {
 
 /**
  * CaseStudyCard - Individual case study card for the grid
- * Displays category, title, metrics, description, and read more link
+ * Displays industry, title, metrics, description, and read more link
  */
 const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
+  // Get metrics that have values
+  const metricsEntries = [
+    { label: 'Time Reduction', value: data.metrics?.time_reduction },
+    { label: 'Ingestion Speed', value: data.metrics?.ingestion_speed },
+    { label: 'Data Accuracy', value: data.metrics?.data_accuracy },
+  ].filter(m => m.value);
+
   return (
     <article className="case-study-card">
       {/* Decorative glow */}
       <div className="case-study-card__glow" />
       
-      {/* Category badge */}
+      {/* Industry badge */}
       <span className="case-study-card__category">
-        {data.category}
+        {data.industry}
       </span>
 
       {/* Title */}
@@ -35,22 +47,13 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
         {data.title}
       </h3>
 
-      {/* Highlight metric */}
-      <div className="case-study-card__highlight-metric">
-        {data.highlightMetric.split('\n').map((line, index) => (
-          <span key={index}>
-            {line}
-            {index < data.highlightMetric.split('\n').length - 1 && <br />}
-          </span>
-        ))}
-      </div>
-
-      {/* Sub metrics */}
-      <div className="case-study-card__sub-metrics">
-        {data.subMetrics.map((metric, index) => (
-          <span key={index} className="case-study-card__sub-metric">
-            {metric}
-          </span>
+      {/* Metrics display - all three metrics */}
+      <div className="case-study-card__metrics">
+        {metricsEntries.map((metric, index) => (
+          <div key={index} className="case-study-card__metric">
+            <span className="case-study-card__metric-value">{metric.value}</span>
+            <span className="case-study-card__metric-label">{metric.label}</span>
+          </div>
         ))}
       </div>
 
@@ -59,12 +62,8 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
         {data.description}
       </p>
 
-      {/* Read more link - placeholder for now */}
-      <Link 
-        to={`/case-studies/${data.slug}`} 
-        className="case-study-card__link"
-        aria-label={`Read success story: ${data.title}`}
-      >
+      {/* Read more - clicks bubble up to parent button */}
+      <span className="case-study-card__link">
         <span className="case-study-card__link-text">Read Success Story</span>
         <span className="case-study-card__link-icon">
           <svg 
@@ -84,7 +83,7 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
             />
           </svg>
         </span>
-      </Link>
+      </span>
     </article>
   );
 };

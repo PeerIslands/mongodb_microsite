@@ -692,7 +692,7 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess, techStackOptions = TECH
             </div>
 
             <div className="form-field full-width">
-              <label>Business Outcomes *</label>
+              <label>Business Outcomes *(Separate bullet points by '|')</label>
               <textarea
                 value={formData.businessOutcomes}
                 onChange={(e) => handleInputChange('businessOutcomes', e.target.value)}
