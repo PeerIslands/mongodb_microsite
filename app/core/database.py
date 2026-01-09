@@ -24,7 +24,7 @@ class Database:
         Connect to MongoDB.
         Called on application startup.
         """
-        cls.client = AsyncIOMotorClient(settings.MONGODB_URL)
+        cls.client = AsyncIOMotorClient(settings.MONGODB_URI)
         cls.db = cls.client[settings.MONGODB_DB_NAME]
         
         # Verify connection

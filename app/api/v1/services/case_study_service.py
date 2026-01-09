@@ -1,13 +1,17 @@
 """
 Case Study Service - Business logic layer for case study operations.
 Handles validation, data transformation, and orchestrates repository calls.
+
+Field naming convention: snake_case (matching frontend requirements)
+
+File Storage:
+- Images and PDFs are stored in Azure Blob Storage
+- MongoDB stores blob paths (e.g., "my-case-study/hero_image.png")
+- Full URLs are constructed at retrieval time using the Azure Blob Service
 """
 
-import base64
 from typing import List, Optional, Dict, Any
 import re
-
-from bson import Binary
 
 from app.api.v1.models.case_study import (
     CreateCaseStudyRequest,
@@ -16,8 +20,11 @@ from app.api.v1.models.case_study import (
     UpdateCaseStudyResponse,
     CaseStudyResponse,
     CaseStudyDetailResponse,
+    DeleteCaseStudyResponse,
+    Metrics,
 )
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
+from app.api.v1.services.azure_blob_service import get_azure_blob_service
 from app.api.v1.exceptions.case_study_exceptions import (
     CaseStudyNotFoundError,
     CaseStudyValidationError,
@@ -37,40 +44,11 @@ class CaseStudyService:
             repository: CaseStudyRepository instance
         """
         self._repository = repository
+        self._blob_service = get_azure_blob_service()
 
     # =========================================================================
     # HELPER METHODS
     # =========================================================================
-
-    def _binary_to_data_url(self, file_data: Dict[str, Any]) -> str:
-        """
-        Convert BSON Binary file data to a base64 data URL for frontend use.
-        
-        Args:
-            file_data: Dict with 'data' (Binary), 'content_type', etc.
-            
-        Returns:
-            Data URL string like: data:image/png;base64,iVBORw0KGgo...
-        """
-        if not file_data or not isinstance(file_data, dict):
-            return ""
-        
-        binary_data = file_data.get("data")
-        content_type = file_data.get("content_type", "application/octet-stream")
-        
-        if not binary_data:
-            return ""
-        
-        # Convert Binary to bytes, then to base64
-        if isinstance(binary_data, Binary):
-            raw_bytes = bytes(binary_data)
-        elif isinstance(binary_data, bytes):
-            raw_bytes = binary_data
-        else:
-            return ""
-        
-        base64_content = base64.b64encode(raw_bytes).decode("utf-8")
-        return f"data:{content_type};base64,{base64_content}"
 
     def _validate_slug(self, slug: str) -> str:
         """
@@ -102,77 +80,99 @@ class CaseStudyService:
 
     def _get_file_value(self, doc: dict, field: str) -> str:
         """
-        Get file field value, converting Binary to data URL if needed.
+        Get file field value, constructing full Azure Blob URL from blob path.
         
-        Handles both:
-        - Old format: string (URL or base64)
-        - New format: dict with Binary data
+        Args:
+            doc: MongoDB document
+            field: Field name (hero_image, company_logo, etc.)
+            
+        Returns:
+            Full Azure Blob URL if blob path exists, otherwise empty string
         """
         value = doc.get(field, "")
         
-        if isinstance(value, dict) and "data" in value:
-            # New format: Binary data stored as dict
-            return self._binary_to_data_url(value)
-        elif isinstance(value, str):
-            # Old format: already a string (URL or base64)
-            return value
+        if isinstance(value, str) and value:
+            # Value is a blob path - construct full URL
+            return self._blob_service.get_full_url(value)
         else:
             return ""
+    
+    def _get_blob_path(self, doc: dict, field: str) -> str:
+        """
+        Get raw blob path from document (without URL construction).
+        Used internally when we need the path for deletion.
+        
+        Args:
+            doc: MongoDB document
+            field: Field name
+            
+        Returns:
+            Blob path string or empty string
+        """
+        value = doc.get(field, "")
+        return value if isinstance(value, str) else ""
+
+    def _get_metrics(self, doc: dict) -> Metrics:
+        """
+        Get metrics object from document.
+        """
+        metrics_data = doc.get("metrics", {})
+        if isinstance(metrics_data, dict):
+            return Metrics(
+                time_reduction=metrics_data.get("time_reduction"),
+                ingestion_speed=metrics_data.get("ingestion_speed"),
+                data_accuracy=metrics_data.get("data_accuracy"),
+            )
+        return Metrics()
 
     def _to_response(self, doc: dict) -> CaseStudyResponse:
         """Convert document to CaseStudyResponse."""
         return CaseStudyResponse(
-            id=doc.get("id", doc.get("_id", "")),
-            slug=doc.get("slug", ""),
+            id=str(doc.get("id", doc.get("_id", ""))),
             title=doc.get("title", ""),
-            industry=doc.get("industry", ""),
-            migrationType=doc.get("migrationType", ""),
-            techStack=doc.get("techStack", []),
-            status=doc.get("status", "draft"),
+            slug=doc.get("slug", ""),
             featured=doc.get("featured", False),
-            views=doc.get("views", 0),
-            createdAt=doc.get("createdAt", ""),
-            updatedAt=doc.get("updatedAt", ""),
-            companyName=doc.get("companyName", ""),
-            companyLogo=self._get_file_value(doc, "companyLogo"),
-            heroImage=self._get_file_value(doc, "heroImage"),
-            summary=doc.get("summary", ""),
+            status=doc.get("status", "draft"),
+            industry=doc.get("industry", ""),
+            tech_stack=doc.get("tech_stack", []),
+            migration_type=doc.get("migration_type"),
+            company_name=doc.get("company_name", ""),
+            company_logo=self._get_file_value(doc, "company_logo"),
+            hero_image=self._get_file_value(doc, "hero_image"),
+            description=doc.get("description", ""),
+            created_at=doc.get("created_at", ""),
+            updated_at=doc.get("updated_at", ""),
         )
 
     def _to_detail_response(self, doc: dict) -> CaseStudyDetailResponse:
         """Convert document to CaseStudyDetailResponse."""
         return CaseStudyDetailResponse(
-            id=doc.get("id", doc.get("_id", "")),
-            slug=doc.get("slug", ""),
+            id=str(doc.get("id", doc.get("_id", ""))),
             title=doc.get("title", ""),
-            industry=doc.get("industry", ""),
-            migrationType=doc.get("migrationType", ""),
-            techStack=doc.get("techStack", []),
-            status=doc.get("status", "draft"),
+            slug=doc.get("slug", ""),
             featured=doc.get("featured", False),
-            views=doc.get("views", 0),
-            createdAt=doc.get("createdAt", ""),
-            updatedAt=doc.get("updatedAt", ""),
-            companyName=doc.get("companyName", ""),
-            companyLogo=self._get_file_value(doc, "companyLogo"),
-            heroImage=self._get_file_value(doc, "heroImage"),
-            summary=doc.get("summary", ""),
+            status=doc.get("status", "draft"),
+            industry=doc.get("industry", ""),
+            tech_stack=doc.get("tech_stack", []),
+            migration_type=doc.get("migration_type"),
+            company_name=doc.get("company_name", ""),
+            company_logo=self._get_file_value(doc, "company_logo"),
+            hero_image=self._get_file_value(doc, "hero_image"),
             description=doc.get("description", ""),
-            industryDetails=doc.get("industryDetails"),
-            challenges=doc.get("challenges", []),
-            businessImpact=doc.get("businessImpact", ""),
-            technicalConstraints=doc.get("technicalConstraints"),
-            solutionApproach=doc.get("solutionApproach", ""),
-            architectureDiagram=self._get_file_value(doc, "architectureDiagram"),
-            implementationDetails=doc.get("implementationDetails", ""),
-            codeSnippets=doc.get("codeSnippets"),
-            metrics=doc.get("metrics", []),
-            businessOutcomes=doc.get("businessOutcomes", []),
-            testimonialQuote=doc.get("testimonialQuote"),
-            testimonialAuthor=doc.get("testimonialAuthor"),
-            testimonialPosition=doc.get("testimonialPosition"),
-            galleryImages=doc.get("galleryImages"),
-            pdfUrl=self._get_file_value(doc, "pdfUrl"),
+            created_at=doc.get("created_at", ""),
+            updated_at=doc.get("updated_at", ""),
+            industry_details=doc.get("industry_details"),
+            challenges=doc.get("challenges", ""),
+            technical_constraints=doc.get("technical_constraints"),
+            approach=doc.get("approach", ""),
+            architecture_diagram=self._get_file_value(doc, "architecture_diagram"),
+            implementation_details=doc.get("implementation_details", ""),
+            metrics=self._get_metrics(doc),
+            business_outcomes=doc.get("business_outcomes", ""),
+            testimonial_quote=doc.get("testimonial_quote"),
+            testimonial_author=doc.get("testimonial_author"),
+            testimonial_position=doc.get("testimonial_position"),
+            pdf_url=self._get_file_value(doc, "pdf_url"),
         )
 
     # =========================================================================
@@ -204,90 +204,20 @@ class CaseStudyService:
         case_study_data = request.model_dump()
         case_study_data["slug"] = normalized_slug
 
-        # Convert nested models to dicts
-        case_study_data["challenges"] = [
-            c if isinstance(c, dict) else c.model_dump() 
-            for c in case_study_data.get("challenges", [])
-        ]
-        case_study_data["metrics"] = [
-            m if isinstance(m, dict) else m.model_dump() 
-            for m in case_study_data.get("metrics", [])
-        ]
-        case_study_data["businessOutcomes"] = [
-            o if isinstance(o, dict) else o.model_dump() 
-            for o in case_study_data.get("businessOutcomes", [])
-        ]
-        if case_study_data.get("codeSnippets"):
-            case_study_data["codeSnippets"] = [
-                s if isinstance(s, dict) else s.model_dump() 
-                for s in case_study_data["codeSnippets"]
-            ]
+        # Convert metrics model to dict
+        if case_study_data.get("metrics"):
+            if hasattr(case_study_data["metrics"], "model_dump"):
+                case_study_data["metrics"] = case_study_data["metrics"].model_dump()
 
         # Create in MongoDB
         created = await self._repository.create(case_study_data)
 
         return CreateCaseStudyResponse(
-            id=created["id"],
+            id=str(created["id"]),
             slug=created["slug"],
             message="Case study created successfully",
         )
 
-    async def create_case_study_with_files(
-        self,
-        request: CreateCaseStudyRequest,
-        file_data: Dict[str, Dict[str, Any]]
-    ) -> CreateCaseStudyResponse:
-        """
-        Create a new case study with raw binary file data.
-        
-        Args:
-            request: CreateCaseStudyRequest with case study data
-            file_data: Dict mapping field names to file dicts with Binary data
-                       e.g., {"heroImage": {"data": Binary(...), "content_type": "image/png", ...}}
-            
-        Returns:
-            CreateCaseStudyResponse with id, slug, and message
-        """
-        # Validate slug
-        normalized_slug = self._validate_slug(request.slug)
-
-        # Convert request to dict for storage
-        case_study_data = request.model_dump()
-        case_study_data["slug"] = normalized_slug
-
-        # Convert nested models to dicts
-        case_study_data["challenges"] = [
-            c if isinstance(c, dict) else c.model_dump() 
-            for c in case_study_data.get("challenges", [])
-        ]
-        case_study_data["metrics"] = [
-            m if isinstance(m, dict) else m.model_dump() 
-            for m in case_study_data.get("metrics", [])
-        ]
-        case_study_data["businessOutcomes"] = [
-            o if isinstance(o, dict) else o.model_dump() 
-            for o in case_study_data.get("businessOutcomes", [])
-        ]
-        if case_study_data.get("codeSnippets"):
-            case_study_data["codeSnippets"] = [
-                s if isinstance(s, dict) else s.model_dump() 
-                for s in case_study_data["codeSnippets"]
-            ]
-
-        # Add binary file data directly to the document
-        # These will be stored as BSON Binary in MongoDB
-        for field_name, file_dict in file_data.items():
-            if file_dict:
-                case_study_data[field_name] = file_dict
-
-        # Create in MongoDB
-        created = await self._repository.create(case_study_data)
-
-        return CreateCaseStudyResponse(
-            id=created["id"],
-            slug=created["slug"],
-            message="Case study created successfully with files",
-        )
 
     async def get_all_case_studies(
         self,
@@ -300,8 +230,8 @@ class CaseStudyService:
         
         Args:
             industry: Filter by industry
-            status: Filter by status
-            featured: Filter by featured flag
+            status: Filter by status ('published' or 'draft')
+            featured: Filter by featured flag (boolean)
             
         Returns:
             List of CaseStudyResponse objects
@@ -334,28 +264,52 @@ class CaseStudyService:
 
         return self._to_detail_response(doc)
 
-    async def increment_views(self, slug: str) -> dict:
+    async def get_case_study_by_id(self, case_id: str) -> CaseStudyDetailResponse:
         """
-        Track a view for a case study.
+        Get a case study by its unique ID.
         
         Args:
-            slug: The case study slug
+            case_id: The case study ID
             
         Returns:
-            Dict with success status and view count
+            CaseStudyDetailResponse with full case study details
+            
+        Raises:
+            CaseStudyNotFoundError: If not found
         """
-        new_count = await self._repository.increment_views(slug)
+        doc = await self._repository.get_by_id(case_id)
         
-        if new_count is None:
-            raise CaseStudyNotFoundError(slug)
+        if not doc:
+            raise CaseStudyNotFoundError(case_id)
 
-        return {"success": True, "views": new_count}
+        return self._to_detail_response(doc)
+
+    async def get_blob_paths(self, case_id: str) -> Dict[str, str]:
+        """
+        Get raw blob paths for a case study (without URL construction).
+        Used for file deletion operations.
+        
+        Args:
+            case_id: The case study ID
+            
+        Returns:
+            Dict with field names as keys and blob paths as values
+            
+        Raises:
+            CaseStudyNotFoundError: If not found
+        """
+        doc = await self._repository.get_by_id(case_id)
+        
+        if not doc:
+            raise CaseStudyNotFoundError(case_id)
+
+        file_fields = ["hero_image", "company_logo", "architecture_diagram", "pdf_url"]
+        return {field: self._get_blob_path(doc, field) for field in file_fields}
 
     async def update_case_study(
         self,
         case_id: str,
         request: UpdateCaseStudyRequest,
-        file_data: Optional[Dict[str, Dict[str, Any]]] = None
     ) -> UpdateCaseStudyResponse:
         """
         Update an existing case study.
@@ -364,14 +318,13 @@ class CaseStudyService:
         1. Check if case study exists
         2. Validate slug if provided
         3. Build update data (only non-None fields)
-        4. Add binary file data if provided
-        5. Update in MongoDB
-        6. Return success response
+        4. Update in MongoDB
+        5. Return success response
         
         Args:
             case_id: The case study ID to update
             request: UpdateCaseStudyRequest with fields to update
-            file_data: Optional dict mapping field names to file dicts with Binary data
+                     (blob paths for files are already included in request)
             
         Returns:
             UpdateCaseStudyResponse with id, slug, and message
@@ -391,33 +344,10 @@ class CaseStudyService:
         if "slug" in update_data:
             update_data["slug"] = self._validate_slug(update_data["slug"])
 
-        # Convert nested models to dicts if present
-        if "challenges" in update_data:
-            update_data["challenges"] = [
-                c if isinstance(c, dict) else c.model_dump() 
-                for c in update_data["challenges"]
-            ]
-        if "metrics" in update_data:
-            update_data["metrics"] = [
-                m if isinstance(m, dict) else m.model_dump() 
-                for m in update_data["metrics"]
-            ]
-        if "businessOutcomes" in update_data:
-            update_data["businessOutcomes"] = [
-                o if isinstance(o, dict) else o.model_dump() 
-                for o in update_data["businessOutcomes"]
-            ]
-        if "codeSnippets" in update_data and update_data["codeSnippets"]:
-            update_data["codeSnippets"] = [
-                s if isinstance(s, dict) else s.model_dump() 
-                for s in update_data["codeSnippets"]
-            ]
-
-        # Add binary file data if provided
-        if file_data:
-            for field_name, file_dict in file_data.items():
-                if file_dict:
-                    update_data[field_name] = file_dict
+        # Convert metrics model to dict if present
+        if "metrics" in update_data and update_data["metrics"]:
+            if hasattr(update_data["metrics"], "model_dump"):
+                update_data["metrics"] = update_data["metrics"].model_dump()
 
         # Update in MongoDB
         updated = await self._repository.update(case_id, update_data)
@@ -426,8 +356,45 @@ class CaseStudyService:
             raise CaseStudyNotFoundError(case_id)
 
         return UpdateCaseStudyResponse(
-            id=updated["id"],
+            id=str(updated["id"]),
             slug=updated["slug"],
             message="Case study updated successfully",
         )
 
+    async def delete_case_study(self, case_id: str) -> DeleteCaseStudyResponse:
+        """
+        Delete a case study by its ID.
+        
+        Also deletes associated files from Azure Blob Storage.
+        
+        Args:
+            case_id: The case study ID to delete
+            
+        Returns:
+            DeleteCaseStudyResponse with id and message
+            
+        Raises:
+            CaseStudyNotFoundError: If case study not found
+        """
+        # Check if case study exists
+        existing = await self._repository.get_by_id(case_id)
+        if not existing:
+            raise CaseStudyNotFoundError(case_id)
+
+        # Delete associated files from Azure Blob Storage
+        file_fields = ["hero_image", "company_logo", "architecture_diagram", "pdf_url"]
+        for field in file_fields:
+            blob_path = self._get_blob_path(existing, field)
+            if blob_path:
+                await self._blob_service.delete_file(blob_path)
+
+        # Delete from MongoDB
+        deleted = await self._repository.delete(case_id)
+        
+        if not deleted:
+            raise CaseStudyNotFoundError(case_id)
+
+        return DeleteCaseStudyResponse(
+            id=case_id,
+            message="Case study deleted successfully",
+        )

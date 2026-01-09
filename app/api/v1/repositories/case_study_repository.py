@@ -1,6 +1,8 @@
 """
 Case Study Repository - Data access layer for case study operations.
 Uses MongoDB for persistent storage.
+
+Field naming convention: snake_case (matching frontend requirements)
 """
 
 from datetime import datetime, timezone
@@ -68,9 +70,8 @@ class CaseStudyRepository:
         now = datetime.now(timezone.utc)
         case_study_data["_id"] = case_study_data.get("id", self.generate_id())
         case_study_data["id"] = case_study_data["_id"]
-        case_study_data["views"] = 0
-        case_study_data["createdAt"] = now.isoformat()
-        case_study_data["updatedAt"] = now.isoformat()
+        case_study_data["created_at"] = now.isoformat()
+        case_study_data["updated_at"] = now.isoformat()
 
         # Insert into MongoDB
         await self._collection.insert_one(case_study_data)
@@ -90,8 +91,8 @@ class CaseStudyRepository:
         
         Args:
             industry: Filter by industry
-            status: Filter by status (published/draft)
-            featured: Filter by featured status
+            status: Filter by status ('published' or 'draft')
+            featured: Filter by featured status (boolean)
             skip: Number of documents to skip
             limit: Maximum number of documents to return
             
@@ -111,7 +112,7 @@ class CaseStudyRepository:
             query["featured"] = featured
 
         # Execute query with sorting (newest first)
-        cursor = self._collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
+        cursor = self._collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
         
         results = []
         async for doc in cursor:
@@ -169,7 +170,7 @@ class CaseStudyRepository:
         update_data.pop("id", None)
         
         # Update timestamp
-        update_data["updatedAt"] = datetime.now(timezone.utc).isoformat()
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
         result = await self._collection.find_one_and_update(
             {"_id": case_id},
@@ -194,29 +195,6 @@ class CaseStudyRepository:
         """
         result = await self._collection.delete_one({"_id": case_id})
         return result.deleted_count > 0
-
-    async def increment_views(self, slug: str) -> Optional[int]:
-        """
-        Increment the view count for a case study.
-        
-        Args:
-            slug: The case study slug
-            
-        Returns:
-            New view count if found, None otherwise
-        """
-        result = await self._collection.find_one_and_update(
-            {"slug": slug},
-            {
-                "$inc": {"views": 1},
-                "$set": {"updatedAt": datetime.now(timezone.utc).isoformat()},
-            },
-            return_document=True,
-        )
-
-        if result:
-            return result.get("views", 0)
-        return None
 
     async def get_count(self, status: Optional[str] = None) -> int:
         """
@@ -249,6 +227,5 @@ class CaseStudyRepository:
         await self._collection.create_index("status")
         await self._collection.create_index("industry")
         await self._collection.create_index("featured")
-        await self._collection.create_index("createdAt")
+        await self._collection.create_index("created_at")
         print("✅ Case study indexes created")
-

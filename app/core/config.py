@@ -37,8 +37,13 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # MongoDB Settings
-    MONGODB_URL: str = "mongodb://localhost:27017"
-    MONGODB_DB_NAME: str = "microsite"
+    # Pydantic settings will load these from .env file automatically
+    MONGODB_URI: str
+    MONGODB_DB_NAME: str
+    
+    # Azure Blob Storage Settings
+    # Full SAS URL for the blob container (includes SAS token)
+    AZURE_BLOB_SAS_URL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),

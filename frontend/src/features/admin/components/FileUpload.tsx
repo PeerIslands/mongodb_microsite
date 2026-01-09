@@ -1,12 +1,17 @@
 import { useState, useRef } from 'react';
 import '@/styles/features/admin/FileUpload.css';
 
+export interface FileUploadResult {
+  file: File | null;
+  previewUrl: string;
+}
+
 interface FileUploadProps {
   accept: string;
   maxSize: number; // in MB
   multiple?: boolean;
   maxFiles?: number;
-  onUpload: (url: string | string[]) => void;
+  onUpload: (result: FileUploadResult | FileUploadResult[]) => void;
   currentFile?: string | string[];
   hint?: string;
 }
@@ -69,11 +74,13 @@ const FileUpload = ({
 
     try {
       if (multiple) {
-        // Multiple file upload simulation
-        const urls: string[] = [];
+        // Multiple file upload - return File objects with preview URLs
+        const results: FileUploadResult[] = [];
         const previews: string[] = [];
         
         for (const file of files) {
+          let previewUrl = '';
+          
           // Create preview for images
           if (file.type.startsWith('image/')) {
             const reader = new FileReader();
@@ -81,55 +88,44 @@ const FileUpload = ({
               reader.onload = (e) => resolve(e.target?.result as string);
               reader.readAsDataURL(file);
             });
-            const previewUrl = await previewPromise;
+            previewUrl = await previewPromise;
+            previews.push(previewUrl);
+          } else {
+            previewUrl = URL.createObjectURL(file);
             previews.push(previewUrl);
           }
           
-          // Simulate upload - Replace with actual upload logic
-          const mockUrl = URL.createObjectURL(file);
-          urls.push(mockUrl);
-          
-          // In production, upload to your server/S3:
-          // const formData = new FormData();
-          // formData.append('file', file);
-          // const response = await fetch('/api/v1/admin/upload', {
-          //   method: 'POST',
-          //   body: formData
-          // });
-          // const data = await response.json();
-          // urls.push(data.url);
+          results.push({ file, previewUrl });
         }
         
-        setPreview(previews.length > 0 ? previews : urls);
-        onUpload(urls);
+        setPreview(previews);
+        onUpload(results);
       } else {
-        // Single file upload
+        // Single file upload - return File object with preview URL
         const file = files[0];
+        let previewUrl = '';
         
         // Create preview for images
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
-          reader.onload = (e) => {
-            setPreview(e.target?.result as string);
-          };
-          reader.readAsDataURL(file);
+          const previewPromise = new Promise<string>((resolve) => {
+            reader.onload = (e) => {
+              const result = e.target?.result as string;
+              setPreview(result);
+              resolve(result);
+            };
+            reader.readAsDataURL(file);
+          });
+          previewUrl = await previewPromise;
         } else if (file.type === 'application/pdf') {
-          setPreview('📄 ' + file.name);
+          previewUrl = '📄 ' + file.name;
+          setPreview(previewUrl);
+        } else {
+          previewUrl = URL.createObjectURL(file);
+          setPreview(previewUrl);
         }
         
-        // Simulate upload - Replace with actual upload logic
-        const mockUrl = URL.createObjectURL(file);
-        onUpload(mockUrl);
-        
-        // In production:
-        // const formData = new FormData();
-        // formData.append('file', file);
-        // const response = await fetch('/api/v1/admin/upload', {
-        //   method: 'POST',
-        //   body: formData
-        // });
-        // const data = await response.json();
-        // onUpload(data.url);
+        onUpload({ file, previewUrl });
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -141,7 +137,7 @@ const FileUpload = ({
 
   const handleRemove = () => {
     setPreview(null);
-    onUpload(multiple ? [] : '');
+    onUpload(multiple ? [] : { file: null, previewUrl: '' });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

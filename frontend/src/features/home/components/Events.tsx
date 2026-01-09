@@ -68,15 +68,6 @@ const Events = () => {
           </div>
         </div>
       </div>
-      
-      {/* Floating screenshot image - positioned relative to events section */}
-      <div className="event-screenshot">
-        <img 
-          src={eventScreenshot} 
-          alt="" 
-          className="event-screenshot-image" 
-        />
-      </div>
     </section>
   );
 };
