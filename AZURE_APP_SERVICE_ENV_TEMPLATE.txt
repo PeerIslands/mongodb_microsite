@@ -1,0 +1,13 @@
+# Azure App Service - Environment Variables
+# Add these in Azure Portal -> App Service -> Configuration -> Application Settings
+
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+MONGODB_DB_NAME=microsite
+AZURE_BLOB_SAS_URL=your-blob-sas-url
+BACKEND_CORS_ORIGINS=https://ashy-glacier-09cfe4b0f.1.azurestaticapps.net,http://localhost:5173
+SECRET_KEY=generate-a-strong-secret-key-minimum-32-characters
+JWT_SECRET_KEY=generate-another-strong-secret-key-minimum-32-characters
+PROJECT_NAME=MongoDB Microsite
+VERSION=0.1.0
+API_V1_STR=/api/v1
+
