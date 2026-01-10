@@ -13,41 +13,41 @@ export const mockCaseStudyDetail: CaseStudyDetail = {
   slug: 'healthcare-eligibility-platform',
   title: "Modernizing a Healthcare Conglomerate's Insurance & Prescription Eligibility Platform",
   industry: 'Healthcare',
-  techStack: ['MongoDB Atlas', 'Google Cloud Platform', 'Kafka', 'Node.js'],
+  tech_stack: ['MongoDB Atlas', 'Google Cloud Platform', 'Kafka', 'Node.js'],
   status: 'published',
   featured: true,
-  createdAt: '2024-07-15',
-  updatedAt: '2024-07-15',
-  companyName: 'Major Healthcare Conglomerate',
-  companyLogo: '',
-  heroImage: '',
+  created_at: '2024-07-15',
+  updated_at: '2024-07-15',
+  company_name: 'Major Healthcare Conglomerate',
+  company_logo: '',
+  hero_image: '',
   description: 'A major healthcare conglomerate relied on a legacy DB2-powered system for insurance eligibility and prescription claims.',
   
   // Client Background
-  industryDetails: 'Fortune 500 Healthcare Company',
+  industry_details: 'Fortune 500 Healthcare Company',
   
   // Problem Statement
   challenges: 'A major healthcare conglomerate relied on a legacy DB2-powered system for insurance eligibility and prescription claims. This process involved loading files into DB2 for cleansing and enrichment — taking ~4 hours per batch. Sharing data across businesses (like retail pharmacies) with significant delays. Resulting in outdated eligibility data, inaccurate Rx pricing, and manual overrides. Ultimately discouraging adoption by pharmacies and patients.',
-  technicalConstraints: 'Legacy DB2 system with batch processing limitations',
+  technical_constraints: 'Legacy DB2 system with batch processing limitations',
   
   // Solution & Architecture
   approach: 'PeerIslands engaged in a 12-month modernization program, partnering with MongoDB Professional Services to: Re-architect the data backend: migrate from DB2 to MongoDB as the new source-of-truth. Build real-time APIs to handle transactional updates directly to the eligibility store. Deploy on Google Cloud Platform, with file validation, threshold/override handling. Stream operational events (e.g., errors, statuses) into Kafka for observability. Streamline onboarding and platform modernization across pharmacy channels.',
-  architectureDiagram: '',
-  implementationDetails: 'Migrated from DB2 to MongoDB Atlas with real-time API integration',
+  architecture_diagram: '',
+  implementation_details: 'Migrated from DB2 to MongoDB Atlas with real-time API integration',
   
   // Value Delivered
   metrics: {
-    timeReduction: '98%',
-    ingestionSpeed: '< 4 minutes for 1M records',
-    dataAccuracy: '100%',
+    time_reduction: '98%',
+    ingestion_speed: '< 4 minutes for 1M records',
+    data_accuracy: '100%',
   },
-  businessOutcomes: 'Eliminated data duplication and dependence on legacy DB2 systems|Real-time access: now processes 1 million records in under 4 minutes|Modern tech stack: MongoDB and GCP underpin a scalable, future-ready platform',
-  testimonialQuote: 'By modernizing a mission-critical eligibility system, pharmacies and business units receive timely, accurate data. Customer experience improves with correct Rx pricing and coverage. IT operations benefit from reduced manual work and higher system reliability.',
-  testimonialAuthor: 'Healthcare IT Director',
-  testimonialPosition: 'Healthcare IT Director',
+  business_outcomes: 'Eliminated data duplication and dependence on legacy DB2 systems|Real-time access: now processes 1 million records in under 4 minutes|Modern tech stack: MongoDB and GCP underpin a scalable, future-ready platform',
+  testimonial_quote: 'By modernizing a mission-critical eligibility system, pharmacies and business units receive timely, accurate data. Customer experience improves with correct Rx pricing and coverage. IT operations benefit from reduced manual work and higher system reliability.',
+  testimonial_author: 'Healthcare IT Director',
+  testimonial_position: 'Healthcare IT Director',
   
   // Media & Files
-  pdfUrl: '#',
+  pdf_url: '#',
 };
 
 // Key metrics data for the comparison table
@@ -99,8 +99,8 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible }: CaseStudyDetailSection
   }
 
   // Parse business outcomes (stored as pipe-separated string)
-  const businessOutcomes = caseStudy.businessOutcomes
-    ? caseStudy.businessOutcomes.split('|').filter(Boolean)
+  const businessOutcomes = caseStudy.business_outcomes
+    ? caseStudy.business_outcomes.split('|').filter(Boolean)
     : [];
 
   return (
@@ -119,14 +119,14 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible }: CaseStudyDetailSection
             <h2 className="case-study-detail__title">{caseStudy.title}</h2>
 
             {/* Company Name */}
-            <p className="case-study-detail__company">{caseStudy.companyName}</p>
+            <p className="case-study-detail__company">{caseStudy.company_name}</p>
           </div>
 
           {/* Top Metrics */}
           <div className="case-study-detail__header-metrics">
             <div className="case-study-detail__metric-item">
               <span className="case-study-detail__metric-value case-study-detail__metric-value--primary">
-                {caseStudy.metrics.timeReduction}
+                {caseStudy.metrics.time_reduction}
               </span>
               <span className="case-study-detail__metric-label">Time Reduction</span>
             </div>
@@ -159,7 +159,7 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible }: CaseStudyDetailSection
             <div className="case-study-detail__section">
               <h3 className="case-study-detail__section-title">Business Impact</h3>
               <ul className="case-study-detail__impact-list">
-                {businessOutcomes.map((outcome, index) => (
+                {businessOutcomes.map((outcome: string, index: number) => (
                   <li key={index} className="case-study-detail__impact-item">
                     <span className="case-study-detail__impact-dot" />
                     {outcome}
@@ -169,17 +169,17 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible }: CaseStudyDetailSection
             </div>
 
             {/* Testimonial */}
-            {caseStudy.testimonialQuote && (
+            {caseStudy.testimonial_quote && (
               <div className="case-study-detail__testimonial">
                 <div className="case-study-detail__testimonial-badge">
-                  {caseStudy.testimonialAuthor?.substring(0, 3).toUpperCase() || 'HID'}
+                  {caseStudy.testimonial_author?.substring(0, 3).toUpperCase() || 'HID'}
                 </div>
                 <div className="case-study-detail__testimonial-content">
                   <blockquote className="case-study-detail__testimonial-quote">
-                    "{caseStudy.testimonialQuote}"
+                    "{caseStudy.testimonial_quote}"
                   </blockquote>
                   <cite className="case-study-detail__testimonial-author">
-                    {caseStudy.testimonialAuthor}
+                    {caseStudy.testimonial_author}
                   </cite>
                 </div>
               </div>

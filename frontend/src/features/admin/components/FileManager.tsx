@@ -14,8 +14,10 @@ interface FileManagerProps {
 }
 
 const FileManager = ({ files, onChange }: FileManagerProps) => {
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // @ts-ignore - Will be used for future upload functionality
+  const [_uploading, setUploading] = useState(false);
+  // @ts-ignore - Will be used for future file input reference
+  const _fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddFile = () => {
     const newFile: DownloadFile = {
@@ -48,8 +50,10 @@ const FileManager = ({ files, onChange }: FileManagerProps) => {
       const mockUrl = URL.createObjectURL(file);
       
       // Get file info
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      const fileType = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+      // @ts-ignore - Reserved for future use
+      const _sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+      // @ts-ignore - Reserved for future use
+      const _fileType = file.name.split('.').pop()?.toUpperCase() || 'FILE';
       
       // Update file info
       const newFiles = [...files];

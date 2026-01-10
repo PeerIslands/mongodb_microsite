@@ -1,0 +1,30 @@
+[
+  {
+    "name": "VITE_PROJECT_NAME",
+    "value": "MongoDB Microsite",
+    "description": "Application name for display in UI"
+  },
+  {
+    "name": "VITE_VERSION",
+    "value": "0.1.0",
+    "description": "Application version number"
+  },
+  {
+    "name": "VITE_API_BASE_URL",
+    "value": "https://your-backend-api.azurewebsites.net",
+    "description": "Backend API base URL - REPLACE WITH YOUR ACTUAL BACKEND URL",
+    "required": true,
+    "local_value": "http://localhost:8000"
+  },
+  {
+    "name": "VITE_API_V1_STR",
+    "value": "/api/v1",
+    "description": "API version prefix path"
+  },
+  {
+    "name": "VITE_AZURE_BLOB_BASE_URL",
+    "value": "https://mmsuploads.blob.core.windows.net/casestudies",
+    "description": "Azure Blob Storage base URL (READ-ONLY, no SAS token)"
+  }
+]
+
