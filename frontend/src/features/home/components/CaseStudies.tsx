@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, EffectCoverflow } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -15,10 +15,16 @@ import { caseStudiesService } from '@/api/services/case-studies.service';
 import type { CaseStudy } from '@/types/models/case-study';
 
 const CaseStudies = () => {
+  const navigate = useNavigate();
   const [featuredCaseStudies, setFeaturedCaseStudies] = useState<CaseStudy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+
+  // Handle case study card click - navigate to success-stories with ID
+  const handleCaseStudyClick = (caseStudyId: string) => {
+    navigate(`/success-stories?id=${caseStudyId}`);
+  };
 
   // Fetch featured case studies on mount
   useEffect(() => {
@@ -26,7 +32,7 @@ const CaseStudies = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await caseStudiesService.getAll({ featured: true });
+        const data = await caseStudiesService.getAll({ featured: true, status: 'published' });
         setFeaturedCaseStudies(data);
       } catch (err) {
         console.error('Failed to fetch featured case studies:', err);
@@ -50,7 +56,7 @@ const CaseStudies = () => {
           <img src={caseStudyCard1} alt="" className="case-study-card-image" />
         </div>
         <div className="case-study-button-container">
-          <Link to="/case-studies" className="case-study-button">
+          <Link to="/success-stories" className="case-study-button">
             <div className="case-study-button-icon">
               <img src={arrowIcon} alt="" className="case-study-arrow" />
             </div>
@@ -64,7 +70,7 @@ const CaseStudies = () => {
           <img src={caseStudyCard2} alt="" className="case-study-card-image" />
         </div>
         <div className="case-study-button-container">
-          <Link to="/case-studies" className="case-study-button">
+          <Link to="/success-stories" className="case-study-button">
             <div className="case-study-button-icon">
               <img src={arrowIcon} alt="" className="case-study-arrow" />
             </div>
@@ -118,7 +124,11 @@ const CaseStudies = () => {
       >
         {featuredCaseStudies.map((caseStudy, index) => (
           <SwiperSlide key={caseStudy.id} className="case-study-slide">
-            <div className="case-study-card">
+            <button 
+              type="button"
+              className="case-study-card case-study-card-clickable"
+              onClick={() => handleCaseStudyClick(caseStudy.id)}
+            >
               <div className="case-study-card-gradient"></div>
               <div className="case-study-card-image-container">
                 <img 
@@ -133,13 +143,13 @@ const CaseStudies = () => {
                 />
               </div>
               <div className="case-study-button-container">
-                <Link to={`/case-studies/${caseStudy.slug}`} className="case-study-button">
+                <div className="case-study-button">
                   <div className="case-study-button-icon">
                     <img src={arrowIcon} alt="" className="case-study-arrow" />
                   </div>
-                </Link>
+                </div>
               </div>
-            </div>
+            </button>
           </SwiperSlide>
         ))}
       </Swiper>
@@ -159,7 +169,7 @@ const CaseStudies = () => {
   );
 
   return (
-    <section className="case-studies">
+    <section id="case-studies" className="case-studies">
       {/* Background image - matches Figma node 17:1577 */}
       <div className="case-studies-background">
         <img 

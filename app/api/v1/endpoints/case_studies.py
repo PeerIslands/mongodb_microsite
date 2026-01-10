@@ -225,7 +225,7 @@ async def create_case_study(
 
 @router.get(
     "",
-    response_model=List[CaseStudyResponse],
+    response_model=List[CaseStudyDetailResponse],
     summary="Get All Case Studies",
     description="""
     Retrieve all case studies with optional filtering.
@@ -243,7 +243,7 @@ async def get_all_case_studies(
     status: Optional[str] = Query(default=None, description="Filter by status ('published' or 'draft')"),
     featured: Optional[bool] = Query(default=None, description="Filter by featured status (boolean)"),
     service: CaseStudyService = Depends(get_case_study_service),
-) -> List[CaseStudyResponse]:
+) -> List[CaseStudyDetailResponse]:
     """Get all case studies with optional filters."""
     return await service.get_all_case_studies(
         industry=industry,

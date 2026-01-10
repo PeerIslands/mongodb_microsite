@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import '@/styles/features/home/Header.css';
 import image2 from '@/assets/image 2.png';
@@ -35,7 +35,7 @@ const Header = () => {
     <>
       <header className="header">
         <div className="header-content">
-          <div className="logo-section">
+          <Link to={ROUTES.HOME} className="logo-section">
             <div className="logo-image-container">
               <img src={image2} alt="PeerAI" className="logo-image logo-image-2" />
             </div>
@@ -47,7 +47,7 @@ const Header = () => {
             <div className="logo-image-container">
               <img src={image3} alt="MongoDB" className="logo-image logo-image-3" />
             </div>
-          </div>
+          </Link>
           
           <nav className="nav">
             <a href="#offerings" className="nav-link">

@@ -88,6 +88,23 @@
   flex: 1 1 300px;
 }
 
+/* Clickable card button reset - when card is a button element */
+button.case-study-card.case-study-card-clickable {
+  border: none;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+button.case-study-card.case-study-card-clickable:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
+}
+
 /* Gradient overlay - matches Figma node 17:1405 */
 .case-study-card-gradient {
   position: absolute;
@@ -169,6 +186,7 @@
   height: 100%;
   display: block;
   max-width: none;
+  
 }
 
 /* Large desktop */
@@ -238,14 +256,23 @@
 
 /* Swiper container */
 .case-studies-swiper {
+  position: relative;
   width: 100%;
-  max-width: 1300px;
+  max-width: 1100px;
   padding: 20px 0;
-  overflow: visible;
+  overflow: hidden;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
 }
 
 .case-studies-swiper .swiper-wrapper {
   align-items: stretch;
+}
+
+/* Ensure swiper slides stay within bounds */
+.case-studies-swiper .swiper-slide {
+  overflow: hidden;
 }
 
 /* Swiper slide */
@@ -284,6 +311,7 @@
 
 /* Carousel wrapper - contains arrows and cards */
 .case-studies-carousel-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,10 +319,12 @@
   width: 100%;
   max-width: 1400px;
   z-index: 1;
+  isolation: isolate;
 }
 
 /* Carousel navigation arrows */
 .case-studies-carousel-arrow {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -307,7 +337,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  z-index: 2;
+  z-index: 10;
 }
 
 .case-studies-carousel-arrow:hover {
@@ -371,12 +401,14 @@
     position: static;
     width: 44px;
     height: 44px;
+    
   }
   
   .case-studies-carousel-arrow-left,
   .case-studies-carousel-arrow-right {
     position: absolute;
     bottom: -60px;
+    
   }
   
   .case-studies-carousel-arrow-left {

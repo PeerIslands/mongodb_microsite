@@ -2,7 +2,6 @@ import '@/styles/features/home/Events.css';
 import arrowIcon from '@/assets/upcoming events/Vector.svg';
 import eventBgImage from '@/assets/upcoming events/c433d9853fc3a6673235cea6507f3cb820675fc2.png';
 import eventImage from '@/assets/upcoming events/a1bb4511f52b9556276916a53c44797104e634c0.png';
-import eventScreenshot from '@/assets/upcoming events/image.png';
 import svgIcon1 from '@/assets/upcoming events/svg470935930_2091.svg';
 import svgIcon2 from '@/assets/upcoming events/svg507675772_2203.svg';
 import svgIcon3 from '@/assets/upcoming events/svg260955957_294.svg';

@@ -224,7 +224,7 @@ class CaseStudyService:
         industry: Optional[str] = None,
         status: Optional[str] = None,
         featured: Optional[bool] = None,
-    ) -> List[CaseStudyResponse]:
+    ) -> List[CaseStudyDetailResponse]:
         """
         Get all case studies with optional filters.
         
@@ -234,7 +234,7 @@ class CaseStudyService:
             featured: Filter by featured flag (boolean)
             
         Returns:
-            List of CaseStudyResponse objects
+            List of CaseStudyDetailResponse objects (includes metrics)
         """
         docs = await self._repository.get_all(
             industry=industry,
@@ -242,7 +242,7 @@ class CaseStudyService:
             featured=featured,
         )
         
-        return [self._to_response(doc) for doc in docs]
+        return [self._to_detail_response(doc) for doc in docs]
 
     async def get_case_study_by_slug(self, slug: str) -> CaseStudyDetailResponse:
         """

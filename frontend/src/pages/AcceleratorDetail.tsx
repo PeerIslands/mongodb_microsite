@@ -144,7 +144,7 @@ const mockAcceleratorData = {
 const AcceleratorDetail = () => {
   // Extract slug from URL pathname
   const slug = window.location.pathname.split('/accelerators/')[1];
-  const [accelerator, setAccelerator] = useState(mockAcceleratorData);
+  const [accelerator] = useState(mockAcceleratorData);
 
   useEffect(() => {
     // In production, fetch accelerator data by slug

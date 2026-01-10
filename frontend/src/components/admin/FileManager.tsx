@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import '@/styles/components/admin/FileManager.css';
 
 interface DownloadFile {
@@ -14,8 +14,7 @@ interface FileManagerProps {
 }
 
 const FileManager = ({ files, onChange }: FileManagerProps) => {
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [, setUploading] = useState(false);
 
   const handleAddFile = () => {
     const newFile: DownloadFile = {
@@ -46,10 +45,6 @@ const FileManager = ({ files, onChange }: FileManagerProps) => {
     try {
       // Simulate upload
       const mockUrl = URL.createObjectURL(file);
-      
-      // Get file info
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      const fileType = file.name.split('.').pop()?.toUpperCase() || 'FILE';
       
       // Update file info
       const newFiles = [...files];
