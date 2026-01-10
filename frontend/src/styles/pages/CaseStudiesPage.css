@@ -15,3 +15,23 @@
 .case-studies-page > * {
   box-sizing: border-box;
 }
+
+/* Error message */
+.case-studies-page__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 8px;
+  margin: 1rem auto;
+  max-width: 600px;
+}
+
+.case-studies-page__error p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: #dc3545;
+  margin: 0;
+}

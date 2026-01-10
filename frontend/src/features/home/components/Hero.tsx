@@ -32,7 +32,14 @@ const Hero = () => {
         </div>
         
         {/* Link - matches Figma node 5:271 */}
-        <a href="#success-stories" className="btn-link">
+        <a 
+          href="#case-studies" 
+          className="btn-link"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('case-studies')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
           <span className="btn-link-text">View Success Stories</span>
           <div className="btn-link-icon">
             <img src={arrowIcon} alt="" className="btn-link-arrow" />

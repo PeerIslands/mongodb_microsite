@@ -53,6 +53,8 @@ interface CaseStudyArchitectureProps {
   heroData?: SuccessStoriesHeroData;
   featuredData?: FeaturedStoriesData;
   caseStudies?: CaseStudyCardData[];
+  // Loading state
+  isLoading?: boolean;
   // Callback when a card is clicked
   onCardClick?: (caseStudyId: string) => void;
 }
@@ -86,50 +88,6 @@ const defaultFeaturedData: FeaturedStoriesData = {
     'Discover how PeerIslands transforms businesses across industries with real results and proven impact',
 };
 
-// Default mock case studies for carousel - using existing CaseStudyCardData fields
-const defaultCaseStudies: CaseStudyCardData[] = [
-  {
-    id: '1',
-    slug: 'healthcare-eligibility-platform',
-    category: 'Healthcare',
-    title: "Modernizing a Healthcare Conglomerate's Insurance & Prescription Eligibility Platform",
-    highlightMetric: '98%\nTime Reduction',
-    description:
-      'A major healthcare conglomerate relied on a legacy DB2-powered system for insurance eligibility and prescription claims.',
-    subMetrics: ['Real-time Performance', 'Eliminated data duplication'],
-  },
-  {
-    id: '2',
-    slug: 'payments-data-modernization',
-    category: 'Financial Services',
-    title: "Accelerating a Payments Provider's Data Modernization",
-    highlightMetric: 'Fast Ingestion\nTime Impact',
-    description:
-      'A leading payments provider faced several issues with its existing data platform: Reliance on Yellowbrick for data pipeline.',
-    subMetrics: ['Higher throughput', '3.13 billion records processed'],
-  },
-  {
-    id: '3',
-    slug: 'immediate-care-realtime-data',
-    category: 'Healthcare',
-    title: 'Empowering an Immediate Care Provider with Real-Time Data Access',
-    highlightMetric: 'Same-day\nTime Impact',
-    description:
-      'An immediate care company faced fragmented, delayed reporting due to siloed data spread across systems.',
-    subMetrics: ['Real-time insights', 'Single source of truth'],
-  },
-  {
-    id: '4',
-    slug: 'retail-inventory-optimization',
-    category: 'Retail',
-    title: 'Transforming Retail Inventory Management with AI-Powered Insights',
-    highlightMetric: '40%\nCost Reduction',
-    description:
-      'A global retail chain struggled with inventory inefficiencies across 500+ stores, leading to stockouts.',
-    subMetrics: ['2x Faster Inventory Turns', '25% better availability'],
-  },
-];
-
 /**
  * CaseStudyArchitecture - Redesigned to show Success Stories Hero + Featured Carousel
  * Displays static hero section with stats and a swiper carousel of featured case studies
@@ -137,7 +95,8 @@ const defaultCaseStudies: CaseStudyCardData[] = [
 const CaseStudyArchitecture = ({
   heroData = defaultHeroData,
   featuredData = defaultFeaturedData,
-  caseStudies = defaultCaseStudies,
+  caseStudies = [],
+  isLoading = false,
   onCardClick,
 }: CaseStudyArchitectureProps) => {
   const swiperRef = useRef<SwiperType | null>(null);
@@ -210,94 +169,114 @@ const CaseStudyArchitecture = ({
 
           {/* Carousel Container */}
           <div className="featured-stories__carousel-wrapper">
-            {/* Navigation - Previous */}
-            <button
-              className="featured-stories__nav featured-stories__nav--prev"
-              onClick={handlePrev}
-              aria-label="Previous case study"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="featured-stories__loading">
+                <div className="featured-stories__loading-spinner" />
+                <p>Loading case studies...</p>
+              </div>
+            )}
 
-            {/* Swiper Carousel */}
-            <Swiper
-              modules={[Navigation]}
-              spaceBetween={24}
-              slidesPerView={1}
-              loop={true}
-              onSwiper={(swiper) => {
-                swiperRef.current = swiper;
-              }}
-              breakpoints={{
-                640: {
-                  slidesPerView: 1.5,
-                  spaceBetween: 20,
-                },
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 24,
-                },
-                1024: {
-                  slidesPerView: 2.5,
-                  spaceBetween: 24,
-                },
-                1280: {
-                  slidesPerView: 3,
-                  spaceBetween: 24,
-                },
-              }}
-              className="featured-stories__swiper"
-            >
-              {caseStudies.map((caseStudy) => (
-                <SwiperSlide key={caseStudy.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleCardClick(caseStudy.id)}
-                    className="featured-stories__card-button"
-                    aria-label={`View details for ${caseStudy.title}`}
+            {/* Empty State */}
+            {!isLoading && caseStudies.length === 0 && (
+              <div className="featured-stories__empty">
+                <p>No case studies available.</p>
+              </div>
+            )}
+
+            {/* Carousel with case studies */}
+            {!isLoading && caseStudies.length > 0 && (
+              <>
+                {/* Navigation - Previous */}
+                <button
+                  className="featured-stories__nav featured-stories__nav--prev"
+                  onClick={handlePrev}
+                  aria-label="Previous case study"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <CaseStudyCard data={caseStudy} />
-                  </button>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                    <path
+                      d="M15 18L9 12L15 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
 
-            {/* Navigation - Next */}
-            <button
-              className="featured-stories__nav featured-stories__nav--next"
-              onClick={handleNext}
-              aria-label="Next case study"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M9 18L15 12L9 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                {/* Swiper Carousel */}
+                <Swiper
+                  modules={[Navigation]}
+                  spaceBetween={24}
+                  slidesPerView={1}
+                  loop={caseStudies.length > 3}
+                  onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                  }}
+                  breakpoints={{
+                    640: {
+                      slidesPerView: 1.5,
+                      spaceBetween: 20,
+                    },
+                    768: {
+                      slidesPerView: 2,
+                      spaceBetween: 24,
+                    },
+                    1024: {
+                      slidesPerView: 2.5,
+                      spaceBetween: 24,
+                    },
+                    1280: {
+                      slidesPerView: 3,
+                      spaceBetween: 24,
+                    },
+                  }}
+                  className="featured-stories__swiper"
+                >
+                  {caseStudies.map((caseStudy) => (
+                    <SwiperSlide key={caseStudy.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleCardClick(caseStudy.id)}
+                        className="featured-stories__card-button"
+                        aria-label={`View details for ${caseStudy.title}`}
+                      >
+                        <CaseStudyCard data={caseStudy} />
+                      </button>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+
+                {/* Navigation - Next */}
+                <button
+                  className="featured-stories__nav featured-stories__nav--next"
+                  onClick={handleNext}
+                  aria-label="Next case study"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 18L15 12L9 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

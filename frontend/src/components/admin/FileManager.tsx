@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import '@/styles/components/admin/FileManager.css';
 
 interface DownloadFile {
@@ -14,10 +14,7 @@ interface FileManagerProps {
 }
 
 const FileManager = ({ files, onChange }: FileManagerProps) => {
-  // @ts-ignore - Will be used for future upload functionality
-  const [_uploading, setUploading] = useState(false);
-  // @ts-ignore - Will be used for future file input reference
-  const _fileInputRef = useRef<HTMLInputElement>(null);
+  const [, setUploading] = useState(false);
 
   const handleAddFile = () => {
     const newFile: DownloadFile = {
@@ -48,12 +45,6 @@ const FileManager = ({ files, onChange }: FileManagerProps) => {
     try {
       // Simulate upload
       const mockUrl = URL.createObjectURL(file);
-      
-      // Get file info
-      // @ts-ignore - Reserved for future use
-      const _sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      // @ts-ignore - Reserved for future use
-      const _fileType = file.name.split('.').pop()?.toUpperCase() || 'FILE';
       
       // Update file info
       const newFiles = [...files];

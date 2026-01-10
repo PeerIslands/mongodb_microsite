@@ -1,13 +1,16 @@
 import '@/styles/features/home/Testimonials.css';
 
-// Profile images - update these paths when actual images are available
-// Using placeholder paths based on Figma asset names
-const profileImage1 = 'http://localhost:3845/assets/0db95bf9da5e84bb8cf62017e2c3f54ac6dd4d6e.png'; // Sean Rose
-const profileImage2 = 'http://localhost:3845/assets/680c4189088474f8639b156bd5335a90bceb57be.png'; // Ryan Delk
-const profileImage3 = 'http://localhost:3845/assets/3f17e5dde76ab2d164b8d4ee298281cd7ac3d49e.png'; // Demetria Giles
-const profileImage4 = 'http://localhost:3845/assets/491c12ba89816bae5fc9c0c993f82d01bdc5ac29.png'; // Jeremy McPeak
-const profileImage5 = 'http://localhost:3845/assets/4322e178a0dae3534aa4b448e3d9ae29618eef2b.png'; // Fabrizio Rinaldi
-const profileImage6 = 'http://localhost:3845/assets/42bb87a5c756c47d62500e9a7c93078fc3d748f4.png'; // Jonathan Simcoe
+// Generate initials-based placeholder avatars using UI Avatars service
+// These are stable placeholder images until actual profile images are available
+const getAvatarUrl = (name: string, bg: string = '5B6CFF') => 
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=80&font-size=0.35&rounded=true`;
+
+const profileImage1 = getAvatarUrl('Sean Rose', '6366F1'); // Sean Rose
+const profileImage2 = getAvatarUrl('Ryan Delk', '8B5CF6'); // Ryan Delk
+const profileImage3 = getAvatarUrl('Demetria Giles', '06B6D4'); // Demetria Giles
+const profileImage4 = getAvatarUrl('Jeremy McPeak', '10B981'); // Jeremy McPeak
+const profileImage5 = getAvatarUrl('Fabrizio Rinaldi', 'F59E0B'); // Fabrizio Rinaldi
+const profileImage6 = getAvatarUrl('Jonathan Simcoe', 'EC4899'); // Jonathan Simcoe
 
 const Testimonials = () => {
   const testimonials = [

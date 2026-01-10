@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import type { CaseStudy, CaseStudyDetail } from '@/types/models/case-study';
+import type { CaseStudyDetail } from '@/types/models/case-study';
 
 // Response type for create/update operations
 export interface CaseStudyResponse {
@@ -9,9 +9,9 @@ export interface CaseStudyResponse {
 }
 
 export const caseStudiesService = {
-  // Get all case studies
+  // Get all case studies (returns full detail including metrics)
   getAll: async (params?: { industry?: string; status?: string; featured?: boolean }) => {
-    const response = await apiClient.get<CaseStudy[]>('/api/v1/case-studies', { params });
+    const response = await apiClient.get<CaseStudyDetail[]>('/api/v1/case-studies', { params });
     return response.data;
   },
 
