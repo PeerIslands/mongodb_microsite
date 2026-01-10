@@ -1,0 +1,13 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+gunicorn==21.2.0
+pydantic==2.7.0
+pydantic-settings==2.4.0
+python-dotenv==1.0.0
+bcrypt==4.1.0
+email-validator==2.1.0
+PyJWT==2.8.0
+motor==3.7.1
+azure-storage-blob==12.28.0
+httpx==0.26.0
+
