@@ -46,7 +46,7 @@ const Capabilities = () => {
               </div>
               <div className="capability-icon-container">
                 <img 
-                  src="http://localhost:3845/assets/c5856a59e1303e46c0d0b7ea6c2a0c4b392318b5.svg" 
+                  src="/assets/c5856a59e1303e46c0d0b7ea6c2a0c4b392318b5.svg" 
                   alt="" 
                   className="capability-icon" 
                 />
