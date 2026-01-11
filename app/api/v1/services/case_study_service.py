@@ -112,6 +112,19 @@ class CaseStudyService:
         value = doc.get(field, "")
         return value if isinstance(value, str) else ""
 
+    def _process_challenges(self, challenges_data):
+        """
+        Process challenges field - handles both string and list formats.
+        MongoDB might have: string OR [{'text': '...'}, ...]
+        """
+        if isinstance(challenges_data, str):
+            return challenges_data
+        elif isinstance(challenges_data, list):
+            # Extract 'text' from list of dicts and join with newlines
+            texts = [item.get('text', '') if isinstance(item, dict) else str(item) for item in challenges_data]
+            return '\n'.join(filter(None, texts))
+        return ""
+
     def _get_metrics(self, doc: dict) -> Metrics:
         """
         Get metrics object from document.
@@ -162,7 +175,7 @@ class CaseStudyService:
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
             industry_details=doc.get("industry_details"),
-            challenges=doc.get("challenges", ""),
+            challenges=self._process_challenges(doc.get("challenges", "")),
             technical_constraints=doc.get("technical_constraints"),
             approach=doc.get("approach", ""),
             architecture_diagram=self._get_file_value(doc, "architecture_diagram"),
