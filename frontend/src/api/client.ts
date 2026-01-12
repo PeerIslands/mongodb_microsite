@@ -1,8 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_TIMEOUT = 30000;
+
+if (!API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL environment variable is not set. Please configure it in your .env file.');
+}
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
