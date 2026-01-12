@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 import '@/styles/components/LoginModal.css';
 
 interface LoginModalProps {
@@ -10,13 +12,51 @@ interface LoginModalProps {
 const LoginModal = ({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const { login, loading, clearError } = useAuth();
+  const { showToast } = useToast();
+
+  // Clear errors when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      clearError();
+    }
+  }, [isOpen, clearError]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login logic
-    console.log('Login attempt:', { email, password });
+    
+    // Call login API
+    const result = await login(email, password);
+
+    if (result.success) {
+      // Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+
+      // Reset form
+      setEmail('');
+      setPassword('');
+      
+      // Show success toast
+      showToast('Login successful! Welcome back.', 'success');
+      
+      // Close modal
+      onClose();
+
+      // Reload page to update UI state and show logged-in header
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      // Show error toast with message from API
+      const errorMsg = result.error || 'Login failed. Please try again.';
+      showToast(errorMsg, 'error');
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -55,6 +95,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
               required
             />
           </div>
@@ -68,20 +109,32 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) => {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
               required
             />
           </div>
 
           <div className="form-options">
             <label className="remember-me">
-              <input type="checkbox" className="checkbox" />
+              <input 
+                type="checkbox" 
+                className="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loading}
+              />
               <span>Remember me</span>
             </label>
             <a href="#forgot" className="forgot-password">Forgot password?</a>
           </div>
 
-          <button type="submit" className="login-submit-button">
-            Login
+          <button 
+            type="submit" 
+            className="login-submit-button"
+            disabled={loading}
+            style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

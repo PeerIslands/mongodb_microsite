@@ -17,15 +17,15 @@ from app.core.database import Database
 # REPOSITORY SINGLETONS
 # =============================================================================
 
-@lru_cache()
 def get_user_repository() -> UserRepository:
     """
-    Get singleton UserRepository instance.
+    Get UserRepository instance with MongoDB connection.
     
     Returns:
         UserRepository instance
     """
-    return UserRepository()
+    db = Database.get_db()
+    return UserRepository(db)
 
 
 def get_case_study_repository() -> CaseStudyRepository:
@@ -43,10 +43,9 @@ def get_case_study_repository() -> CaseStudyRepository:
 # SERVICE SINGLETONS
 # =============================================================================
 
-@lru_cache()
 def get_user_service() -> UserService:
     """
-    Get singleton UserService instance.
+    Get UserService instance.
     
     Returns:
         UserService instance with injected repository
@@ -55,10 +54,9 @@ def get_user_service() -> UserService:
     return UserService(repository)
 
 
-@lru_cache()
 def get_auth_service() -> AuthService:
     """
-    Get singleton AuthService instance.
+    Get AuthService instance.
     
     Returns:
         AuthService instance with injected repository

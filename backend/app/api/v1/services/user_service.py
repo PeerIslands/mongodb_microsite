@@ -22,7 +22,7 @@ class UserService:
     """
 
     # Domain for internal users
-    INTERNAL_DOMAIN = "@peerislands.io.in"
+    INTERNAL_DOMAIN = "@peerislands.io"
 
     def __init__(self, repository: UserRepository):
         """

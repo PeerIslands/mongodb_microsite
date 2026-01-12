@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 import '@/styles/components/SignupModal.css';
 
 interface SignupModalProps {
@@ -14,19 +16,56 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const { signup, loading, clearError } = useAuth();
+  const { showToast } = useToast();
+
+  // Clear errors when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      clearError();
+    }
+  }, [isOpen, clearError]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate passwords match
     if (password !== confirmPassword) {
-      alert('Passwords do not match!');
+      const errorMsg = 'Passwords do not match!';
+      showToast(errorMsg, 'error');
+      return;
+    }
+
+    // Validate password strength (backend requires min 6, we enforce 8 on frontend)
+    if (password.length < 6) {
+      const errorMsg = 'Password must be at least 6 characters long.';
+      showToast(errorMsg, 'error');
       return;
     }
     
-    // TODO: Implement signup logic
-    console.log('Signup attempt:', { firstName, lastName, email, password });
+    // Call signup API
+    const result = await signup(firstName, lastName, email, password);
+
+    if (result.success) {
+      // Reset form
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      
+      // Show success toast
+      showToast('Account created successfully! You can now log in.', 'success');
+      
+      // Close modal
+      onClose();
+    } else {
+      // Show error toast with message from API
+      const errorMsg = result.error || 'Signup failed. Please try again.';
+      showToast(errorMsg, 'error');
+    }
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -66,6 +105,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
                 placeholder="Enter your first name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -79,6 +119,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
                 placeholder="Enter your last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -93,6 +134,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
               required
             />
           </div>
@@ -103,10 +145,12 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               type="password"
               id="password"
               className="form-input"
-              placeholder="Create a password"
+              placeholder="Create a password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
               required
+              minLength={6}
             />
           </div>
 
@@ -119,12 +163,18 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               placeholder="Confirm your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={loading}
               required
             />
           </div>
 
-          <button type="submit" className="signup-submit-button">
-            Create Account
+          <button 
+            type="submit" 
+            className="signup-submit-button"
+            disabled={loading}
+            style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

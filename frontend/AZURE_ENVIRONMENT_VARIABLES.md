@@ -372,3 +372,4 @@ console.log(response); // Should get 200 OK
 **Frontend Framework**: React + Vite + TypeScript  
 **Deployment**: Azure Static Web Apps
 
+
