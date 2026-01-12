@@ -32,5 +32,7 @@ export interface LoginResponse {
   user_email: string;
   is_internal: boolean;
   is_admin: boolean;
+  requires_totp?: boolean;
+  session_token?: string;
 }
 
