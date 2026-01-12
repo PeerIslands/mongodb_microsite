@@ -46,9 +46,6 @@ const Hero = () => {
           </div>
         </a>
       </div>
-      
-      {/* Gradient fade at bottom - matches Figma node 6:278 */}
-      <div className="hero-gradient-fade"></div>
     </section>
   );
 };

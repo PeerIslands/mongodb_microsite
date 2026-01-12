@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import '@/styles/features/admin/CaseStudyList.css';
 import { caseStudiesService } from '@/api/services/case-studies.service';
 
@@ -29,9 +29,14 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
   const [caseStudies, setCaseStudies] = useState<CaseStudyApiResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref to prevent duplicate API calls in React Strict Mode
+  const hasFetchedRef = useRef(false);
 
   // Fetch case studies on component mount
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     fetchCaseStudies();
   }, []);
 

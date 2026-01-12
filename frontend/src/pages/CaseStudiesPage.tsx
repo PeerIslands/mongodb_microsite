@@ -19,11 +19,7 @@ const transformToCaseStudyCardData = (caseStudy: CaseStudyDetail): CaseStudyCard
     industry: caseStudy.industry,
     title: caseStudy.title,
     description: caseStudy.description,
-    metrics: {
-      time_reduction: caseStudy.metrics?.time_reduction ?? null,
-      ingestion_speed: caseStudy.metrics?.ingestion_speed ?? null,
-      data_accuracy: caseStudy.metrics?.data_accuracy ?? null,
-    },
+    metrics: caseStudy.metrics || [],
   };
 };
 

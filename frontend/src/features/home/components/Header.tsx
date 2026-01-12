@@ -3,9 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { useToast } from '@/contexts/ToastContext';
 import '@/styles/features/home/Header.css';
-import image2 from '@/assets/image 2.png';
-import image3 from '@/assets/image 3.png';
-import line1 from '@/assets/Line 1.png';
+import logo from '@/assets/logo.svg';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
@@ -99,17 +97,7 @@ const Header = () => {
       <header className="header">
         <div className="header-content">
           <Link to={ROUTES.HOME} className="logo-section">
-            <div className="logo-image-container">
-              <img src={image2} alt="PeerAI" className="logo-image logo-image-2" />
-            </div>
-            <div className="logo-separator">
-              <div className="separator-wrapper">
-                <img src={line1} alt="" className="separator-line" />
-              </div>
-            </div>
-            <div className="logo-image-container">
-              <img src={image3} alt="MongoDB" className="logo-image logo-image-3" />
-            </div>
+            <img src={logo} alt="PeerAI X MongoDB" className="logo-image" />
           </Link>
           
           <nav className="nav">
@@ -143,7 +131,7 @@ const Header = () => {
                 className="nav-link admin-link"
                 onClick={(e) => handleNavigation(e, '/admin')}
               >
-                🛡️ Admin Dashboard
+                Admin Dashboard
               </a>
             )}
           </nav>
