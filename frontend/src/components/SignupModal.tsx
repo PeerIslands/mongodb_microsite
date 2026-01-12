@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import apiClient from '@/api/client';
 import QRCodeDisplay from './QRCodeDisplay';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import BackupCodesDisplay from './BackupCodesDisplay';
@@ -120,31 +121,25 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setVerificationError('');
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/register/verify-mfa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          totp_code: code,
-        }),
+      const response = await apiClient.post('/api/v1/register/verify-mfa', {
+        user_id: userId,
+        totp_code: code,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setBackupCodes(data.backup_codes);
+      if (response.data && response.data.success) {
+        setBackupCodes(response.data.backup_codes);
         setStep('backup-codes');
         showToast('MFA verified successfully!', 'success');
         setVerificationError('');
       } else {
-        const errorMsg = data.detail || 'Invalid code. Please try again.';
-        console.log('TOTP Error:', errorMsg); // Debug log
+        const errorMsg = response.data?.detail || 'Invalid code. Please try again.';
+        console.log('TOTP Error:', errorMsg);
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error) {
-      const errorMsg = 'Verification failed. Please try again.';
-      console.error('TOTP Verification Error:', error); // Debug log
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Verification failed. Please try again.';
+      console.error('TOTP Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
     } finally {
@@ -159,33 +154,25 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setVerifying(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/register/acknowledge-backup-codes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          acknowledged: true,
-        }),
+      await apiClient.post('/api/v1/register/acknowledge-backup-codes', {
+        user_id: userId,
+        acknowledged: true,
       });
 
-      if (response.ok) {
-        setStep('complete');
-        showToast('Registration complete! You can now log in.', 'success');
-        
-        // Auto-redirect to login after 2 seconds
-        setTimeout(() => {
-          resetForm();
-          onClose();
-          if (onSwitchToLogin) {
-            onSwitchToLogin();
-          }
-        }, 2000);
-      } else {
-        showToast('Failed to complete registration. Please try again.', 'error');
-        setVerifying(false);
-      }
-    } catch (error) {
-      showToast('Network error. Please try again.', 'error');
+      setStep('complete');
+      showToast('Registration complete! You can now log in.', 'success');
+      
+      // Auto-redirect to login after 2 seconds
+      setTimeout(() => {
+        resetForm();
+        onClose();
+        if (onSwitchToLogin) {
+          onSwitchToLogin();
+        }
+      }, 2000);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Failed to complete registration. Please try again.';
+      showToast(errorMsg, 'error');
       setVerifying(false);
     }
   };
