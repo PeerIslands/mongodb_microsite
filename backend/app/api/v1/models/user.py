@@ -102,10 +102,14 @@ class SignInResponse(BaseModel):
         access_token: JWT token for authentication
         token_type: Token type (always "bearer")
         user_email: Authenticated user's email
+        is_internal: Whether user is internal
+        is_admin: Whether user is admin
     """
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field(default="bearer", description="Token type")
     user_email: str = Field(..., description="User's email address")
+    is_internal: bool = Field(..., description="Whether user is internal")
+    is_admin: bool = Field(..., description="Whether user is admin")
 
 
 # =============================================================================

@@ -296,3 +296,4 @@ A: Vite only exposes environment variables that start with `VITE_` to prevent ac
 **Security Level**: Frontend-Safe Variables Only  
 **Backend Security**: Sensitive credentials kept on backend
 
+

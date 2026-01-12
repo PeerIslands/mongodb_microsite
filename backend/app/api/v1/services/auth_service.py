@@ -184,5 +184,7 @@ class AuthService:
             access_token=access_token,
             token_type="bearer",
             user_email=user_email,
+            is_internal=is_internal,
+            is_admin=is_admin,
         )
 

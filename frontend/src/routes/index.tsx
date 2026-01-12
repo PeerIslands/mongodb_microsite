@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout, MainLayout, AdminLayout } from '@/layouts';
 import { ROUTES } from '@/constants';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy load pages for code splitting
 import { lazy, Suspense } from 'react';
@@ -11,6 +12,7 @@ const AcceleratorDetailPage = lazy(() => import('@/pages/AcceleratorDetailPage')
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
 const CaseStudyDetailPage = lazy(() => import('@/pages/CaseStudyDetailPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Loading component
 const PageLoader = () => (
@@ -31,6 +33,15 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    errorElement: (
+      <RootLayout>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage />
+          </Suspense>
+        </ErrorBoundary>
+      </RootLayout>
+    ),
     children: [
       {
         element: <MainLayout />,
@@ -122,6 +133,14 @@ const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        path: '*',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage />
+          </Suspense>
+        ),
       },
     ],
   },

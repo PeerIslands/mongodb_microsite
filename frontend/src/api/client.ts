@@ -16,8 +16,8 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
+    // Add auth token if available (using 'authToken' key)
+    const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,13 +34,13 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle common errors
+    // Handle common errors (just log them, don't redirect)
+    // Components should handle errors appropriately via toast notifications
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
-          localStorage.removeItem('auth_token');
-          window.location.href = '/admin/login';
+          // Unauthorized - let the calling component handle it
+          console.error('Unauthorized:', error.response.data);
           break;
         case 403:
           console.error('Forbidden:', error.response.data);

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import uuid
 
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.api.v1.models.user import UserModel, LoginCredsModel
 from app.api.v1.exceptions.user_exceptions import UserAlreadyExistsError, UserNotFoundError
 
@@ -14,17 +15,19 @@ from app.api.v1.exceptions.user_exceptions import UserAlreadyExistsError, UserNo
 class UserRepository:
     """
     Repository for user data operations.
-    Currently uses in-memory storage. Replace with MongoDB in production.
+    Uses MongoDB for persistent storage.
     """
 
-    def __init__(self):
-        """Initialize in-memory storage."""
-        # Simulates User Table
-        self._user_table: Dict[str, Dict[str, Any]] = {}
-        # Simulates Login_creds Table
-        self._login_creds_table: Dict[str, Dict[str, Any]] = {}
-        # Email index for quick lookup
-        self._email_index: Dict[str, str] = {}
+    def __init__(self, db: AsyncIOMotorDatabase):
+        """
+        Initialize repository with MongoDB database.
+        
+        Args:
+            db: MongoDB database instance
+        """
+        self.db = db
+        self.users_collection = db["users"]
+        self.login_creds_collection = db["login_creds"]
 
     def generate_id(self) -> str:
         """Generate a unique user ID."""
@@ -40,7 +43,10 @@ class UserRepository:
         Returns:
             True if email exists, False otherwise
         """
-        return email.lower() in self._email_index
+        result = await self.users_collection.find_one(
+            {"user_email": {"$regex": f"^{email}$", "$options": "i"}}
+        )
+        return result is not None
 
     async def create_user(
         self,
@@ -93,12 +99,9 @@ class UserRepository:
             created_at=now,
         )
 
-        # Store in tables
-        self._user_table[user_id] = user.to_dict()
-        self._login_creds_table[user_id] = login_creds.to_dict()
-        
-        # Update email index
-        self._email_index[user_email.lower()] = user_id
+        # Insert into MongoDB collections
+        await self.users_collection.insert_one(user.to_dict())
+        await self.login_creds_collection.insert_one(login_creds.to_dict())
 
         return user_id
 
@@ -112,7 +115,7 @@ class UserRepository:
         Returns:
             User data dictionary if found, None otherwise
         """
-        return self._user_table.get(user_id)
+        return await self.users_collection.find_one({"_id": user_id})
 
     async def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """
@@ -124,10 +127,9 @@ class UserRepository:
         Returns:
             User data dictionary if found, None otherwise
         """
-        user_id = self._email_index.get(email.lower())
-        if user_id:
-            return self._user_table.get(user_id)
-        return None
+        return await self.users_collection.find_one(
+            {"user_email": {"$regex": f"^{email}$", "$options": "i"}}
+        )
 
     async def get_all_users(
         self, skip: int = 0, limit: int = 100
@@ -142,12 +144,12 @@ class UserRepository:
         Returns:
             List of user data dictionaries
         """
-        users = list(self._user_table.values())
-        return users[skip : skip + limit]
+        cursor = self.users_collection.find().skip(skip).limit(limit)
+        return await cursor.to_list(length=limit)
 
     async def get_user_count(self) -> int:
         """Get total number of users."""
-        return len(self._user_table)
+        return await self.users_collection.count_documents({})
 
     async def get_login_creds(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -159,7 +161,21 @@ class UserRepository:
         Returns:
             Login credentials if found, None otherwise
         """
-        return self._login_creds_table.get(user_id)
+        return await self.login_creds_collection.find_one({"_id": user_id})
+    
+    async def get_login_creds_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """
+        Get login credentials by email address.
+        
+        Args:
+            email: The user's email address
+            
+        Returns:
+            Login credentials if found, None otherwise
+        """
+        return await self.login_creds_collection.find_one(
+            {"user_email": {"$regex": f"^{email}$", "$options": "i"}}
+        )
 
     async def update_user(
         self, user_id: str, update_data: Dict[str, Any]
@@ -174,14 +190,14 @@ class UserRepository:
         Returns:
             True if updated, False if user not found
         """
-        if user_id not in self._user_table:
-            return False
-
-        for key, value in update_data.items():
-            if key != "_id":  # Don't allow ID updates
-                self._user_table[user_id][key] = value
-
-        return True
+        # Remove _id from update data if present
+        update_data = {k: v for k, v in update_data.items() if k != "_id"}
+        
+        result = await self.users_collection.update_one(
+            {"_id": user_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0 or result.matched_count > 0
 
     async def delete_user(self, user_id: str) -> bool:
         """
@@ -193,18 +209,9 @@ class UserRepository:
         Returns:
             True if deleted, False if user not found
         """
-        if user_id not in self._user_table:
-            return False
-
-        # Get email before deletion for index cleanup
-        user_email = self._user_table[user_id].get("user_email", "").lower()
-
-        # Delete from all tables
-        del self._user_table[user_id]
-        if user_id in self._login_creds_table:
-            del self._login_creds_table[user_id]
-        if user_email in self._email_index:
-            del self._email_index[user_email]
-
-        return True
+        # Delete from both collections
+        user_result = await self.users_collection.delete_one({"_id": user_id})
+        await self.login_creds_collection.delete_one({"_id": user_id})
+        
+        return user_result.deleted_count > 0
 
