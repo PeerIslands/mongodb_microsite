@@ -30,13 +30,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware - Allow all origins for development
+# CORS Middleware
+# Configure allowed origins based on environment
+allowed_origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",  # Alternative dev port
+    "https://ashy-glacier-09cfe4b0f.5.azurestaticapps.net",  # Azure Static Web App
+]
+
+# Add custom CORS origins from settings if configured
+if settings.BACKEND_CORS_ORIGINS:
+    allowed_origins.extend(settings.BACKEND_CORS_ORIGINS)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include API router
