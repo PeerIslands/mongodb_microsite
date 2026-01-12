@@ -7,8 +7,8 @@ interface UseAuthReturn {
   userId: string | null;
   loading: boolean;
   error: string | null;
-  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  login: (email: string, password: string) => Promise<{ success: boolean; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
+  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
 }
@@ -24,7 +24,7 @@ export const useAuth = (): UseAuthReturn => {
     lastName: string, 
     email: string, 
     password: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; data?: any; error?: string }> => {
     setLoading(true);
     setError(null);
     
@@ -41,7 +41,9 @@ export const useAuth = (): UseAuthReturn => {
       localStorage.setItem('userId', response.user_id);
       
       setLoading(false);
-      return { success: true };
+      
+      // UPDATED: Return full response data (includes totp_setup)
+      return { success: true, data: response };
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Signup failed. Please try again.';
       setError(errorMessage);
@@ -50,7 +52,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
     setLoading(true);
     setError(null);
     
@@ -60,7 +62,18 @@ export const useAuth = (): UseAuthReturn => {
         user_password: password,
       });
       
-      // Store token, email, and user role information
+      // Check if TOTP verification is required
+      if (response.requires_totp) {
+        // Don't store tokens yet - need TOTP verification first
+        setLoading(false);
+        return { 
+          success: true,
+          requiresTotp: true,
+          sessionToken: response.session_token,
+        };
+      }
+      
+      // Standard login (no TOTP) - store tokens immediately
       localStorage.setItem('authToken', response.access_token);
       localStorage.setItem('userEmail', response.user_email);
       localStorage.setItem('isAdmin', String(response.is_admin));
