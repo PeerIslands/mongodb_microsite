@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
+import apiClient from '@/api/client';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import '@/styles/components/ForgotPasswordModal.css';
 
@@ -59,18 +60,14 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/password-reset/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_email: email }),
+      const response = await apiClient.post('/api/v1/password-reset/request', {
+        user_email: email,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setResetToken(data.reset_token);
+      if (response.data) {
+        setResetToken(response.data.reset_token);
         
-        if (data.totp_required) {
+        if (response.data.totp_required) {
           // User has TOTP enabled - show TOTP verification
           setStep('verify-totp');
           showToast('Enter code from your authenticator app', 'info');
@@ -79,13 +76,11 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
           setStep('email-sent');
           showToast('Password reset instructions sent', 'success');
         }
-      } else {
-        // Still show success to prevent email enumeration
-        setStep('email-sent');
-        showToast('If an account exists, reset instructions have been sent', 'success');
       }
     } catch (error) {
-      showToast('Network error. Please try again.', 'error');
+      // Still show success to prevent email enumeration
+      setStep('email-sent');
+      showToast('If an account exists, reset instructions have been sent', 'success');
     } finally {
       setLoading(false);
     }
@@ -99,26 +94,20 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
     setVerificationError('');
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/password-reset/verify-totp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reset_token: resetToken,
-          totp_code: code,
-        }),
+      const response = await apiClient.post('/api/v1/password-reset/verify-totp', {
+        reset_token: resetToken,
+        totp_code: code,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setPasswordResetToken(data.password_reset_token);
+      if (response.data && response.data.success) {
+        setPasswordResetToken(response.data.password_reset_token);
         setStep('new-password');
         showToast('TOTP verified! Set your new password', 'success');
       } else {
-        setVerificationError(data.detail || 'Invalid code. Please try again.');
+        setVerificationError(response.data?.detail || 'Invalid code. Please try again.');
       }
-    } catch (error) {
-      setVerificationError('Verification failed. Please try again.');
+    } catch (error: any) {
+      setVerificationError(error.response?.data?.detail || 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -143,18 +132,12 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/password-reset/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password_reset_token: passwordResetToken,
-          new_password: newPassword,
-        }),
+      const response = await apiClient.post('/api/v1/password-reset/complete', {
+        password_reset_token: passwordResetToken,
+        new_password: newPassword,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (response.data && response.data.success) {
         setStep('success');
         showToast('Password reset successfully!', 'success');
         
@@ -166,10 +149,10 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
           }
         }, 2000);
       } else {
-        showToast(data.detail || 'Failed to reset password', 'error');
+        showToast(response.data?.detail || 'Failed to reset password', 'error');
       }
-    } catch (error) {
-      showToast('Network error. Please try again.', 'error');
+    } catch (error: any) {
+      showToast(error.response?.data?.detail || 'Network error. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import apiClient from '@/api/client';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import '@/styles/components/LoginModal.css';
 
@@ -102,23 +103,17 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
     setVerificationError('');
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify-login-totp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_token: sessionToken,
-          totp_code: code,
-        }),
+      const response = await apiClient.post('/api/v1/verify-login-totp', {
+        session_token: sessionToken,
+        totp_code: code,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.access_token) {
+      if (response.data && response.data.access_token) {
         // Store tokens
-        localStorage.setItem('authToken', data.access_token);
-        localStorage.setItem('userEmail', data.user_email);
-        localStorage.setItem('isAdmin', String(data.is_admin));
-        localStorage.setItem('isInternal', String(data.is_internal));
+        localStorage.setItem('authToken', response.data.access_token);
+        localStorage.setItem('userEmail', response.data.user_email);
+        localStorage.setItem('isAdmin', String(response.data.is_admin));
+        localStorage.setItem('isInternal', String(response.data.is_internal));
         
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
@@ -135,13 +130,13 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
           window.location.reload();
         }, 1000);
       } else {
-        const errorMsg = data.detail || 'Invalid code';
+        const errorMsg = response.data?.detail || 'Invalid code';
         console.log('TOTP Login Error:', errorMsg);
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error) {
-      const errorMsg = 'Verification failed';
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Verification failed';
       console.error('TOTP Login Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
