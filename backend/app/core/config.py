@@ -3,9 +3,10 @@ from typing import List
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Get the app directory (parent of core directory)
+# Get the backend directory (parent of app directory)
 APP_DIR = Path(__file__).parent.parent
-ENV_FILE = APP_DIR / ".env"
+BACKEND_DIR = APP_DIR.parent  # Go up one more level to backend/
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -44,6 +45,30 @@ class Settings(BaseSettings):
     # Azure Blob Storage Settings
     # Full SAS URL for the blob container (includes SAS token)
     AZURE_BLOB_SAS_URL: str = ""
+    
+    # TOTP/MFA Settings
+    TOTP_ENABLED: bool = True
+    TOTP_ISSUER_NAME: str = "MongoDB Microsite"
+    TOTP_DIGITS: int = 6
+    TOTP_PERIOD: int = 30
+    TOTP_ALGORITHM: str = "SHA1"
+    
+    # CRITICAL: Encryption key for TOTP secrets (must be set in environment)
+    TOTP_SECRET_ENCRYPTION_KEY: str = ""
+    
+    # Rate Limiting
+    TOTP_MAX_ATTEMPTS_PER_WINDOW: int = 5
+    TOTP_RATE_LIMIT_WINDOW_MINUTES: int = 15
+    TOTP_MAX_FAILURES_BEFORE_LOCK: int = 10
+    TOTP_ACCOUNT_LOCK_DURATION_MINUTES: int = 60
+    
+    # Backup Codes
+    TOTP_BACKUP_CODES_COUNT: int = 10
+    TOTP_BACKUP_CODE_BCRYPT_ROUNDS: int = 12
+    
+    # Time Window Tolerance
+    TOTP_TIME_WINDOW_TOLERANCE: int = 1  # ±1 window (30 seconds each way)
+    TOTP_ALLOW_CODE_REUSE: bool = False
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),

@@ -1,0 +1,314 @@
+/* Backup Codes Display Styles - Matching Glassmorphism Theme */
+
+.backup-codes-display {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.backup-codes-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.backup-codes-header h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 6px 0;
+}
+
+.backup-codes-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.backup-codes-warning {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 193, 7, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.warning-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 8px 0;
+  font-size: 13px;
+}
+
+.warning-list {
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.warning-list li {
+  margin-bottom: 4px;
+}
+
+.warning-list strong {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.backup-codes-container {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.codes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.code-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s;
+}
+
+.code-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(91, 108, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.code-number {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 28px;
+}
+
+.code-value {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.backup-codes-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.action-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.action-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(91, 108, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(91, 108, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.download-button:hover {
+  background: rgba(91, 108, 255, 0.1);
+  border-color: #5b6cff;
+  color: #7b8cff;
+}
+
+.print-button:hover {
+  background: rgba(0, 237, 100, 0.1);
+  border-color: rgba(0, 237, 100, 0.5);
+  color: #00ed64;
+}
+
+.copy-button:hover {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.5);
+  color: #ffc107;
+}
+
+.button-icon {
+  font-size: 18px;
+}
+
+.button-text {
+  font-size: 14px;
+}
+
+.backup-codes-confirmation {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.confirmation-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.confirmation-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #5b6cff;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.checkbox-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.backup-codes-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(91, 108, 255, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(91, 108, 255, 0.2);
+  margin-bottom: 16px;
+}
+
+.info-icon {
+  font-size: 16px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.info-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.finish-button {
+  width: 100%;
+  padding: 14px;
+  background: #5b6cff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(91, 108, 255, 0.3);
+}
+
+.finish-button:hover:not(:disabled) {
+  background: #4a5ae8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(91, 108, 255, 0.4);
+}
+
+.finish-button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .codes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backup-codes-actions {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+
+  .backup-codes-warning {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .backup-codes-actions,
+  .backup-codes-confirmation,
+  .finish-button {
+    display: none;
+  }
+
+  .backup-codes-container {
+    background: white;
+    border: 2px solid #000;
+  }
+
+  .code-item {
+    background: white;
+    border: 1px solid #000;
+    color: black;
+  }
+
+  .code-value {
+    color: black;
+  }
+}

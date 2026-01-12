@@ -1,13 +1,23 @@
 """
 User Service - Business logic layer for user operations.
 Handles validation, encryption, and orchestrates repository calls.
+Updated to support mandatory MFA/TOTP during registration.
 """
 
 import bcrypt
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
 
-from app.api.v1.models.user import UserCreateRequest, UserCreateResponse
+from app.api.v1.models.user import (
+    UserCreateRequest,
+    UserCreateResponse,
+    TOTPSetupData,
+    TOTPVerificationRequest,
+    TOTPVerificationResponse,
+)
 from app.api.v1.repositories.user_repository import UserRepository
+from app.api.v1.repositories.totp_repository import TOTPRepository
+from app.api.v1.services.totp_service import TOTPService
 from app.api.v1.exceptions.user_exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
@@ -18,20 +28,27 @@ from app.api.v1.exceptions.user_exceptions import (
 class UserService:
     """
     Service class for user-related business logic.
-    Implements the processing flow for user registration.
+    Implements the processing flow for user registration with mandatory MFA.
     """
 
     # Domain for internal users
     INTERNAL_DOMAIN = "@peerislands.io"
 
-    def __init__(self, repository: UserRepository):
+    def __init__(
+        self,
+        repository: UserRepository,
+        totp_repository: Optional[TOTPRepository] = None
+    ):
         """
-        Initialize the service with a repository.
+        Initialize the service with repositories and TOTP service.
         
         Args:
             repository: UserRepository instance for data access
+            totp_repository: TOTPRepository for TOTP secrets (optional for backwards compat)
         """
         self._repository = repository
+        self._totp_repository = totp_repository
+        self._totp_service = TOTPService()
 
     # =========================================================================
     # HELPER METHODS
@@ -87,39 +104,57 @@ class UserService:
 
     async def create_user(self, request: UserCreateRequest) -> UserCreateResponse:
         """
-        Register a new user.
+        UPDATED: Register a new user with mandatory MFA setup.
         
-        Processing Flow:
-        1. Registration layer receives the request
-        2. Validate inputs (handled by Pydantic model)
-        3. Check if email already exists
-        4. Determine if user is internal (@company.com)
-        5. Encrypt password using bcrypt
-        6. Store data in User and Login_creds tables
-        7. Return success response
+        New Processing Flow:
+        1. Validate inputs (Pydantic)
+        2. Check if email exists
+        3. Determine internal status
+        4. Encrypt password
+        5. Generate TOTP secret (NEW)
+        6. Generate QR code (NEW)
+        7. Create user (pending_mfa status)
+        8. Store TOTP secret (encrypted)
+        9. Return response with TOTP setup data
         
         Args:
             request: UserCreateRequest with registration data
             
         Returns:
-            UserCreateResponse with user_id, is_internal, and message
+            UserCreateResponse with TOTP setup information
             
         Raises:
             UserAlreadyExistsError: If email already exists
+            ValueError: If TOTP repository not initialized
         """
-        # Step 1 & 2: Request received and validated by Pydantic
-
-        # Step 3: Check if email already exists
+        # Validate TOTP repository is available
+        if not self._totp_repository:
+            raise ValueError("TOTP repository not initialized")
+        
+        # Steps 1-2: Validate and check email
         if await self._repository.email_exists(request.user_email):
             raise UserAlreadyExistsError(request.user_email)
 
-        # Step 4: Check if user is internal
+        # Step 3: Check if internal
         is_internal = self.is_internal_user(request.user_email)
 
-        # Step 5: Encrypt password (never store plain text)
+        # Step 4: Encrypt password
         encrypted_password = self.encrypt_password(request.user_password)
 
-        # Step 6: Generate ID and store in database
+        # Step 5: Generate TOTP secret (NEW)
+        totp_secret = self._totp_service.generate_secret()
+
+        # Step 6: Generate QR code (NEW)
+        qr_code = self._totp_service.generate_qr_code(
+            totp_secret,
+            request.user_email
+        )
+        otpauth_url = self._totp_service.generate_otpauth_url(
+            totp_secret,
+            request.user_email
+        )
+
+        # Step 7: Create user (pending_mfa status)
         user_id = self._repository.generate_id()
         
         await self._repository.create_user(
@@ -131,11 +166,32 @@ class UserService:
             encrypted_password=encrypted_password,
         )
 
-        # Step 7: Return success response
+        # Step 8: Store TOTP secret (encrypted)
+        encrypted_secret = self._totp_service.encrypt_secret(totp_secret)
+        
+        await self._totp_repository.create_totp_secret(
+            user_id=user_id,
+            user_email=request.user_email,
+            encrypted_secret=encrypted_secret,
+        )
+
+        # Step 9: Return response with TOTP setup
         return UserCreateResponse(
             user_id=user_id,
+            user_email=request.user_email,
             is_internal=is_internal,
-            message="User registered successfully",
+            registration_status="pending_mfa",
+            account_active=False,
+            totp_setup=TOTPSetupData(
+                secret=totp_secret,  # Return plain for initial setup
+                qr_code=qr_code,
+                manual_entry_key=totp_secret,
+                issuer="MongoDB Microsite",
+                account_name=request.user_email,
+                otpauth_url=otpauth_url,
+            ),
+            message="Account created. Complete MFA setup to activate account.",
+            next_step="verify_totp",
         )
 
     async def get_user_by_id(self, user_id: str) -> Dict[str, Any]:
@@ -205,14 +261,15 @@ class UserService:
         self, email: str, password: str
     ) -> Dict[str, Any]:
         """
-        Authenticate a user with email and password.
+        UPDATED: Authenticate a user with email and password.
+        NOW includes registration status and MFA fields.
         
         Args:
             email: User's email address
             password: Plain text password
             
         Returns:
-            User data if authentication successful
+            User data if authentication successful (includes MFA status)
             
         Raises:
             UserNotFoundError: If user not found or password incorrect
@@ -232,5 +289,124 @@ class UserService:
             "user_email": user["user_email"],
             "is_internal": user["is_internal"],
             "is_admin": user["is_admin"],
+            # MFA fields (NEW)
+            "totp_enabled": user.get("totp_enabled", False),
+            "registration_status": user.get("registration_status", "completed"),
+            "can_login": user.get("can_login", True),
+            "account_active": user.get("account_active", True),
         }
+    
+    # =========================================================================
+    # MFA/TOTP METHODS (NEW)
+    # =========================================================================
+    
+    async def verify_totp_and_complete_registration(
+        self,
+        user_id: str,
+        totp_code: str
+    ) -> TOTPVerificationResponse:
+        """
+        Verify TOTP code and complete user registration.
+        
+        Args:
+            user_id: User ID
+            totp_code: 6-digit TOTP code from authenticator app
+            
+        Returns:
+            TOTPVerificationResponse with backup codes
+            
+        Raises:
+            UserNotFoundError: If user not found
+            ValueError: If TOTP code is invalid or repository not initialized
+        """
+        # Validate TOTP repository
+        if not self._totp_repository:
+            raise ValueError("TOTP repository not initialized")
+        
+        # Get user and TOTP secret
+        user = await self._repository.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(user_id)
+        
+        totp_secret_doc = await self._totp_repository.get_totp_secret_by_user_id(user_id)
+        if not totp_secret_doc:
+            raise ValueError("TOTP secret not found")
+        
+        # Decrypt secret
+        secret = self._totp_service.decrypt_secret(
+            totp_secret_doc["secret_encrypted"]
+        )
+        
+        # Validate TOTP code
+        if not self._totp_service.validate_totp_code(secret, totp_code):
+            # Increment failed attempts
+            await self._totp_repository.increment_verification_attempts(user_id)
+            raise ValueError("Invalid code")
+        
+        # Generate backup codes
+        backup_codes = self._totp_service.generate_backup_codes()
+        backup_codes_hashed = [
+            {
+                "code_hash": self._totp_service.hash_backup_code(code),
+                "is_used": False,
+                "used_at": None
+            }
+            for code in backup_codes
+        ]
+        
+        # Update user: activate account
+        await self._repository.activate_user_account(user_id)
+        
+        # Update TOTP secret: mark as verified, store backup codes
+        await self._totp_repository.complete_totp_setup(
+            user_id=user_id,
+            backup_codes_hashed=backup_codes_hashed
+        )
+        
+        # Get updated user data
+        updated_user = await self._repository.get_user_by_id(user_id)
+        
+        # Return response
+        return TOTPVerificationResponse(
+            success=True,
+            message="MFA setup complete! Your account is now active.",
+            user={
+                "user_id": user_id,
+                "email": updated_user["user_email"],
+                "registration_status": "completed",
+                "account_active": True,
+                "can_login": True,
+                "totp_enabled": True,
+            },
+            backup_codes=backup_codes,  # Plain codes for user to save
+            next_step="save_backup_codes",
+        )
+    
+    async def acknowledge_backup_codes(
+        self,
+        user_id: str,
+        downloaded: bool = False
+    ) -> bool:
+        """
+        Mark that user has acknowledged/saved backup codes.
+        
+        Args:
+            user_id: User ID
+            downloaded: Whether codes were downloaded
+            
+        Returns:
+            True if successful
+            
+        Raises:
+            ValueError: If TOTP repository not initialized
+        """
+        if not self._totp_repository:
+            raise ValueError("TOTP repository not initialized")
+        
+        await self._totp_repository.acknowledge_backup_codes(
+            user_id=user_id,
+            downloaded=downloaded
+        )
+        
+        return True
 

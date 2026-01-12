@@ -58,7 +58,7 @@ class UserRepository:
         encrypted_password: str,
     ) -> str:
         """
-        Create a new user and their login credentials.
+        UPDATED: Create a new user with MFA pending status.
         
         Args:
             user_id: Unique user identifier
@@ -73,6 +73,11 @@ class UserRepository:
             
         Raises:
             UserAlreadyExistsError: If email already exists
+            
+        Note:
+            - User starts in "pending_mfa" status
+            - account_active and can_login are False
+            - Must complete MFA setup to activate account
         """
         # Check for existing email
         if await self.email_exists(user_email):
@@ -80,7 +85,7 @@ class UserRepository:
 
         now = datetime.now(timezone.utc)
 
-        # Create User model
+        # Create User model with MFA pending status
         user = UserModel(
             _id=user_id,
             first_name=first_name,
@@ -88,6 +93,17 @@ class UserRepository:
             user_email=user_email,
             is_internal=is_internal,
             is_admin=False,
+            # MFA fields - new user starts with MFA pending
+            totp_enabled=False,
+            totp_setup_at=None,
+            totp_last_used=None,
+            # Registration status - pending MFA setup
+            registration_status="pending_mfa",
+            registration_started_at=now,
+            registration_completed_at=None,
+            # Account access - blocked until MFA setup
+            account_active=False,
+            can_login=False,
             created_at=now,
         )
 
@@ -214,4 +230,126 @@ class UserRepository:
         await self.login_creds_collection.delete_one({"_id": user_id})
         
         return user_result.deleted_count > 0
+    
+    # =========================================================================
+    # MFA/TOTP-RELATED METHODS (NEW)
+    # =========================================================================
+    
+    async def activate_user_account(self, user_id: str) -> bool:
+        """
+        Activate user account after successful MFA setup.
+        
+        Updates:
+        - totp_enabled = True
+        - totp_setup_at = now
+        - registration_status = "completed"
+        - registration_completed_at = now
+        - account_active = True
+        - can_login = True
+        
+        Args:
+            user_id: The user's ID
+            
+        Returns:
+            True if updated successfully
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await self.users_collection.update_one(
+            {"_id": user_id},
+            {
+                "$set": {
+                    "totp_enabled": True,
+                    "totp_setup_at": now,
+                    "registration_status": "completed",
+                    "registration_completed_at": now,
+                    "account_active": True,
+                    "can_login": True,
+                }
+            }
+        )
+        
+        return result.modified_count > 0 or result.matched_count > 0
+    
+    async def update_totp_last_used(self, user_id: str) -> bool:
+        """
+        Update the timestamp when TOTP was last successfully used.
+        
+        Args:
+            user_id: The user's ID
+            
+        Returns:
+            True if updated successfully
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await self.users_collection.update_one(
+            {"_id": user_id},
+            {"$set": {"totp_last_used": now}}
+        )
+        
+        return result.modified_count > 0 or result.matched_count > 0
+    
+    async def disable_user_totp(self, user_id: str) -> bool:
+        """
+        Disable TOTP for a user (when user disables MFA).
+        
+        Args:
+            user_id: The user's ID
+            
+        Returns:
+            True if updated successfully
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        
+        result = await self.users_collection.update_one(
+            {"_id": user_id},
+            {
+                "$set": {
+                    "totp_enabled": False,
+                    "totp_setup_at": None,
+                    "totp_last_used": None,
+                }
+            }
+        )
+        
+        return result.modified_count > 0 or result.matched_count > 0
+    
+    async def get_users_with_pending_mfa(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Get users with pending MFA setup.
+        
+        Args:
+            skip: Number to skip
+            limit: Maximum number to return
+            
+        Returns:
+            List of user dictionaries with pending_mfa status
+        """
+        cursor = self.users_collection.find(
+            {"registration_status": "pending_mfa"}
+        ).skip(skip).limit(limit)
+        
+        return await cursor.to_list(length=limit)
+    
+    async def get_users_with_mfa_enabled(
+        self, skip: int = 0, limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Get users with MFA enabled.
+        
+        Args:
+            skip: Number to skip
+            limit: Maximum number to return
+            
+        Returns:
+            List of user dictionaries with MFA enabled
+        """
+        cursor = self.users_collection.find(
+            {"totp_enabled": True}
+        ).skip(skip).limit(limit)
+        
+        return await cursor.to_list(length=limit)
 

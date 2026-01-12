@@ -8,12 +8,14 @@ import image3 from '@/assets/image 3.png';
 import line1 from '@/assets/Line 1.png';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 const Header = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -44,11 +46,21 @@ const Header = () => {
   };
 
   const handleSwitchToSignup = () => {
+    setIsLoginModalOpen(false);
+    setIsForgotPasswordModalOpen(false);
     setIsSignupModalOpen(true);
   };
 
   const handleSwitchToLogin = () => {
+    setIsSignupModalOpen(false);
+    setIsForgotPasswordModalOpen(false);
     setIsLoginModalOpen(true);
+  };
+
+  const handleSwitchToForgotPassword = () => {
+    setIsLoginModalOpen(false);
+    setIsSignupModalOpen(false);
+    setIsForgotPasswordModalOpen(true);
   };
 
   const handleLogout = () => {
@@ -207,11 +219,18 @@ const Header = () => {
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToSignup={handleSwitchToSignup}
+        onSwitchToForgotPassword={handleSwitchToForgotPassword}
       />
 
       <SignupModal 
         isOpen={isSignupModalOpen} 
         onClose={() => setIsSignupModalOpen(false)}
+        onSwitchToLogin={handleSwitchToLogin}
+      />
+
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordModalOpen}
+        onClose={() => setIsForgotPasswordModalOpen(false)}
         onSwitchToLogin={handleSwitchToLogin}
       />
     </>
