@@ -7,12 +7,6 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/azure-static-web-apps-ashy-glacier-09cfe4b0f.yml'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - develop
-    paths:
-      - 'frontend/**'
   workflow_dispatch:
 
 jobs:
