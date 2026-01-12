@@ -213,6 +213,45 @@ async def verify_totp_registration(
         )
 
 
+@router.get(
+    "/register/totp-debug/{user_id}",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Debug TOTP setup (Development only)",
+    description="Get current valid TOTP code for debugging. Remove in production!",
+)
+async def debug_totp(
+    user_id: str,
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    Get current valid TOTP code for debugging.
+    WARNING: This should be removed in production!
+    """
+    try:
+        from app.api.v1.services.totp_service import TOTPService
+        from app.api.v1.dependencies.services import get_totp_repository
+        
+        totp_service = TOTPService()
+        totp_repo = get_totp_repository()
+        
+        totp_secret_doc = await totp_repo.get_totp_secret_by_user_id(user_id)
+        if not totp_secret_doc:
+            return {"error": "TOTP secret not found for user"}
+        
+        secret = totp_service.decrypt_secret(totp_secret_doc["secret_encrypted"])
+        current_code = totp_service.get_current_code(secret)
+        
+        return {
+            "user_id": user_id,
+            "current_valid_code": current_code,
+            "message": "Enter this code in your app to test",
+            "note": "Remove this endpoint in production!"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @router.post(
     "/register/acknowledge-backup-codes",
     status_code=status.HTTP_200_OK,

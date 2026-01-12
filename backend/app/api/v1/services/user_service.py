@@ -337,11 +337,21 @@ class UserService:
             totp_secret_doc["secret_encrypted"]
         )
         
+        # Debug logging
+        print(f"[DEBUG] TOTP Verification - User ID: {user_id}")
+        print(f"[DEBUG] Code provided: {totp_code}")
+        print(f"[DEBUG] Code length: {len(totp_code)}")
+        print(f"[DEBUG] Code is digits: {totp_code.isdigit()}")
+        print(f"[DEBUG] Current valid code: {self._totp_service.get_current_code(secret)}")
+        
         # Validate TOTP code
-        if not self._totp_service.validate_totp_code(secret, totp_code):
+        is_valid = self._totp_service.validate_totp_code(secret, totp_code)
+        print(f"[DEBUG] Validation result: {is_valid}")
+        
+        if not is_valid:
             # Increment failed attempts
             await self._totp_repository.increment_verification_attempts(user_id)
-            raise ValueError("Invalid code")
+            raise ValueError(f"Invalid TOTP code. Please ensure your device time is synchronized and try again.")
         
         # Generate backup codes
         backup_codes = self._totp_service.generate_backup_codes()
