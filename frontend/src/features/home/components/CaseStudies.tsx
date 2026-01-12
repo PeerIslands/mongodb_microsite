@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, EffectCoverflow } from 'swiper/modules';
+import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/effect-coverflow';
 import '@/styles/features/home/CaseStudies.css';
 import caseStudiesBg from '@/assets/case-studies-bg.png';
-import arrowIcon from '@/assets/case-studies-arrow.svg';
-import caseStudyCard1 from '@/assets/case-study-card-1.png';
-import caseStudyCard2 from '@/assets/case-study-card-2.png';
 import { caseStudiesService } from '@/api/services/case-studies.service';
 import type { CaseStudy } from '@/types/models/case-study';
+import { CaseStudyCard } from '@/features/case-studies/components';
+import type { CaseStudyCardData } from '@/features/case-studies/components';
+
+/**
+ * Transform API response to CaseStudyCardData format
+ */
+const transformToCaseStudyCardData = (caseStudy: CaseStudy): CaseStudyCardData => ({
+  id: caseStudy.id,
+  slug: caseStudy.slug,
+  industry: caseStudy.industry,
+  title: caseStudy.title,
+  description: caseStudy.description,
+  metrics: caseStudy.metrics || [],
+});
 
 const CaseStudies = () => {
   const navigate = useNavigate();
-  const [featuredCaseStudies, setFeaturedCaseStudies] = useState<CaseStudy[]>([]);
+  const [featuredCaseStudies, setFeaturedCaseStudies] = useState<CaseStudyCardData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   // Handle case study card click - navigate to success-stories with ID
@@ -31,12 +40,10 @@ const CaseStudies = () => {
     const fetchFeaturedCaseStudies = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const data = await caseStudiesService.getAll({ featured: true, status: 'published' });
-        setFeaturedCaseStudies(data);
+        setFeaturedCaseStudies(data.map(transformToCaseStudyCardData));
       } catch (err) {
         console.error('Failed to fetch featured case studies:', err);
-        setError('Failed to load case studies');
       } finally {
         setIsLoading(false);
       }
@@ -47,40 +54,22 @@ const CaseStudies = () => {
 
   const showCarouselControls = featuredCaseStudies.length > 2;
 
-  // Render static fallback (original design)
-  const renderFallback = () => (
-    <div className="case-studies-cards">
-      <div className="case-study-card case-study-card-1">
-        <div className="case-study-card-gradient"></div>
-        <div className="case-study-card-image-container">
-          <img src={caseStudyCard1} alt="" className="case-study-card-image" />
-        </div>
-        <div className="case-study-button-container">
-          <Link to="/success-stories" className="case-study-button">
-            <div className="case-study-button-icon">
-              <img src={arrowIcon} alt="" className="case-study-arrow" />
-            </div>
-          </Link>
-        </div>
-      </div>
-      
-      <div className="case-study-card case-study-card-2">
-        <div className="case-study-card-gradient"></div>
-        <div className="case-study-card-image-container">
-          <img src={caseStudyCard2} alt="" className="case-study-card-image" />
-        </div>
-        <div className="case-study-button-container">
-          <Link to="/success-stories" className="case-study-button">
-            <div className="case-study-button-icon">
-              <img src={arrowIcon} alt="" className="case-study-arrow" />
-            </div>
-          </Link>
-        </div>
-      </div>
+  // Render loading state
+  const renderLoading = () => (
+    <div className="case-studies-loading">
+      <div className="case-studies-loading__spinner" />
+      <p>Loading case studies...</p>
     </div>
   );
 
-  // Render dynamic case study cards with Swiper
+  // Render empty state
+  const renderEmpty = () => (
+    <div className="case-studies-empty">
+      <p>No featured case studies available.</p>
+    </div>
+  );
+
+  // Render case study cards with Swiper
   const renderCaseStudyCards = () => (
     <div className="case-studies-carousel-wrapper">
       {showCarouselControls && (
@@ -96,59 +85,41 @@ const CaseStudies = () => {
       )}
       
       <Swiper
-        modules={[Navigation, EffectCoverflow]}
+        modules={[Navigation]}
         spaceBetween={24}
         slidesPerView={1}
         loop={featuredCaseStudies.length > 2}
         speed={600}
-        effect={featuredCaseStudies.length > 2 ? 'coverflow' : undefined}
-        coverflowEffect={{
-          rotate: 0,
-          stretch: 0,
-          depth: 100,
-          modifier: 1,
-          slideShadows: false,
-        }}
         breakpoints={{
+          640: {
+            slidesPerView: 1.5,
+            spaceBetween: 20,
+          },
           768: {
             slidesPerView: 2,
             spaceBetween: 24,
           },
           1024: {
-            slidesPerView: 2,
-            spaceBetween: 40,
+            slidesPerView: 2.5,
+            spaceBetween: 24,
+          },
+          1280: {
+            slidesPerView: 3,
+            spaceBetween: 24,
           },
         }}
         onSwiper={(swiper) => setSwiperInstance(swiper)}
         className="case-studies-swiper"
       >
-        {featuredCaseStudies.map((caseStudy, index) => (
+        {featuredCaseStudies.map((caseStudy) => (
           <SwiperSlide key={caseStudy.id} className="case-study-slide">
             <button 
               type="button"
-              className="case-study-card case-study-card-clickable"
+              className="case-study-card-button"
               onClick={() => handleCaseStudyClick(caseStudy.id)}
+              aria-label={`View details for ${caseStudy.title}`}
             >
-              <div className="case-study-card-gradient"></div>
-              <div className="case-study-card-image-container">
-                <img 
-                  src={caseStudy.hero_image} 
-                  alt={caseStudy.title}
-                  className="case-study-card-image"
-                  onError={(e) => {
-                    // Fallback to placeholder on error
-                    const target = e.target as HTMLImageElement;
-                    target.src = index % 2 === 0 ? caseStudyCard1 : caseStudyCard2;
-                  }}
-                />
-              </div>
-              <div className="case-study-button-container">
-                <div className="case-study-button">
-                  <div className="case-study-button-icon">
-                    <img src={arrowIcon} alt="" className="case-study-arrow" />
-                  </div>
-                </div>
-              </div>
+              <CaseStudyCard data={caseStudy} />
             </button>
           </SwiperSlide>
         ))}
@@ -170,31 +141,27 @@ const CaseStudies = () => {
 
   return (
     <section id="case-studies" className="case-studies">
-      {/* Background image - matches Figma node 17:1577 */}
+      {/* Background image */}
       <div className="case-studies-background">
         <img 
           src={caseStudiesBg} 
           alt="" 
           className="case-studies-bg-image"
-          onError={(e) => {
-            console.error('Failed to load case studies background image:', e);
-          }}
-          onLoad={() => {
-            console.log('Case studies background image loaded successfully');
-          }}
         />
       </div>
       
-      {/* Title - matches Figma node 17:1578 */}
+      {/* Title */}
       <h2 className="case-studies-title">
         <span>Featured</span>
         <span>Case Studies</span>
       </h2>
       
-      {/* Cards - show API data or fallback */}
-      {isLoading || error || featuredCaseStudies.length === 0
-        ? renderFallback()
-        : renderCaseStudyCards()
+      {/* Cards - show loading, empty, or cards */}
+      {isLoading 
+        ? renderLoading()
+        : featuredCaseStudies.length === 0
+          ? renderEmpty()
+          : renderCaseStudyCards()
       }
     </section>
   );

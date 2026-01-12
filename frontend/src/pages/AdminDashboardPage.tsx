@@ -70,19 +70,19 @@ const AdminDashboard = () => {
             className={`main-nav-tab ${mainView === 'cases' ? 'active' : ''}`}
             onClick={() => handleMainViewChange('cases')}
           >
-            📚 Case Studies
+            Case Studies
           </button>
           <button
             className={`main-nav-tab ${mainView === 'accelerators' ? 'active' : ''}`}
             onClick={() => handleMainViewChange('accelerators')}
           >
-            🚀 Accelerators
+            Accelerators
           </button>
           <button
             className={`main-nav-tab ${mainView === 'analytics' ? 'active' : ''}`}
             onClick={() => handleMainViewChange('analytics')}
           >
-            📊 Analytics
+            Analytics
           </button>
         </div>
 

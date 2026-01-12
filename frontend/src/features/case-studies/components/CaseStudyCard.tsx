@@ -1,20 +1,17 @@
 import '@/styles/features/case-studies/CaseStudyCard.css';
-
-// Metrics structure matching backend
-export interface CaseStudyMetrics {
-  time_reduction?: string | null;
-  ingestion_speed?: string | null;
-  data_accuracy?: string | null;
-}
+import type { MetricItem } from '@/types/models/case-study';
 
 export interface CaseStudyCardData {
   id: string;
   slug: string;
-  industry: string; // Maps to category display
+  industry: string;
   title: string;
   description: string;
-  metrics: CaseStudyMetrics;
+  metrics: MetricItem[];
 }
+
+// Re-export for backward compatibility
+export type CaseStudyMetrics = MetricItem[];
 
 interface CaseStudyCardProps {
   data: CaseStudyCardData;
@@ -22,15 +19,13 @@ interface CaseStudyCardProps {
 
 /**
  * CaseStudyCard - Individual case study card for the grid
- * Displays industry, title, metrics, description, and read more link
+ * Displays industry, title, top 3 metrics, description, and read more link
  */
 const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
-  // Get metrics that have values
-  const metricsEntries = [
-    { label: 'Time Reduction', value: data.metrics?.time_reduction },
-    { label: 'Ingestion Speed', value: data.metrics?.ingestion_speed },
-    { label: 'Data Accuracy', value: data.metrics?.data_accuracy },
-  ].filter(m => m.value);
+  // Get top 3 metrics that have values
+  const displayMetrics = (data.metrics || [])
+    .filter(m => m.label && m.value)
+    .slice(0, 3);
 
   return (
     <article className="case-study-card">
@@ -47,15 +42,17 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
         {data.title}
       </h3>
 
-      {/* Metrics display - all three metrics */}
-      <div className="case-study-card__metrics">
-        {metricsEntries.map((metric, index) => (
-          <div key={index} className="case-study-card__metric">
-            <span className="case-study-card__metric-value">{metric.value}</span>
-            <span className="case-study-card__metric-label">{metric.label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Metrics display - top 3 metrics */}
+      {displayMetrics.length > 0 && (
+        <div className="case-study-card__metrics">
+          {displayMetrics.map((metric, index) => (
+            <div key={index} className="case-study-card__metric">
+              <span className="case-study-card__metric-value">{metric.value}</span>
+              <span className="case-study-card__metric-label">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Description */}
       <p className="case-study-card__description">

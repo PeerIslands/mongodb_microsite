@@ -228,6 +228,83 @@
   min-width: 250px;
 }
 
+/* Industry single select with custom option */
+.industry-custom-input {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.industry-custom-input input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.industry-custom-input input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.industry-custom-input input:focus {
+  outline: none;
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
+}
+
+.industry-back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.industry-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tech-input-only {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.tech-input-only input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.tech-input-only input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.tech-input-only input:focus {
+  outline: none;
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
+}
+
 .custom-tech-input input {
   flex: 1;
   background: rgba(255, 255, 255, 0.05);
@@ -443,6 +520,105 @@
   border: 1px solid rgba(255, 152, 0, 0.2);
 }
 
+/* Dynamic Metrics */
+.metric-row.dynamic-metric {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.metric-row.dynamic-metric:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.metric-label-input {
+  flex: 1;
+  min-width: 150px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.metric-value-input {
+  flex: 1.5;
+  min-width: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.metric-label-input::placeholder,
+.metric-value-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.metric-label-input:focus,
+.metric-value-input:focus {
+  outline: none;
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
+}
+
+.metric-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 82, 82, 0.15);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  color: #ff5252;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.metric-remove-btn:hover {
+  background: rgba(255, 82, 82, 0.25);
+  border-color: rgba(255, 82, 82, 0.5);
+  transform: scale(1.05);
+}
+
+.add-metric-btn {
+  background: rgba(91, 108, 255, 0.15);
+  border: 1px dashed rgba(91, 108, 255, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.add-metric-btn:hover {
+  background: rgba(91, 108, 255, 0.25);
+  border-color: rgba(91, 108, 255, 0.6);
+  color: #ffffff;
+}
+
 /* Form Actions */
 .form-actions {
   display: flex;
@@ -522,6 +698,21 @@
   
   .metric-label {
     text-align: center;
+  }
+  
+  .metric-row.dynamic-metric {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .metric-label-input,
+  .metric-value-input {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .metric-remove-btn {
+    align-self: flex-end;
   }
   
   .form-actions {

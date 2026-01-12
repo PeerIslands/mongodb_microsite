@@ -97,38 +97,23 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
           )}
         </header>
 
-        {/* Key Metrics - Horizontal Row at Top */}
-        <div className="case-study-detail__metrics-row">
-          {/* <h3 className="case-study-detail__section-title">Key Metrics</h3> */}
-          <div className="case-study-detail__key-metrics">
-            {caseStudy.metrics?.time_reduction && (
-              <div className="case-study-detail__key-metric">
-                <span className="case-study-detail__key-metric-value">
-                  {caseStudy.metrics.time_reduction}
-                </span>
-                <span className="case-study-detail__key-metric-label">Time Reduction</span>
-              </div>
-            )}
-
-            {caseStudy.metrics?.ingestion_speed && (
-              <div className="case-study-detail__key-metric">
-                <span className="case-study-detail__key-metric-value">
-                  {caseStudy.metrics.ingestion_speed}
-                </span>
-                <span className="case-study-detail__key-metric-label">Ingestion Speed</span>
-              </div>
-            )}
-
-            {caseStudy.metrics?.data_accuracy && (
-              <div className="case-study-detail__key-metric">
-                <span className="case-study-detail__key-metric-value">
-                  {caseStudy.metrics.data_accuracy}
-                </span>
-                <span className="case-study-detail__key-metric-label">Data Accuracy</span>
-              </div>
-            )}
+        {/* Key Metrics - Horizontal Row at Top (shows all metrics) */}
+        {caseStudy.metrics && caseStudy.metrics.length > 0 && (
+          <div className="case-study-detail__metrics-row">
+            <div className="case-study-detail__key-metrics">
+              {caseStudy.metrics
+                .filter(m => m.label && m.value)
+                .map((metric, index) => (
+                  <div key={index} className="case-study-detail__key-metric">
+                    <span className="case-study-detail__key-metric-value">
+                      {metric.value}
+                    </span>
+                    <span className="case-study-detail__key-metric-label">{metric.label}</span>
+                  </div>
+                ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Sections - Full Width */}
         <div className="case-study-detail__content">
@@ -167,9 +152,16 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
                 <blockquote className="case-study-detail__testimonial-quote">
                   "{caseStudy.testimonial_quote}"
                 </blockquote>
-                <cite className="case-study-detail__testimonial-author">
-                  {caseStudy.testimonial_author}
-                </cite>
+                <div className="case-study-detail__testimonial-attribution">
+                  <cite className="case-study-detail__testimonial-author">
+                    {caseStudy.testimonial_author}
+                  </cite>
+                  {caseStudy.testimonial_position && (
+                    <span className="case-study-detail__testimonial-position">
+                      {caseStudy.testimonial_position}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}

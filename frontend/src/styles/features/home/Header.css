@@ -29,6 +29,7 @@
   gap: 0;
   position: relative;
   flex-shrink: 0;
+  margin-bottom: 7px;
 }
 
 .logo-image-container {
@@ -116,18 +117,26 @@
 }
 
 .nav-link.admin-link {
-  color: #00ED64;
-  font-weight: 500;
-  background: rgba(0, 237, 100, 0.05);
-  border-radius: 8px;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
+  color: #ffffff;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(13px, 1.2vw, 15px);
+  font-weight: 400;
+  font-style: normal;
+  text-transform: capitalize;
+  letter-spacing: 0.53px;
+  line-height: 1.6;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  white-space: nowrap;
+  padding: 0 clamp(10px, 1.5vw, 18px);
 }
 
 .nav-link.admin-link:hover {
-  color: #00ED64;
-  background: rgba(0, 237, 100, 0.1);
-  transform: translateY(-2px);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .dropdown-arrow {
