@@ -1,8 +1,32 @@
-# Admin Management Scripts
+# Backend Utility Scripts
 
-Scripts for managing admin users in the MongoDB Microsite application.
+Scripts for database management and administration in the MongoDB Microsite application.
 
-## promote_admin.sh & promote_admin.py
+## Migration Scripts
+
+### migrate_add_mfa_fields.py
+
+Add MFA/TOTP fields to database for mandatory multi-factor authentication.
+
+**When to run:** Before deploying MFA functionality
+
+**Usage:**
+```bash
+cd backend
+python scripts/migrate_add_mfa_fields.py
+```
+
+**What it does:**
+1. Adds MFA fields to existing users
+2. Creates `totp_secrets` collection
+3. Creates required indexes
+4. Handles existing users (grandfather clause)
+
+---
+
+## Admin Management Scripts
+
+### promote_admin.sh & promote_admin.py
 
 Promote an internal user to admin status.
 

@@ -18,6 +18,10 @@ PyJWT = "^2.8.0"
 motor = "^3.7.1"
 azure-storage-blob = "^12.28.0"
 httpx = "^0.26.0"
+# TOTP/MFA Dependencies
+pyotp = "^2.9.0"
+qrcode = {extras = ["pil"], version = "^7.4.2"}
+cryptography = "^42.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

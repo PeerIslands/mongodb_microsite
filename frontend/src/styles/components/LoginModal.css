@@ -233,6 +233,76 @@
   text-decoration: underline;
 }
 
+/* =================================================================== */
+/* TOTP VERIFICATION STEP (NEW) */
+/* =================================================================== */
+
+.totp-verification-step {
+  padding: 20px 0;
+}
+
+.totp-info-box {
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 18px;
+  background: rgba(91, 108, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(91, 108, 255, 0.2);
+  border-radius: 12px;
+}
+
+.totp-info-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
+.totp-info-subtext {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.totp-info-subtext strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.back-to-login-button {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.back-to-login-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.back-to-login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =================================================================== */
+/* RESPONSIVE DESIGN */
+/* =================================================================== */
+
 @media (max-width: 480px) {
   .modal-content {
     padding: 32px 24px;
@@ -254,6 +324,18 @@
 
   .login-submit-button {
     padding: 14px 20px;
+  }
+
+  .totp-info-box {
+    padding: 14px;
+  }
+
+  .totp-info-text {
+    font-size: 13px;
+  }
+
+  .totp-info-subtext {
+    font-size: 12px;
   }
 }
 

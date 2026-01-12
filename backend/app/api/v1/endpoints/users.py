@@ -16,6 +16,9 @@ from app.api.v1.models.user import (
     UserCreateRequest,
     UserCreateResponse,
     ErrorResponse,
+    TOTPVerificationRequest,
+    TOTPVerificationResponse,
+    BackupCodesAcknowledgeRequest,
 )
 from app.api.v1.services.user_service import UserService
 from app.api.v1.dependencies.services import get_user_service
@@ -143,4 +146,119 @@ async def get_user_by_id(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.message,
+        )
+
+
+# =============================================================================
+# MFA/TOTP ENDPOINTS (NEW)
+# =============================================================================
+
+@router.post(
+    "/register/verify-mfa",
+    response_model=TOTPVerificationResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "TOTP verified, account activated"},
+        400: {"model": ErrorResponse, "description": "Invalid TOTP code"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Verify TOTP and complete registration",
+    description="Verify TOTP code during registration to activate account. This MUST be called after /saveuser to activate the account.",
+)
+async def verify_totp_registration(
+    request: TOTPVerificationRequest,
+    user_service: UserService = Depends(get_user_service),
+) -> TOTPVerificationResponse:
+    """
+    Verify TOTP code and complete user registration.
+    
+    This endpoint completes the mandatory MFA setup process:
+    1. Validates the TOTP code from user's authenticator app
+    2. Activates the user account
+    3. Generates and returns backup codes
+    4. Marks registration as complete
+    
+    Args:
+        request: TOTPVerificationRequest with user_id and totp_code
+        user_service: Injected UserService instance
+        
+    Returns:
+        TOTPVerificationResponse with backup codes and user status
+        
+    Raises:
+        HTTPException 400: If TOTP code is invalid
+        HTTPException 404: If user not found
+        HTTPException 500: If internal error occurs
+    """
+    try:
+        return await user_service.verify_totp_and_complete_registration(
+            user_id=request.user_id,
+            totp_code=request.totp_code,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to verify TOTP: {str(e)}",
+        )
+
+
+@router.post(
+    "/register/acknowledge-backup-codes",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Backup codes acknowledged"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Acknowledge backup codes saved",
+    description="User confirms they have saved their backup codes securely.",
+)
+async def acknowledge_backup_codes(
+    request: BackupCodesAcknowledgeRequest,
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    User acknowledges they have saved backup codes.
+    
+    This is the final step of registration, confirming that the user
+    has safely stored their backup recovery codes.
+    
+    Args:
+        request: BackupCodesAcknowledgeRequest with user_id
+        user_service: Injected UserService instance
+        
+    Returns:
+        Success response with redirect information
+        
+    Raises:
+        HTTPException 404: If user not found
+        HTTPException 500: If internal error occurs
+    """
+    try:
+        await user_service.acknowledge_backup_codes(request.user_id)
+        return {
+            "success": True,
+            "message": "Registration fully complete",
+            "redirect_to": "/dashboard"
+        }
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to acknowledge backup codes: {str(e)}",
         )
