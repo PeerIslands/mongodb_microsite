@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import '@/styles/components/LoginModal.css';
@@ -15,9 +15,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
-  const { login, loading, error, clearError } = useAuth();
+  const { login, loading, clearError } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNavigate();
   const location = useLocation();
 
   // Clear errors when modal opens/closes

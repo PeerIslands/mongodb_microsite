@@ -15,15 +15,13 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
 
-  const { signup, loading, error, clearError } = useAuth();
+  const { signup, loading, clearError } = useAuth();
   const { showToast } = useToast();
 
   // Clear errors when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setValidationError('');
       clearError();
     }
   }, [isOpen, clearError]);
@@ -32,12 +30,10 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setValidationError('');
     
     // Validate passwords match
     if (password !== confirmPassword) {
       const errorMsg = 'Passwords do not match!';
-      setValidationError(errorMsg);
       showToast(errorMsg, 'error');
       return;
     }
@@ -45,7 +41,6 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     // Validate password strength (backend requires min 6, we enforce 8 on frontend)
     if (password.length < 6) {
       const errorMsg = 'Password must be at least 6 characters long.';
-      setValidationError(errorMsg);
       showToast(errorMsg, 'error');
       return;
     }
