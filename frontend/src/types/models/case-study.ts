@@ -1,9 +1,11 @@
-// Metrics structure with fixed fields (snake_case to match API)
-export interface CaseStudyMetrics {
-  time_reduction?: string | null;
-  ingestion_speed?: string | null;
-  data_accuracy?: string | null;
+// Single metric item (matches backend MetricItem)
+export interface MetricItem {
+  label: string;
+  value: string;
 }
+
+// Metrics is now an array of MetricItem (max 5 items)
+export type CaseStudyMetrics = MetricItem[];
 
 // Base Case Study (for list view) - snake_case to match API response
 // Note: API returns CaseStudyDetailResponse which includes metrics

@@ -1,8 +1,11 @@
 import { Outlet, Link } from 'react-router-dom';
 import '@/styles/layouts/AdminLayout.css';
-import image2 from '@/assets/image 2.png';
-import image3 from '@/assets/image 3.png';
-import line1 from '@/assets/Line 1.png';
+// Pre-import admin component CSS to prevent flash of unstyled content during lazy loading
+import '@/styles/pages/AdminDashboardPage.css';
+import '@/styles/features/admin/CaseStudyList.css';
+import '@/styles/features/admin/AcceleratorList.css';
+import '@/styles/features/admin/AnalyticsDashboard.css';
+import logo from '@/assets/logo.svg';
 
 /**
  * Admin layout with header and sidebar
@@ -14,15 +17,7 @@ const AdminLayout = () => {
       <header className="admin-header">
         <div className="admin-header-content">
           <div className="admin-logo-section">
-            <div className="logo-image-container">
-              <img src={image2} alt="PeerAI" className="logo-image logo-image-2" />
-            </div>
-            <div className="logo-separator">
-              <img src={line1} alt="" className="separator-line" />
-            </div>
-            <div className="logo-image-container">
-              <img src={image3} alt="MongoDB" className="logo-image logo-image-3" />
-            </div>
+            <img src={logo} alt="PeerAI X MongoDB" className="logo-image" />
           </div>
           
           <div className="admin-title">

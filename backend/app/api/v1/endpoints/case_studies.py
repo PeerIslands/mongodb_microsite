@@ -11,8 +11,8 @@ Endpoints:
 Field naming convention: snake_case (matching frontend requirements)
 
 File Storage:
-- Images and PDFs are uploaded to Azure Blob Storage
-- Folder structure: {slug}/{field_name}.{ext}
+- PDFs are uploaded to Azure Blob Storage
+- Folder structure: {case_id}/{field_name}.{ext}
 - MongoDB stores the blob path, full URL is constructed at retrieval time
 """
 
@@ -29,7 +29,7 @@ from app.api.v1.models.case_study import (
     CaseStudyResponse,
     CaseStudyDetailResponse,
     DeleteCaseStudyResponse,
-    Metrics,
+    MetricItem,
 )
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService
@@ -49,7 +49,7 @@ def is_valid_file(f) -> bool:
 
 async def upload_file_to_blob(
     file: UploadFile,
-    slug: str,
+    case_id: str,
     field_name: str,
     blob_service: AzureBlobService,
 ) -> str:
@@ -58,8 +58,8 @@ async def upload_file_to_blob(
     
     Args:
         file: The uploaded file
-        slug: Case study slug (used in folder name)
-        field_name: Field name (hero_image, company_logo, etc.)
+        case_id: Case study ID (used in folder name)
+        field_name: Field name (pdf_url, etc.)
         blob_service: Azure Blob Service instance
         
     Returns:
@@ -75,13 +75,46 @@ async def upload_file_to_blob(
     
     blob_path = await blob_service.upload_file(
         file_content=content,
-        slug=slug,
+        slug=case_id,  # Using case_id instead of slug for folder path
         field_name=field_name,
         original_filename=file.filename,
         content_type=mime_type,
     )
     
     return blob_path
+
+
+def parse_metrics(metrics_json: str) -> List[MetricItem]:
+    """
+    Parse metrics JSON string into list of MetricItem objects.
+    
+    Expected format: [{"label": "Time Reduction", "value": "50%"}, ...]
+    Maximum 5 items allowed.
+    
+    Args:
+        metrics_json: JSON string of metrics array
+        
+    Returns:
+        List of MetricItem objects
+    """
+    if not metrics_json:
+        return []
+    
+    try:
+        parsed = json.loads(metrics_json)
+        if not isinstance(parsed, list):
+            return []
+        
+        metrics = []
+        for item in parsed[:5]:  # Limit to 5 items
+            if isinstance(item, dict) and "label" in item and "value" in item:
+                metrics.append(MetricItem(
+                    label=str(item["label"]).strip(),
+                    value=str(item["value"]).strip()
+                ))
+        return metrics
+    except json.JSONDecodeError:
+        return []
 
 
 # =============================================================================
@@ -101,19 +134,19 @@ async def upload_file_to_blob(
     **File fields:** Uncheck 'Send empty value' to see file picker.
     
     **Supported files:**
-    - hero_image: PNG/JPG (max 5MB)
-    - company_logo: PNG/JPG/SVG (max 2MB)  
     - pdf_file: PDF only (max 10MB)
-    - architecture_diagram: PNG/JPG/SVG (max 5MB)
     
     **Storage format:** Files are uploaded to Azure Blob with folder structure:
-    `{slug}/{field_name}.{ext}`
+    `{case_id}/{field_name}.{ext}`
+    
+    **Metrics format:** JSON array with max 5 items:
+    `[{"label": "Time Reduction", "value": "50%"}, {"label": "Accuracy", "value": "99%"}]`
     """,
 )
 async def create_case_study(
     # Required text fields
     title: str = Form(..., description="Case study title"),
-    slug: str = Form(..., description="URL-friendly slug (unique)"),
+    slug: str = Form(..., description="URL-friendly slug derived from title"),
     industry: str = Form(..., description="Industry sector"),
     company_name: str = Form(..., description="Client company name"),
     
@@ -123,56 +156,22 @@ async def create_case_study(
     tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
     migration_type: str = Form(default="", description="Type of migration (nullable)"),
     description: str = Form(default="", description="Full description"),
-    industry_details: str = Form(default="", description="Industry details (nullable)"),
     challenges: str = Form(default="", description="Challenges faced"),
-    technical_constraints: str = Form(default="", description="Technical constraints (nullable)"),
     approach: str = Form(default="", description="Solution approach"),
-    implementation_details: str = Form(default="", description="Implementation details"),
     business_outcomes: str = Form(default="", description="Business outcomes"),
     testimonial_quote: str = Form(default="", description="Testimonial quote (nullable)"),
     testimonial_author: str = Form(default="", description="Testimonial author (nullable)"),
     testimonial_position: str = Form(default="", description="Testimonial position (nullable)"),
     
-    # Metrics fields
-    time_reduction: str = Form(default="", description="Time reduction metric"),
-    ingestion_speed: str = Form(default="", description="Ingestion speed metric"),
-    data_accuracy: str = Form(default="", description="Data accuracy metric"),
+    # Metrics field - JSON array of {label, value} objects (max 5)
+    metrics: str = Form(default="", description='JSON array: [{"label": "Time Reduction", "value": "50%"}]'),
     
     # File uploads - stored in Azure Blob Storage
-    hero_image: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
-    company_logo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
     pdf_file: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
-    architecture_diagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
     
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> CreateCaseStudyResponse:
     """Create a case study with files stored in Azure Blob Storage."""
-    
-    # Get Azure Blob Service
-    blob_service = get_azure_blob_service()
-    
-    # Upload files to Azure Blob Storage and get blob paths
-    blob_paths: Dict[str, str] = {}
-    
-    if is_valid_file(hero_image):
-        blob_paths["hero_image"] = await upload_file_to_blob(
-            hero_image, slug, "hero_image", blob_service
-        )
-    
-    if is_valid_file(company_logo):
-        blob_paths["company_logo"] = await upload_file_to_blob(
-            company_logo, slug, "company_logo", blob_service
-        )
-    
-    if is_valid_file(pdf_file):
-        blob_paths["pdf_url"] = await upload_file_to_blob(
-            pdf_file, slug, "pdf_url", blob_service
-        )
-    
-    if is_valid_file(architecture_diagram):
-        blob_paths["architecture_diagram"] = await upload_file_to_blob(
-            architecture_diagram, slug, "architecture_diagram", blob_service
-        )
     
     # Parse tech stack (accepts JSON array string)
     tech_stack_list = []
@@ -185,14 +184,10 @@ async def create_case_study(
             # Fallback to comma-separated for backwards compatibility
             tech_stack_list = [t.strip() for t in tech_stack.split(",") if t.strip()]
     
-    # Build metrics object
-    metrics = Metrics(
-        time_reduction=time_reduction if time_reduction else None,
-        ingestion_speed=ingestion_speed if ingestion_speed else None,
-        data_accuracy=data_accuracy if data_accuracy else None,
-    )
+    # Parse metrics
+    metrics_list = parse_metrics(metrics)
     
-    # Create request object with blob paths
+    # Create request object (without pdf_url for now - will be added after creation)
     request = CreateCaseStudyRequest(
         title=title,
         slug=slug,
@@ -202,25 +197,32 @@ async def create_case_study(
         tech_stack=tech_stack_list,
         migration_type=migration_type if migration_type else None,
         company_name=company_name,
-        company_logo=blob_paths.get("company_logo", ""),
         description=description,
-        industry_details=industry_details if industry_details else None,
         challenges=challenges,
-        technical_constraints=technical_constraints if technical_constraints else None,
         approach=approach,
-        architecture_diagram=blob_paths.get("architecture_diagram"),
-        implementation_details=implementation_details,
-        metrics=metrics,
+        metrics=metrics_list,
         business_outcomes=business_outcomes,
         testimonial_quote=testimonial_quote if testimonial_quote else None,
         testimonial_author=testimonial_author if testimonial_author else None,
         testimonial_position=testimonial_position if testimonial_position else None,
-        hero_image=blob_paths.get("hero_image", ""),
-        pdf_url=blob_paths.get("pdf_url", ""),
+        pdf_url="",
     )
     
-    # Create case study (no file_data needed, blob paths are in request)
-    return await service.create_case_study(request)
+    # Create case study first to get the ID
+    result = await service.create_case_study(request)
+    case_id = result.id
+    
+    # Upload PDF file if provided (using case_id for folder path)
+    if is_valid_file(pdf_file):
+        blob_service = get_azure_blob_service()
+        pdf_blob_path = await upload_file_to_blob(
+            pdf_file, case_id, "pdf_url", blob_service
+        )
+        # Update the case study with the PDF path
+        update_request = UpdateCaseStudyRequest(pdf_url=pdf_blob_path)
+        await service.update_case_study(case_id, update_request)
+    
+    return result
 
 
 @router.get(
@@ -287,6 +289,9 @@ async def get_case_study_by_id(
     
     **Note:** When uploading new files, the old files in Azure Blob Storage
     will be automatically deleted and replaced with the new ones.
+    
+    **Metrics format:** JSON array with max 5 items:
+    `[{"label": "Time Reduction", "value": "50%"}, {"label": "Accuracy", "value": "99%"}]`
     """,
     responses={
         200: {"description": "Case study updated successfully"},
@@ -298,7 +303,7 @@ async def update_case_study(
     case_id: str,
     # Optional text fields - empty string means "don't update"
     title: str = Form(default="", description="Case study title"),
-    slug: str = Form(default="", description="URL-friendly slug"),
+    slug: str = Form(default="", description="URL-friendly slug derived from title"),
     industry: str = Form(default="", description="Industry sector"),
     company_name: str = Form(default="", description="Client company name"),
     featured: str = Form(default="", description="true or false"),
@@ -306,26 +311,18 @@ async def update_case_study(
     tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
     migration_type: str = Form(default="", description="Type of migration"),
     description: str = Form(default="", description="Full description"),
-    industry_details: str = Form(default="", description="Industry details"),
     challenges: str = Form(default="", description="Challenges faced"),
-    technical_constraints: str = Form(default="", description="Technical constraints"),
     approach: str = Form(default="", description="Solution approach"),
-    implementation_details: str = Form(default="", description="Implementation details"),
     business_outcomes: str = Form(default="", description="Business outcomes"),
     testimonial_quote: str = Form(default="", description="Testimonial quote"),
     testimonial_author: str = Form(default="", description="Testimonial author"),
     testimonial_position: str = Form(default="", description="Testimonial position"),
     
-    # Metrics fields
-    time_reduction: str = Form(default="", description="Time reduction metric"),
-    ingestion_speed: str = Form(default="", description="Ingestion speed metric"),
-    data_accuracy: str = Form(default="", description="Data accuracy metric"),
+    # Metrics field - JSON array of {label, value} objects (max 5)
+    metrics: str = Form(default="", description='JSON array: [{"label": "Time Reduction", "value": "50%"}]'),
     
     # File uploads - stored in Azure Blob Storage
-    hero_image: UploadFile = File(default=None, media_type="image/*", description="Hero image PNG/JPG"),
-    company_logo: UploadFile = File(default=None, media_type="image/*", description="Company logo"),
     pdf_file: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
-    architecture_diagram: UploadFile = File(default=None, media_type="image/*", description="Architecture diagram"),
     
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> UpdateCaseStudyResponse:
@@ -335,9 +332,6 @@ async def update_case_study(
     blob_service = get_azure_blob_service()
     
     # Get existing case study to retrieve old blob paths for deletion
-    # We need to get raw document to access blob paths (not full URLs)
-    existing_detail = await service.get_case_study_by_id(case_id)
-    existing_slug = existing_detail.slug
     existing_blob_paths = await service.get_blob_paths(case_id)
     
     # Build update data dictionary (only include non-empty fields)
@@ -368,16 +362,10 @@ async def update_case_study(
         update_data["migration_type"] = migration_type
     if description:
         update_data["description"] = description
-    if industry_details:
-        update_data["industry_details"] = industry_details
     if challenges:
         update_data["challenges"] = challenges
-    if technical_constraints:
-        update_data["technical_constraints"] = technical_constraints
     if approach:
         update_data["approach"] = approach
-    if implementation_details:
-        update_data["implementation_details"] = implementation_details
     if business_outcomes:
         update_data["business_outcomes"] = business_outcomes
     if testimonial_quote:
@@ -388,51 +376,17 @@ async def update_case_study(
         update_data["testimonial_position"] = testimonial_position
     
     # Handle metrics
-    if time_reduction or ingestion_speed or data_accuracy:
-        update_data["metrics"] = Metrics(
-            time_reduction=time_reduction if time_reduction else None,
-            ingestion_speed=ingestion_speed if ingestion_speed else None,
-            data_accuracy=data_accuracy if data_accuracy else None,
-        )
+    if metrics:
+        update_data["metrics"] = parse_metrics(metrics)
     
-    # Use new slug if provided, otherwise use existing slug for file uploads
-    upload_slug = slug if slug else existing_slug
-    
-    # Upload new files to Azure Blob Storage (delete old files first)
-    if is_valid_file(hero_image):
-        # Delete old file if exists
-        if existing_blob_paths.get("hero_image"):
-            await blob_service.delete_file(existing_blob_paths["hero_image"])
-        # Upload new file
-        update_data["hero_image"] = await upload_file_to_blob(
-            hero_image, upload_slug, "hero_image", blob_service
-        )
-    
-    if is_valid_file(company_logo):
-        # Delete old file if exists
-        if existing_blob_paths.get("company_logo"):
-            await blob_service.delete_file(existing_blob_paths["company_logo"])
-        # Upload new file
-        update_data["company_logo"] = await upload_file_to_blob(
-            company_logo, upload_slug, "company_logo", blob_service
-        )
-    
+    # Upload new PDF file to Azure Blob Storage (delete old file first)
     if is_valid_file(pdf_file):
         # Delete old file if exists
         if existing_blob_paths.get("pdf_url"):
             await blob_service.delete_file(existing_blob_paths["pdf_url"])
-        # Upload new file
+        # Upload new file (using case_id for folder path)
         update_data["pdf_url"] = await upload_file_to_blob(
-            pdf_file, upload_slug, "pdf_url", blob_service
-        )
-    
-    if is_valid_file(architecture_diagram):
-        # Delete old file if exists
-        if existing_blob_paths.get("architecture_diagram"):
-            await blob_service.delete_file(existing_blob_paths["architecture_diagram"])
-        # Upload new file
-        update_data["architecture_diagram"] = await upload_file_to_blob(
-            architecture_diagram, upload_slug, "architecture_diagram", blob_service
+            pdf_file, case_id, "pdf_url", blob_service
         )
     
     # Create update request

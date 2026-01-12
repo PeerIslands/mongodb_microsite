@@ -1,23 +1,39 @@
 """
-Azure Blob Storage Service - Handles file uploads to Azure Blob Storage.
+Azure Blob Storage Service - Handles PDF uploads to Azure Blob Storage.
 
-This service uploads files to Azure Blob Storage and returns the blob path
+This service uploads PDF files to Azure Blob Storage and returns the blob path
 that can be stored in MongoDB. Full URLs are constructed at retrieval time.
+
+Supported file types: PDF only
 """
 
-import mimetypes
 from typing import Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 import httpx
 
 from app.core.config import settings
 
 
+# Allowed content types for PDF files
+ALLOWED_CONTENT_TYPES = {
+    "application/pdf",
+}
+
+# Maximum file size: 10MB
+MAX_FILE_SIZE = 10 * 1024 * 1024
+
+
+class AzureBlobServiceError(Exception):
+    """Custom exception for Azure Blob Service errors."""
+    pass
+
+
 class AzureBlobService:
     """
-    Service for uploading and managing files in Azure Blob Storage.
+    Service for uploading and managing PDF files in Azure Blob Storage.
     
     Uses SAS URL for authentication (no Azure SDK required).
+    Only accepts PDF files.
     """
 
     def __init__(self):
@@ -43,35 +59,41 @@ class AzureBlobService:
         sas_token = parsed.query
         return base_url, sas_token
 
-    def _get_file_extension(self, filename: str, content_type: str) -> str:
+    def _validate_pdf_file(self, content_type: str, file_content: bytes, original_filename: str) -> None:
         """
-        Get file extension from filename or content type.
+        Validate that the file is a valid PDF.
         
         Args:
-            filename: Original filename
             content_type: MIME content type
+            file_content: Raw file bytes
+            original_filename: Original filename
             
-        Returns:
-            File extension with dot (e.g., '.png')
+        Raises:
+            AzureBlobServiceError: If file is not a valid PDF
         """
-        if filename and '.' in filename:
-            return '.' + filename.rsplit('.', 1)[1].lower()
+        # Check content type
+        if content_type not in ALLOWED_CONTENT_TYPES:
+            raise AzureBlobServiceError(
+                f"Invalid file type: {content_type}. Only PDF files are allowed."
+            )
         
-        # Fallback to content type
-        ext = mimetypes.guess_extension(content_type)
-        if ext:
-            return ext
+        # Check file extension
+        if original_filename and not original_filename.lower().endswith('.pdf'):
+            raise AzureBlobServiceError(
+                "Invalid file extension. Only .pdf files are allowed."
+            )
         
-        # Default extensions based on content type
-        content_type_map = {
-            'image/png': '.png',
-            'image/jpeg': '.jpg',
-            'image/jpg': '.jpg',
-            'image/svg+xml': '.svg',
-            'image/webp': '.webp',
-            'application/pdf': '.pdf',
-        }
-        return content_type_map.get(content_type, '.bin')
+        # Check file size
+        if len(file_content) > MAX_FILE_SIZE:
+            raise AzureBlobServiceError(
+                f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)}MB."
+            )
+        
+        # Check PDF magic bytes (PDF files start with %PDF-)
+        if not file_content.startswith(b'%PDF-'):
+            raise AzureBlobServiceError(
+                "Invalid PDF file. File does not appear to be a valid PDF."
+            )
 
     async def upload_file(
         self,
@@ -82,30 +104,34 @@ class AzureBlobService:
         content_type: str,
     ) -> str:
         """
-        Upload a file to Azure Blob Storage.
+        Upload a PDF file to Azure Blob Storage.
         
-        Creates folder structure: {slug}/{field_name}.{ext}
+        Creates folder structure: {case_id}/{field_name}.pdf
         
         Args:
             file_content: Raw file bytes
-            slug: Case study slug (used as folder name)
-            field_name: Field name (hero_image, company_logo, etc.)
-            original_filename: Original filename for extension detection
-            content_type: MIME content type
+            slug: Case study ID (used as folder name)
+            field_name: Field name (pdf_url)
+            original_filename: Original filename for validation
+            content_type: MIME content type (must be application/pdf)
             
         Returns:
-            Blob path (without base URL) e.g., "my-case-study/hero_image.png"
+            Blob path (without base URL) e.g., "abc123/pdf_url.pdf"
+            
+        Raises:
+            AzureBlobServiceError: If file is not a valid PDF
+            ValueError: If Azure Blob SAS URL not configured
         """
         if not self._sas_url:
             raise ValueError("Azure Blob SAS URL not configured")
         
-        # Get file extension
-        extension = self._get_file_extension(original_filename, content_type)
+        # Validate PDF file
+        self._validate_pdf_file(content_type, file_content, original_filename)
         
-        # Create standardized filename: {field_name}.{ext}
-        standardized_filename = f"{field_name}{extension}"
+        # Create standardized filename: {field_name}.pdf
+        standardized_filename = f"{field_name}.pdf"
         
-        # Full blob path: {slug}/{field_name}.{ext}
+        # Full blob path: {case_id}/{field_name}.pdf
         blob_path = f"{slug}/{standardized_filename}"
         
         # Construct upload URL with SAS token
@@ -114,7 +140,7 @@ class AzureBlobService:
         # Set appropriate content type header
         headers = {
             "x-ms-blob-type": "BlockBlob",
-            "Content-Type": content_type,
+            "Content-Type": "application/pdf",
         }
         
         # Upload file using httpx
@@ -134,7 +160,7 @@ class AzureBlobService:
         Delete a file from Azure Blob Storage.
         
         Args:
-            blob_path: Blob path (e.g., "my-case-study/hero_image.png")
+            blob_path: Blob path (e.g., "abc123/pdf_url.pdf")
             
         Returns:
             True if deleted successfully, False otherwise
@@ -182,4 +208,3 @@ def get_azure_blob_service() -> AzureBlobService:
     if _azure_blob_service is None:
         _azure_blob_service = AzureBlobService()
     return _azure_blob_service
-
