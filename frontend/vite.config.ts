@@ -5,6 +5,12 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
+  // Validate required environment variables
+  if (!env.VITE_API_BASE_URL) {
+    console.error('❌ VITE_API_BASE_URL is not set in .env file');
+    console.error('Please create a .env file with: VITE_API_BASE_URL=your_api_url');
+  }
+  
   return {
     plugins: [react()],
     server: {
@@ -12,7 +18,7 @@ export default defineConfig(({ mode }) => {
       open: true,
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://localhost:8000',
+          target: env.VITE_API_BASE_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
