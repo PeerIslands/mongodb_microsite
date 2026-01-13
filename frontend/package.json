@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@toast-ui/react-editor": "^3.2.3",
     "axios": "^1.6.2",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",

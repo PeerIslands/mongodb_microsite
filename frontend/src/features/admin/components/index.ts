@@ -8,6 +8,7 @@ export { default as FileManager } from './FileManager';
 export { default as FileUpload } from './FileUpload';
 export { default as MonthlyReport } from './MonthlyReport';
 export { default as PageLevelAnalytics } from './PageLevelAnalytics';
+export { default as RichTextEditor } from './RichTextEditor';
 export { default as SiteWideAnalytics } from './SiteWideAnalytics';
 export { default as VideoUploader } from './VideoUploader';
 

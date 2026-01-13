@@ -35,7 +35,7 @@ const CaseStudiesPage = () => {
   // State for case studies list
   const [caseStudies, setCaseStudies] = useState<CaseStudyCardData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
 
   // State to track the selected case study
   const [selectedCaseStudy, setSelectedCaseStudy] = useState<CaseStudyDetail | null>(null);
@@ -48,13 +48,11 @@ const CaseStudiesPage = () => {
     const fetchCaseStudies = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const response = await caseStudiesService.getAll({ status: 'published' });
         const transformedData = response.map(transformToCaseStudyCardData);
         setCaseStudies(transformedData);
       } catch (err) {
         console.error('Failed to fetch case studies:', err);
-        setError('Failed to load case studies. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +75,6 @@ const CaseStudiesPage = () => {
       setIsDetailVisible(true);
     } catch (err) {
       console.error('Failed to fetch case study details:', err);
-      setError('Failed to load case study details. Please try again.');
     } finally {
       setIsDetailLoading(false);
     }
@@ -115,12 +112,6 @@ const CaseStudiesPage = () => {
 
   return (
     <div className="case-studies-page">
-      {/* Error message */}
-      {error && (
-        <div className="case-studies-page__error">
-          <p>{error}</p>
-        </div>
-      )}
 
       {/* Success Stories Hero + Featured Carousel */}
       <CaseStudyArchitecture 

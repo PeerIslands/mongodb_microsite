@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import '@/styles/features/admin/CaseStudyForm.css';
 import FileUpload, { FileUploadResult } from './FileUpload';
+import RichTextEditor from './RichTextEditor';
 import { caseStudiesService } from '@/api/services/case-studies.service';
 
 const INDUSTRY_OPTIONS = [
   'Healthcare',
   'Finance',
+  'Banking',
   'E-commerce',
   'Retail',
   'Manufacturing',
@@ -243,6 +245,26 @@ const CaseStudyForm = ({
            formData.metrics.slice(0, MIN_METRICS).every(m => m.label.trim() && m.value.trim());
   };
 
+  // Validate testimonial fields - all three must be filled together or all empty
+  const areTestimonialFieldsValid = () => {
+    const quote = formData.testimonialQuote.trim();
+    const author = formData.testimonialAuthor.trim();
+    const position = formData.testimonialPosition.trim();
+    
+    const filledCount = [quote, author, position].filter(Boolean).length;
+    // Valid if all empty (0) or all filled (3)
+    return filledCount === 0 || filledCount === 3;
+  };
+
+  const hasPartialTestimonial = () => {
+    const quote = formData.testimonialQuote.trim();
+    const author = formData.testimonialAuthor.trim();
+    const position = formData.testimonialPosition.trim();
+    
+    const filledCount = [quote, author, position].filter(Boolean).length;
+    return filledCount > 0 && filledCount < 3;
+  };
+
   // Handle file upload changes
   const handleFileChange = (field: keyof typeof fileData, result: FileUploadResult | FileUploadResult[]) => {
     if (Array.isArray(result)) {
@@ -268,6 +290,12 @@ const CaseStudyForm = ({
     // Validate industry
     if (!formData.industry.trim()) {
       setErrorMessage('Please select or enter an industry.');
+      return;
+    }
+    
+    // Validate testimonial fields - all or none
+    if (!areTestimonialFieldsValid()) {
+      setErrorMessage('Testimonial fields must be either all filled or all empty. Please complete Quote, Author, and Position.');
       return;
     }
     
@@ -521,21 +549,21 @@ const CaseStudyForm = ({
           <div className="form-grid">
             <div className="form-field full-width">
               <label>Challenges</label>
-              <textarea
+              <RichTextEditor
                 value={formData.challenges}
-                onChange={(e) => handleInputChange('challenges', e.target.value)}
-                placeholder="Describe the challenges faced"
-                rows={4}
+                onChange={(markdown) => handleInputChange('challenges', markdown)}
+                placeholder="Describe the challenges faced..."
+                height="240px"
               />
             </div>
 
             <div className="form-field full-width">
               <label>Approach</label>
-              <textarea
+              <RichTextEditor
                 value={formData.approach}
-                onChange={(e) => handleInputChange('approach', e.target.value)}
-                placeholder="Describe the solution approach"
-                rows={4}
+                onChange={(markdown) => handleInputChange('approach', markdown)}
+                placeholder="Describe the solution approach..."
+                height="240px"
               />
             </div>
 
@@ -586,17 +614,17 @@ const CaseStudyForm = ({
             </div>
 
             <div className="form-field full-width">
-              <label>Business Outcomes (Separate with ' | ' for bullets)</label>
-              <textarea
+              <label>Business Outcomes</label>
+              <RichTextEditor
                 value={formData.businessOutcomes}
-                onChange={(e) => handleInputChange('businessOutcomes', e.target.value)}
-                placeholder="Describe the business outcomes achieved"
-                rows={4}
+                onChange={(markdown) => handleInputChange('businessOutcomes', markdown)}
+                placeholder="List the business outcomes achieved (use bullet points)..."
+                height="240px"
               />
             </div>
 
             <div className="form-field full-width">
-              <label>Testimonial Quote (Optional)</label>
+              <label>Testimonial Quote {hasPartialTestimonial() && '*'}</label>
               <textarea
                 value={formData.testimonialQuote}
                 onChange={(e) => handleInputChange('testimonialQuote', e.target.value)}
@@ -606,7 +634,7 @@ const CaseStudyForm = ({
             </div>
 
             <div className="form-field">
-              <label>Testimonial Author</label>
+              <label>Testimonial Author {hasPartialTestimonial() && '*'}</label>
               <input
                 type="text"
                 value={formData.testimonialAuthor}
@@ -616,7 +644,7 @@ const CaseStudyForm = ({
             </div>
 
             <div className="form-field">
-              <label>Author Position</label>
+              <label>Author Position {hasPartialTestimonial() && '*'}</label>
               <input
                 type="text"
                 value={formData.testimonialPosition}
@@ -624,6 +652,12 @@ const CaseStudyForm = ({
                 placeholder="Job title"
               />
             </div>
+
+            {hasPartialTestimonial() && (
+              <div className="form-field full-width">
+                <p className="validation-hint">All testimonial fields (Quote, Author, Position) must be filled</p>
+              </div>
+            )}
           </div>
         </div>
 

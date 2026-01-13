@@ -1,0 +1,291 @@
+/* Rich Text Editor - Dark Theme Overrides for Toast UI Editor */
+
+.rich-text-editor-wrapper {
+  width: 100%;
+}
+
+/* Main container */
+.rich-text-editor-wrapper .toastui-editor-defaultUI {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+
+.toastui-editor-toolbar-divider{
+    display: none !important;
+}
+
+.toastui-editor-defaultUI-toolbar {
+    background: #202025 !important;
+    border-bottom: 1px solid #202025 !important;
+}
+
+
+.rich-text-editor-wrapper .toastui-editor-toolbar-group {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 8px;
+  margin-right: 8px;
+}
+
+.rich-text-editor-wrapper .toastui-editor-toolbar-group:last-child {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+/* Toolbar buttons */
+.rich-text-editor-wrapper .toastui-editor-toolbar-icons {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  transition: all 0.2s;
+  filter: invert(1) brightness(0.85);
+}
+
+.rich-text-editor-wrapper .toastui-editor-toolbar-icons:hover {
+  background-color: rgba(238, 239, 245, 0.2);
+  border-color: rgba(173, 180, 241, 0.3);
+}
+
+
+.rich-text-editor-wrapper .toastui-editor-toolbar-icons:active,
+.rich-text-editor-wrapper .toastui-editor-toolbar-icons.active {
+    background-color: rgba(238, 239, 245, 0.2);
+    border-color: rgba(173, 180, 241, 0.3);
+}
+
+/* Editor content area */
+.rich-text-editor-wrapper .toastui-editor-main {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rich-text-editor-wrapper .toastui-editor-main-container {
+  background: transparent;
+}
+
+.rich-text-editor-wrapper .toastui-editor-ww-container {
+  background: transparent;
+}
+
+/* WYSIWYG editor */
+.rich-text-editor-wrapper .toastui-editor-contents,
+.rich-text-editor-wrapper .ProseMirror {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #ffffff;
+  padding: 16px;
+  background: transparent;
+}
+
+/* Placeholder */
+.rich-text-editor-wrapper .toastui-editor-contents .placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.rich-text-editor-wrapper .ProseMirror .placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Text styling within editor */
+.rich-text-editor-wrapper .toastui-editor-contents p,
+.rich-text-editor-wrapper .ProseMirror p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.75em;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents h1,
+.rich-text-editor-wrapper .toastui-editor-contents h2,
+.rich-text-editor-wrapper .toastui-editor-contents h3,
+.rich-text-editor-wrapper .toastui-editor-contents h4,
+.rich-text-editor-wrapper .toastui-editor-contents h5,
+.rich-text-editor-wrapper .toastui-editor-contents h6,
+.rich-text-editor-wrapper .ProseMirror h1,
+.rich-text-editor-wrapper .ProseMirror h2,
+.rich-text-editor-wrapper .ProseMirror h3,
+.rich-text-editor-wrapper .ProseMirror h4,
+.rich-text-editor-wrapper .ProseMirror h5,
+.rich-text-editor-wrapper .ProseMirror h6 {
+  color: #ffffff;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  border-bottom: none;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents strong,
+.rich-text-editor-wrapper .ProseMirror strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents em,
+.rich-text-editor-wrapper .ProseMirror em {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Lists */
+.rich-text-editor-wrapper .toastui-editor-contents ul,
+.rich-text-editor-wrapper .toastui-editor-contents ol,
+.rich-text-editor-wrapper .ProseMirror ul,
+.rich-text-editor-wrapper .ProseMirror ol {
+  color: rgba(255, 255, 255, 0.9);
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents li,
+.rich-text-editor-wrapper .ProseMirror li {
+  margin-bottom: 0.25em;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents ul li::marker,
+.rich-text-editor-wrapper .ProseMirror ul li::marker {
+  color: #5b6cff;
+}
+
+.rich-text-editor-wrapper .toastui-editor-contents ol li::marker,
+.rich-text-editor-wrapper .ProseMirror ol li::marker {
+  color: #5b6cff;
+}
+
+/* Horizontal rule */
+.rich-text-editor-wrapper .toastui-editor-contents hr,
+.rich-text-editor-wrapper .ProseMirror hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 1em 0;
+}
+
+/* Focus state */
+.rich-text-editor-wrapper .toastui-editor-defaultUI:focus-within {
+  border-color: #5b6cff;
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
+}
+
+/* Tab switcher (Preview tab) */
+.rich-text-editor-wrapper .toastui-editor-tabs {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rich-text-editor-wrapper .toastui-editor-tabs .tab-item {
+  color: rgba(255, 255, 255, 0.6);
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.rich-text-editor-wrapper .toastui-editor-tabs .tab-item:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.rich-text-editor-wrapper .toastui-editor-tabs .tab-item.active {
+  color: #ffffff;
+  background: rgba(91, 108, 255, 0.2);
+  border-bottom: 2px solid #5b6cff;
+}
+
+/* Markdown preview */
+.rich-text-editor-wrapper .toastui-editor-md-preview {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px;
+}
+
+.rich-text-editor-wrapper .toastui-editor-md-preview .toastui-editor-contents {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Scrollbar */
+.rich-text-editor-wrapper .toastui-editor-main::-webkit-scrollbar,
+.rich-text-editor-wrapper .ProseMirror::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rich-text-editor-wrapper .toastui-editor-main::-webkit-scrollbar-track,
+.rich-text-editor-wrapper .ProseMirror::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rich-text-editor-wrapper .toastui-editor-main::-webkit-scrollbar-thumb,
+.rich-text-editor-wrapper .ProseMirror::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.rich-text-editor-wrapper .toastui-editor-main::-webkit-scrollbar-thumb:hover,
+.rich-text-editor-wrapper .ProseMirror::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Disabled state */
+.rich-text-editor-wrapper.rich-text-editor-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.rich-text-editor-wrapper.rich-text-editor-disabled .toastui-editor-defaultUI {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Popup/Dropdown styling (for heading selector) */
+.toastui-editor-popup {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.toastui-editor-popup-body {
+  background: transparent !important;
+}
+
+.toastui-editor-popup button {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background: transparent !important;
+  transition: all 0.2s !important;
+}
+
+.toastui-editor-popup button:hover {
+  background: rgba(91, 108, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Heading dropdown items */
+.toastui-editor-dropdown-toolbar {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+/* Selection styling */
+.rich-text-editor-wrapper .ProseMirror ::selection {
+  background: rgba(91, 108, 255, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .rich-text-editor-wrapper .toastui-editor-toolbar {
+    padding: 6px 8px;
+    flex-wrap: wrap;
+  }
+  
+  .rich-text-editor-wrapper .toastui-editor-toolbar-icons {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .rich-text-editor-wrapper .toastui-editor-contents,
+  .rich-text-editor-wrapper .ProseMirror {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
