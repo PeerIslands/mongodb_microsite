@@ -198,7 +198,7 @@ const Header = () => {
                 )}
               </div>
             )}
-            <button className="demo-button">Demo</button>
+            <button className="demo-button">Contact Us</button>
           </div>
         </div>
       </header>

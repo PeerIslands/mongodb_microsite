@@ -144,6 +144,96 @@
   margin: 0;
 }
 
+/* Markdown Content Styles */
+.case-study-detail__markdown-content {
+  /* Paragraphs */
+}
+
+.case-study-detail__markdown-content p {
+  margin: 0 0 0.75em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.case-study-detail__markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Headings */
+.case-study-detail__markdown-content h1,
+.case-study-detail__markdown-content h2,
+.case-study-detail__markdown-content h3,
+.case-study-detail__markdown-content h4,
+.case-study-detail__markdown-content h5,
+.case-study-detail__markdown-content h6 {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 1em 0 0.5em;
+}
+
+.case-study-detail__markdown-content h1:first-child,
+.case-study-detail__markdown-content h2:first-child,
+.case-study-detail__markdown-content h3:first-child,
+.case-study-detail__markdown-content h4:first-child,
+.case-study-detail__markdown-content h5:first-child,
+.case-study-detail__markdown-content h6:first-child {
+  margin-top: 0;
+}
+
+.case-study-detail__markdown-content h1 { font-size: 1.5rem; }
+.case-study-detail__markdown-content h2 { font-size: 1.25rem; }
+.case-study-detail__markdown-content h3 { font-size: 1.125rem; }
+.case-study-detail__markdown-content h4 { font-size: 1rem; }
+.case-study-detail__markdown-content h5 { font-size: 0.9375rem; }
+.case-study-detail__markdown-content h6 { font-size: 0.875rem; }
+
+/* Bold and Italic */
+.case-study-detail__markdown-content strong {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.case-study-detail__markdown-content em {
+  font-style: italic;
+}
+
+/* Strikethrough */
+.case-study-detail__markdown-content del {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Lists */
+.case-study-detail__markdown-content ul,
+.case-study-detail__markdown-content ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.5em;
+}
+
+.case-study-detail__markdown-content li {
+  margin-bottom: 0.375em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.case-study-detail__markdown-content li:last-child {
+  margin-bottom: 0;
+}
+
+.case-study-detail__markdown-content ul li::marker {
+  color: #5b6cff;
+}
+
+.case-study-detail__markdown-content ol li::marker {
+  color: #5b6cff;
+}
+
+/* Horizontal Rule */
+.case-study-detail__markdown-content hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 1.5em 0;
+}
+
 /* Business Impact List */
 .case-study-detail__impact-list {
   list-style: none;

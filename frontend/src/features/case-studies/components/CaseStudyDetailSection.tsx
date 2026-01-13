@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import type { CaseStudyDetail } from '@/types/models/case-study';
+import { markdownToHtml } from '@/utils/markdown';
 import '@/styles/features/case-studies/CaseStudyDetailSection.css';
 
 interface CaseStudyDetailSectionProps {
@@ -45,10 +46,10 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
     return null;
   }
 
-  // Parse business outcomes (stored as pipe-separated string)
-  const businessOutcomes = caseStudy.business_outcomes
-    ? caseStudy.business_outcomes.split('|').filter(Boolean)
-    : [];
+  // Convert markdown content to HTML
+  const challengesHtml = markdownToHtml(caseStudy.challenges || '');
+  const approachHtml = markdownToHtml(caseStudy.approach || '');
+  const businessOutcomesHtml = markdownToHtml(caseStudy.business_outcomes || '');
 
   return (
     <section
@@ -118,29 +119,37 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
         {/* Content Sections - Full Width */}
         <div className="case-study-detail__content">
           {/* Challenge Section */}
-          <div className="case-study-detail__section">
-            <h3 className="case-study-detail__section-title">Challenge</h3>
-            <p className="case-study-detail__section-text">{caseStudy.challenges}</p>
-          </div>
+          {challengesHtml && (
+            <div className="case-study-detail__section">
+              <h3 className="case-study-detail__section-title">Challenge</h3>
+              <div 
+                className="case-study-detail__section-text case-study-detail__markdown-content"
+                dangerouslySetInnerHTML={{ __html: challengesHtml }}
+              />
+            </div>
+          )}
 
           {/* Solution Section */}
-          <div className="case-study-detail__section">
-            <h3 className="case-study-detail__section-title">Solution</h3>
-            <p className="case-study-detail__section-text">{caseStudy.approach}</p>
-          </div>
+          {approachHtml && (
+            <div className="case-study-detail__section">
+              <h3 className="case-study-detail__section-title">Solution</h3>
+              <div 
+                className="case-study-detail__section-text case-study-detail__markdown-content"
+                dangerouslySetInnerHTML={{ __html: approachHtml }}
+              />
+            </div>
+          )}
 
           {/* Business Impact Section */}
-          <div className="case-study-detail__section">
-            <h3 className="case-study-detail__section-title">Business Impact</h3>
-            <ul className="case-study-detail__impact-list">
-              {businessOutcomes.map((outcome, index) => (
-                <li key={index} className="case-study-detail__impact-item">
-                  <span className="case-study-detail__impact-dot" />
-                  {outcome}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {businessOutcomesHtml && (
+            <div className="case-study-detail__section">
+              <h3 className="case-study-detail__section-title">Business Impact</h3>
+              <div 
+                className="case-study-detail__section-text case-study-detail__markdown-content"
+                dangerouslySetInnerHTML={{ __html: businessOutcomesHtml }}
+              />
+            </div>
+          )}
 
           {/* Testimonial */}
           {caseStudy.testimonial_quote && (

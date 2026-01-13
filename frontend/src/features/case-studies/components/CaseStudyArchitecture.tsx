@@ -215,7 +215,7 @@ const CaseStudyArchitecture = ({
                   modules={[Navigation]}
                   spaceBetween={24}
                   slidesPerView={1}
-                  loop={caseStudies.length > 3}
+                  loop={caseStudies.length > 2}
                   onSwiper={(swiper) => {
                     swiperRef.current = swiper;
                   }}
@@ -229,12 +229,12 @@ const CaseStudyArchitecture = ({
                       spaceBetween: 24,
                     },
                     1024: {
-                      slidesPerView: 2.5,
+                      slidesPerView: 2,
                       spaceBetween: 24,
                     },
                     1280: {
-                      slidesPerView: 3,
-                      spaceBetween: 24,
+                      slidesPerView: 2,
+                      spaceBetween: 32,
                     },
                   }}
                   className="featured-stories__swiper"
