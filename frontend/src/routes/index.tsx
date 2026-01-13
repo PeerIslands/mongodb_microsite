@@ -11,6 +11,7 @@ const AcceleratorsPage = lazy(() => import('@/pages/AcceleratorsPage'));
 const AcceleratorDetailPage = lazy(() => import('@/pages/AcceleratorDetailPage'));
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
 const CaseStudyDetailPage = lazy(() => import('@/pages/CaseStudyDetailPage'));
+const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
@@ -91,6 +92,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <CaseStudyDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.INSIGHTS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <BlogsPage />
               </Suspense>
             ),
           },

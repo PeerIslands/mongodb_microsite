@@ -52,8 +52,8 @@ const NotFoundPage = () => {
           <div className="links-grid">
             <Link to="/" className="page-link">Home</Link>
             <Link to="/accelerators" className="page-link">Accelerators</Link>
-            <Link to="/case-studies" className="page-link">Case Studies</Link>
             <Link to="/success-stories" className="page-link">Success Stories</Link>
+            <Link to="/insights" className="page-link">Insights</Link>
           </div>
         </div>
       </div>

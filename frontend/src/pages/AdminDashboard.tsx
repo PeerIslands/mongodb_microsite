@@ -5,17 +5,21 @@ import CaseStudyList from '../components/admin/CaseStudyList';
 import CaseStudyForm from '../components/admin/CaseStudyForm';
 import AcceleratorList from '../components/admin/AcceleratorList';
 import AcceleratorForm from '../components/admin/AcceleratorForm';
+import BlogList from '../components/admin/BlogList';
+import BlogForm from '../components/admin/BlogForm';
 import AnalyticsDashboard from '../components/admin/AnalyticsDashboard';
 
-type MainView = 'cases' | 'accelerators' | 'analytics';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'analytics';
 type SubView = 'list' | 'add' | 'edit';
 
 const AdminDashboard = () => {
   const [mainView, setMainView] = useState<MainView>('cases');
   const [caseView, setCaseView] = useState<SubView>('list');
   const [accView, setAccView] = useState<SubView>('list');
+  const [blogView, setBlogView] = useState<SubView>('list');
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
+  const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
 
   // Case Study handlers
   const handleCaseAddNew = () => {
@@ -49,6 +53,22 @@ const AdminDashboard = () => {
     setEditingAccId(null);
   };
 
+  // Blog handlers
+  const handleBlogAddNew = () => {
+    setEditingBlogId(null);
+    setBlogView('add');
+  };
+
+  const handleBlogEdit = (id: string) => {
+    setEditingBlogId(id);
+    setBlogView('edit');
+  };
+
+  const handleBlogBackToList = () => {
+    setBlogView('list');
+    setEditingBlogId(null);
+  };
+
   // Main view change
   const handleMainViewChange = (view: MainView) => {
     setMainView(view);
@@ -58,6 +78,9 @@ const AdminDashboard = () => {
     } else if (view === 'accelerators') {
       setAccView('list');
       setEditingAccId(null);
+    } else if (view === 'blogs') {
+      setBlogView('list');
+      setEditingBlogId(null);
     }
   };
 
@@ -77,6 +100,12 @@ const AdminDashboard = () => {
             onClick={() => handleMainViewChange('accelerators')}
           >
             🚀 Accelerators
+          </button>
+          <button
+            className={`main-nav-tab ${mainView === 'blogs' ? 'active' : ''}`}
+            onClick={() => handleMainViewChange('blogs')}
+          >
+            📝 Blogs
           </button>
           <button
             className={`main-nav-tab ${mainView === 'analytics' ? 'active' : ''}`}
@@ -112,6 +141,21 @@ const AdminDashboard = () => {
                 editingId={editingAccId} 
                 onCancel={handleAccBackToList}
                 onSuccess={handleAccBackToList}
+              />
+            )}
+          </>
+        )}
+        
+        {mainView === 'blogs' && (
+          <>
+            {blogView === 'list' && (
+              <BlogList onAddNew={handleBlogAddNew} onEdit={handleBlogEdit} />
+            )}
+            {(blogView === 'add' || blogView === 'edit') && (
+              <BlogForm 
+                editingId={editingBlogId} 
+                onCancel={handleBlogBackToList}
+                onSuccess={handleBlogBackToList}
               />
             )}
           </>
