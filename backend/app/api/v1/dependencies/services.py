@@ -9,10 +9,12 @@ from functools import lru_cache
 from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
 from app.api.v1.repositories.totp_repository import TOTPRepository
+from app.api.v1.repositories.blog_repository import BlogRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.password_reset_service import PasswordResetService
+from app.api.v1.services.blog_service import BlogService
 from app.core.database import Database
 
 
@@ -51,6 +53,17 @@ def get_totp_repository() -> TOTPRepository:
     """
     db = Database.get_db()
     return TOTPRepository(db)
+
+
+def get_blog_repository() -> BlogRepository:
+    """
+    Get BlogRepository instance with MongoDB connection.
+    
+    Returns:
+        BlogRepository instance
+    """
+    db = Database.get_db()
+    return BlogRepository(db)
 
 
 # =============================================================================
@@ -102,4 +115,15 @@ def get_password_reset_service() -> PasswordResetService:
     user_repository = get_user_repository()
     totp_repository = get_totp_repository()
     return PasswordResetService(user_repository, totp_repository)
+
+
+def get_blog_service() -> BlogService:
+    """
+    Get BlogService instance.
+    
+    Returns:
+        BlogService instance with injected repository
+    """
+    repository = get_blog_repository()
+    return BlogService(repository)
 
