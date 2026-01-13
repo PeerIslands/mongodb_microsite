@@ -18,6 +18,12 @@
     "react-router-dom": "^6.20.0",
     "swiper": "^12.0.3"
   },
+  "overrides": {
+    "@toast-ui/react-editor": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
