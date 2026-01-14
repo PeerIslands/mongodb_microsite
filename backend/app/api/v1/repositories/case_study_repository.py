@@ -152,6 +152,25 @@ class CaseStudyRepository:
             doc["id"] = str(doc["_id"])
         return doc
 
+    async def find_many(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Find multiple case studies with a custom query filter.
+        
+        Args:
+            query: MongoDB query filter
+            
+        Returns:
+            List of case study documents matching the query
+        """
+        cursor = self._collection.find(query)
+        
+        results = []
+        async for doc in cursor:
+            doc["id"] = str(doc["_id"])
+            results.append(doc)
+        
+        return results
+
     async def update(
         self, case_id: str, update_data: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:

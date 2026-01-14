@@ -8,6 +8,15 @@ export interface CaseStudyResponse {
   message: string;
 }
 
+// Testimonial data from case studies
+export interface TestimonialData {
+  id: string;
+  company_name: string;
+  testimonial_quote: string;
+  testimonial_author: string;
+  testimonial_position: string;
+}
+
 export const caseStudiesService = {
   // Get all case studies (returns full detail including metrics)
   getAll: async (params?: { industry?: string; status?: string; featured?: boolean }) => {
@@ -44,6 +53,12 @@ export const caseStudiesService = {
   // Delete case study by ID
   delete: async (id: string) => {
     const response = await apiClient.delete<{ id: string; message: string }>(`/api/v1/case-studies/${id}`);
+    return response.data;
+  },
+
+  // Get all testimonials from published case studies
+  getTestimonials: async () => {
+    const response = await apiClient.get<TestimonialData[]>('/api/v1/case-studies/testimonials');
     return response.data;
   },
 };
