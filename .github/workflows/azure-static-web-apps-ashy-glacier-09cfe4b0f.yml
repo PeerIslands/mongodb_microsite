@@ -58,31 +58,44 @@ jobs:
           VITE_AZURE_BLOB_BASE_URL: ${{ vars.VITE_AZURE_BLOB_BASE_URL || 'https://mmsuploads.blob.core.windows.net/casestudies' }}
         run: npm run build
 
-      - name: Verify build output
+      - name: Verify build output and prepare for deployment
         working-directory: ./frontend
         run: |
           echo "✓ Checking build output..."
           ls -lah dist/
           
-          # Verify staticwebapp.config.json exists
+          # Verify and copy staticwebapp.config.json
           if [ -f "dist/staticwebapp.config.json" ]; then
             echo "✓ staticwebapp.config.json found in dist/"
           else
-            echo "⚠ staticwebapp.config.json NOT found, copying manually..."
+            echo "⚠ staticwebapp.config.json NOT found in dist/, copying..."
             cp staticwebapp.config.json dist/
           fi
+          
+          # Also place config in root of frontend folder (Azure might look here too)
+          echo "✓ Ensuring config is in frontend root as well..."
+          cp staticwebapp.config.json .
+          
+          # Show config content for debugging
+          echo "📄 Config file content (first 20 lines):"
+          head -20 staticwebapp.config.json
           
           # Verify index.html exists
           if [ -f "dist/index.html" ]; then
             echo "✓ index.html found"
+            # Check how modules are loaded
+            echo "📄 Module script tags in index.html:"
+            grep -i "type=\"module\"" dist/index.html || echo "No module scripts found"
           else
             echo "❌ index.html NOT found!"
             exit 1
           fi
           
-          # Show JS files MIME type will be handled by config
+          # Show JS files
           echo "✓ JavaScript modules in assets:"
-          ls -lh dist/assets/*.js | head -5 || echo "No JS files found"
+          ls -lh dist/assets/*.js 2>/dev/null | head -5 || echo "No JS files found"
+          
+          echo "✓ Build verification complete!"
 
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
