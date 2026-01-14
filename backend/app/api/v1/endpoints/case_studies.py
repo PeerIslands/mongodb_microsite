@@ -12,7 +12,7 @@ Field naming convention: snake_case (matching frontend requirements)
 
 File Storage:
 - PDFs are uploaded to Azure Blob Storage
-- Folder structure: {case_id}/{field_name}.{ext}
+- Folder structure: casestudies/{case_id}/{field_name}.{ext}
 - MongoDB stores the blob path, full URL is constructed at retrieval time
 """
 
@@ -49,7 +49,8 @@ def is_valid_file(f) -> bool:
 
 async def upload_file_to_blob(
     file: UploadFile,
-    case_id: str,
+    category: str,
+    item_id: str,
     field_name: str,
     blob_service: AzureBlobService,
 ) -> str:
@@ -58,12 +59,13 @@ async def upload_file_to_blob(
     
     Args:
         file: The uploaded file
-        case_id: Case study ID (used in folder name)
+        category: Category folder - "casestudies", "accelerators", or "blogs"
+        item_id: Item ID (case study ID, accelerator ID, or blog ID)
         field_name: Field name (pdf_url, etc.)
         blob_service: Azure Blob Service instance
         
     Returns:
-        Blob path to store in MongoDB
+        Blob path to store in MongoDB (full URL constructed on GET)
     """
     content = await file.read()
     
@@ -75,7 +77,8 @@ async def upload_file_to_blob(
     
     blob_path = await blob_service.upload_file(
         file_content=content,
-        slug=case_id,  # Using case_id instead of slug for folder path
+        category=category,
+        item_id=item_id,
         field_name=field_name,
         original_filename=file.filename,
         content_type=mime_type,
@@ -137,7 +140,7 @@ def parse_metrics(metrics_json: str) -> List[MetricItem]:
     - pdf_file: PDF only (max 10MB)
     
     **Storage format:** Files are uploaded to Azure Blob with folder structure:
-    `{case_id}/{field_name}.{ext}`
+    `casestudies/{case_id}/{field_name}.{ext}`
     
     **Metrics format:** JSON array with max 5 items:
     `[{"label": "Time Reduction", "value": "50%"}, {"label": "Accuracy", "value": "99%"}]`
@@ -212,11 +215,11 @@ async def create_case_study(
     result = await service.create_case_study(request)
     case_id = result.id
     
-    # Upload PDF file if provided (using case_id for folder path)
+    # Upload PDF file if provided (using category folder structure)
     if is_valid_file(pdf_file):
         blob_service = get_azure_blob_service()
         pdf_blob_path = await upload_file_to_blob(
-            pdf_file, case_id, "pdf_url", blob_service
+            pdf_file, "casestudies", case_id, "pdf_url", blob_service
         )
         # Update the case study with the PDF path
         update_request = UpdateCaseStudyRequest(pdf_url=pdf_blob_path)
@@ -432,9 +435,9 @@ async def update_case_study(
         # Delete old file if exists
         if existing_blob_paths.get("pdf_url"):
             await blob_service.delete_file(existing_blob_paths["pdf_url"])
-        # Upload new file (using case_id for folder path)
+        # Upload new file (using category folder structure)
         update_data["pdf_url"] = await upload_file_to_blob(
-            pdf_file, case_id, "pdf_url", blob_service
+            pdf_file, "casestudies", case_id, "pdf_url", blob_service
         )
     
     # Create update request
