@@ -1,13 +1,22 @@
 """
-Azure Blob Storage Service - Handles PDF uploads to Azure Blob Storage.
+Azure Blob Storage Service - Handles file uploads to Azure Blob Storage.
 
-This service uploads PDF files to Azure Blob Storage and returns the blob path
+This service uploads PDF, video, and image files to Azure Blob Storage and returns the blob path
 that can be stored in MongoDB. Full URLs are constructed at retrieval time.
 
-Supported file types: PDF only
+Supported file types:
+- PDF: application/pdf
+- Video: video/mp4, video/webm, video/quicktime, video/x-msvideo
+- Image: image/jpeg, image/png, image/webp, image/gif
+
+Folder Structure:
+- casestudies/{item_id}/{field_name}.pdf
+- accelerators/{item_id}/{field_name}.pdf
+- accelerators/{item_id}/{field_name}.mp4 (or other video extension)
+- accelerators/{item_id}/{field_name}.jpg (or other image extension)
 """
 
-from typing import Optional
+from typing import Optional, Literal
 from urllib.parse import urlparse
 import httpx
 
@@ -15,12 +24,50 @@ from app.core.config import settings
 
 
 # Allowed content types for PDF files
-ALLOWED_CONTENT_TYPES = {
+ALLOWED_PDF_CONTENT_TYPES = {
     "application/pdf",
 }
 
-# Maximum file size: 10MB
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Allowed content types for video files
+ALLOWED_VIDEO_CONTENT_TYPES = {
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",  # .mov
+    "video/x-msvideo",  # .avi
+}
+
+# Allowed content types for image files
+ALLOWED_IMAGE_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
+
+# Video file extensions mapping
+VIDEO_EXTENSIONS = {
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/quicktime": ".mov",
+    "video/x-msvideo": ".avi",
+}
+
+# Image file extensions mapping
+IMAGE_EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+
+# Maximum file sizes
+MAX_PDF_SIZE = 10 * 1024 * 1024      # 10MB for PDFs
+MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos
+MAX_IMAGE_SIZE = 5 * 1024 * 1024     # 5MB for images
+
+# Valid categories for folder organization (blogs not included - stored in MongoDB only)
+CategoryType = Literal["casestudies", "accelerators"]
+VALID_CATEGORIES = ["casestudies", "accelerators"]
 
 
 class AzureBlobServiceError(Exception):
@@ -30,10 +77,15 @@ class AzureBlobServiceError(Exception):
 
 class AzureBlobService:
     """
-    Service for uploading and managing PDF files in Azure Blob Storage.
+    Service for uploading and managing files in Azure Blob Storage.
     
     Uses SAS URL for authentication (no Azure SDK required).
-    Only accepts PDF files.
+    Supports PDF and video files.
+    
+    Folder structure: {category}/{item_id}/{field_name}.{ext}
+    Categories: casestudies, accelerators
+    
+    Note: Blogs are stored in MongoDB only (no Azure Blob uploads).
     """
 
     def __init__(self):
@@ -72,7 +124,7 @@ class AzureBlobService:
             AzureBlobServiceError: If file is not a valid PDF
         """
         # Check content type
-        if content_type not in ALLOWED_CONTENT_TYPES:
+        if content_type not in ALLOWED_PDF_CONTENT_TYPES:
             raise AzureBlobServiceError(
                 f"Invalid file type: {content_type}. Only PDF files are allowed."
             )
@@ -84,9 +136,9 @@ class AzureBlobService:
             )
         
         # Check file size
-        if len(file_content) > MAX_FILE_SIZE:
+        if len(file_content) > MAX_PDF_SIZE:
             raise AzureBlobServiceError(
-                f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)}MB."
+                f"File too large. Maximum size is {MAX_PDF_SIZE // (1024 * 1024)}MB."
             )
         
         # Check PDF magic bytes (PDF files start with %PDF-)
@@ -95,10 +147,71 @@ class AzureBlobService:
                 "Invalid PDF file. File does not appear to be a valid PDF."
             )
 
+    def _validate_video_file(self, content_type: str, file_content: bytes, original_filename: str) -> str:
+        """
+        Validate that the file is a valid video.
+        
+        Args:
+            content_type: MIME content type
+            file_content: Raw file bytes
+            original_filename: Original filename
+            
+        Returns:
+            File extension for the video (e.g., ".mp4")
+            
+        Raises:
+            AzureBlobServiceError: If file is not a valid video
+        """
+        # Check content type
+        if content_type not in ALLOWED_VIDEO_CONTENT_TYPES:
+            raise AzureBlobServiceError(
+                f"Invalid file type: {content_type}. Allowed video types: mp4, webm, mov, avi."
+            )
+        
+        # Check file size
+        if len(file_content) > MAX_VIDEO_SIZE:
+            raise AzureBlobServiceError(
+                f"Video too large. Maximum size is {MAX_VIDEO_SIZE // (1024 * 1024)}MB."
+            )
+        
+        # Return the appropriate extension
+        return VIDEO_EXTENSIONS.get(content_type, ".mp4")
+
+    def _validate_image_file(self, content_type: str, file_content: bytes, original_filename: str) -> str:
+        """
+        Validate that the file is a valid image.
+        
+        Args:
+            content_type: MIME content type
+            file_content: Raw file bytes
+            original_filename: Original filename
+            
+        Returns:
+            File extension for the image (e.g., ".jpg")
+            
+        Raises:
+            AzureBlobServiceError: If file is not a valid image
+        """
+        # Check content type
+        if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
+            raise AzureBlobServiceError(
+                f"Invalid file type: {content_type}. Allowed image types: jpeg, png, webp, gif."
+            )
+        
+        # Check file size
+        if len(file_content) > MAX_IMAGE_SIZE:
+            raise AzureBlobServiceError(
+                f"Image too large. Maximum size is {MAX_IMAGE_SIZE // (1024 * 1024)}MB."
+            )
+        
+        # Return the appropriate extension
+        return IMAGE_EXTENSIONS.get(content_type, ".jpg")
+
     async def upload_file(
         self,
         file_content: bytes,
-        slug: str,
+        category: CategoryType,
+        item_id: str,
         field_name: str,
         original_filename: str,
         content_type: str,
@@ -106,24 +219,31 @@ class AzureBlobService:
         """
         Upload a PDF file to Azure Blob Storage.
         
-        Creates folder structure: {case_id}/{field_name}.pdf
+        Creates folder structure: {category}/{item_id}/{field_name}.pdf
         
         Args:
             file_content: Raw file bytes
-            slug: Case study ID (used as folder name)
+            category: Category folder - "casestudies", "accelerators", or "blogs"
+            item_id: Item ID (case study ID, accelerator ID, or blog ID)
             field_name: Field name (pdf_url)
             original_filename: Original filename for validation
             content_type: MIME content type (must be application/pdf)
             
         Returns:
-            Blob path (without base URL) e.g., "abc123/pdf_url.pdf"
+            Blob path (without base URL) e.g., "casestudies/abc123/pdf_url.pdf"
             
         Raises:
-            AzureBlobServiceError: If file is not a valid PDF
+            AzureBlobServiceError: If file is not a valid PDF or invalid category
             ValueError: If Azure Blob SAS URL not configured
         """
         if not self._sas_url:
             raise ValueError("Azure Blob SAS URL not configured")
+        
+        # Validate category
+        if category not in VALID_CATEGORIES:
+            raise AzureBlobServiceError(
+                f"Invalid category: {category}. Must be one of {VALID_CATEGORIES}"
+            )
         
         # Validate PDF file
         self._validate_pdf_file(content_type, file_content, original_filename)
@@ -131,8 +251,8 @@ class AzureBlobService:
         # Create standardized filename: {field_name}.pdf
         standardized_filename = f"{field_name}.pdf"
         
-        # Full blob path: {case_id}/{field_name}.pdf
-        blob_path = f"{slug}/{standardized_filename}"
+        # Full blob path: {category}/{item_id}/{field_name}.pdf
+        blob_path = f"{category}/{item_id}/{standardized_filename}"
         
         # Construct upload URL with SAS token
         upload_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
@@ -150,6 +270,142 @@ class AzureBlobService:
                 content=file_content,
                 headers=headers,
                 timeout=60.0,  # 60 second timeout for large files
+            )
+            response.raise_for_status()
+        
+        return blob_path
+
+    async def upload_video(
+        self,
+        file_content: bytes,
+        category: CategoryType,
+        item_id: str,
+        field_name: str,
+        original_filename: str,
+        content_type: str,
+    ) -> str:
+        """
+        Upload a video file to Azure Blob Storage.
+        
+        Creates folder structure: {category}/{item_id}/{field_name}.{ext}
+        
+        Args:
+            file_content: Raw file bytes
+            category: Category folder - "casestudies" or "accelerators"
+            item_id: Item ID (case study ID or accelerator ID)
+            field_name: Field name (video_url)
+            original_filename: Original filename for validation
+            content_type: MIME content type (must be a video type)
+            
+        Returns:
+            Blob path (without base URL) e.g., "accelerators/abc123/video_url.mp4"
+            
+        Raises:
+            AzureBlobServiceError: If file is not a valid video or invalid category
+            ValueError: If Azure Blob SAS URL not configured
+        """
+        if not self._sas_url:
+            raise ValueError("Azure Blob SAS URL not configured")
+        
+        # Validate category
+        if category not in VALID_CATEGORIES:
+            raise AzureBlobServiceError(
+                f"Invalid category: {category}. Must be one of {VALID_CATEGORIES}"
+            )
+        
+        # Validate video file and get extension
+        file_extension = self._validate_video_file(content_type, file_content, original_filename)
+        
+        # Create standardized filename: {field_name}.{ext}
+        standardized_filename = f"{field_name}{file_extension}"
+        
+        # Full blob path: {category}/{item_id}/{field_name}.{ext}
+        blob_path = f"{category}/{item_id}/{standardized_filename}"
+        
+        # Construct upload URL with SAS token
+        upload_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        
+        # Set appropriate content type header
+        headers = {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": content_type,
+        }
+        
+        # Upload file using httpx with longer timeout for videos
+        async with httpx.AsyncClient() as client:
+            response = await client.put(
+                upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=300.0,  # 5 minute timeout for large video files
+            )
+            response.raise_for_status()
+        
+        return blob_path
+
+    async def upload_image(
+        self,
+        file_content: bytes,
+        category: CategoryType,
+        item_id: str,
+        field_name: str,
+        original_filename: str,
+        content_type: str,
+    ) -> str:
+        """
+        Upload an image file to Azure Blob Storage.
+        
+        Creates folder structure: {category}/{item_id}/{field_name}.{ext}
+        
+        Args:
+            file_content: Raw file bytes
+            category: Category folder - "casestudies" or "accelerators"
+            item_id: Item ID (case study ID or accelerator ID)
+            field_name: Field name (thumbnail_url)
+            original_filename: Original filename for validation
+            content_type: MIME content type (must be an image type)
+            
+        Returns:
+            Blob path (without base URL) e.g., "accelerators/abc123/thumbnail_url.jpg"
+            
+        Raises:
+            AzureBlobServiceError: If file is not a valid image or invalid category
+            ValueError: If Azure Blob SAS URL not configured
+        """
+        if not self._sas_url:
+            raise ValueError("Azure Blob SAS URL not configured")
+        
+        # Validate category
+        if category not in VALID_CATEGORIES:
+            raise AzureBlobServiceError(
+                f"Invalid category: {category}. Must be one of {VALID_CATEGORIES}"
+            )
+        
+        # Validate image file and get extension
+        file_extension = self._validate_image_file(content_type, file_content, original_filename)
+        
+        # Create standardized filename: {field_name}.{ext}
+        standardized_filename = f"{field_name}{file_extension}"
+        
+        # Full blob path: {category}/{item_id}/{field_name}.{ext}
+        blob_path = f"{category}/{item_id}/{standardized_filename}"
+        
+        # Construct upload URL with SAS token
+        upload_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        
+        # Set appropriate content type header
+        headers = {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": content_type,
+        }
+        
+        # Upload file using httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.put(
+                upload_url,
+                content=file_content,
+                headers=headers,
+                timeout=60.0,  # 60 second timeout for images
             )
             response.raise_for_status()
         

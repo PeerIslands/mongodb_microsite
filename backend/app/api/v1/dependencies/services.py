@@ -2,6 +2,7 @@
 Dependency injection for services.
 Provides singleton instances of services for FastAPI endpoints.
 Updated to include TOTP repository for MFA support.
+Updated to include Accelerator repository and service.
 """
 
 from functools import lru_cache
@@ -10,11 +11,13 @@ from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
 from app.api.v1.repositories.totp_repository import TOTPRepository
 from app.api.v1.repositories.blog_repository import BlogRepository
+from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.password_reset_service import PasswordResetService
 from app.api.v1.services.blog_service import BlogService
+from app.api.v1.services.accelerator_service import AcceleratorService
 from app.core.database import Database
 
 
@@ -64,6 +67,17 @@ def get_blog_repository() -> BlogRepository:
     """
     db = Database.get_db()
     return BlogRepository(db)
+
+
+def get_accelerator_repository() -> AcceleratorRepository:
+    """
+    Get AcceleratorRepository instance with MongoDB connection.
+    
+    Returns:
+        AcceleratorRepository instance
+    """
+    db = Database.get_db()
+    return AcceleratorRepository(db)
 
 
 # =============================================================================
@@ -126,4 +140,15 @@ def get_blog_service() -> BlogService:
     """
     repository = get_blog_repository()
     return BlogService(repository)
+
+
+def get_accelerator_service() -> AcceleratorService:
+    """
+    Get AcceleratorService instance.
+    
+    Returns:
+        AcceleratorService instance with injected repository
+    """
+    repository = get_accelerator_repository()
+    return AcceleratorService(repository)
 
