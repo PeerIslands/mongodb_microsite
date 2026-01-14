@@ -7,7 +7,7 @@ CRUD operations and file management.
 Note: Blob paths are stored in MongoDB, full Azure URLs are constructed on GET.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict
 from datetime import datetime, timezone
 
 from app.api.v1.models.accelerator import (
@@ -21,10 +21,7 @@ from app.api.v1.models.accelerator import (
     MetricItem,
 )
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
-from app.api.v1.exceptions.accelerator_exceptions import (
-    AcceleratorNotFoundError,
-    AcceleratorValidationError,
-)
+from app.api.v1.exceptions.accelerator_exceptions import AcceleratorNotFoundError
 from app.api.v1.services.azure_blob_service import get_azure_blob_service
 
 

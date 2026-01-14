@@ -24,7 +24,6 @@ from app.api.v1.models.accelerator import (
     CreateAcceleratorResponse,
     UpdateAcceleratorRequest,
     UpdateAcceleratorResponse,
-    AcceleratorResponse,
     AcceleratorDetailResponse,
     DeleteAcceleratorResponse,
     MetricItem,
