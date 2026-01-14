@@ -15,10 +15,7 @@ from app.api.v1.models.blog import (
     DeleteBlogResponse,
 )
 from app.api.v1.repositories.blog_repository import BlogRepository
-from app.api.v1.exceptions.blog_exceptions import (
-    BlogNotFoundError,
-    BlogValidationError,
-)
+from app.api.v1.exceptions.blog_exceptions import BlogNotFoundError
 
 
 class BlogService:

@@ -20,7 +20,6 @@ from app.api.v1.models.blog import (
     BlogResponse,
     BlogDetailResponse,
     DeleteBlogResponse,
-    BlogStatus,
 )
 from app.api.v1.services.blog_service import BlogService
 from app.api.v1.dependencies.services import get_blog_service
