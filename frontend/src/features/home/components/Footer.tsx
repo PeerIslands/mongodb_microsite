@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import '@/styles/features/home/Footer.css';
 import image2 from '@/assets/image 2.png';
 import image3 from '@/assets/image 3.png';
@@ -6,6 +7,17 @@ import discordIcon from '@/assets/discord-icon.svg';
 import twitterIcon from '@/assets/twitter-icon.svg';
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  const handleBlogClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    navigate('/insights');
+    // Scroll to top after navigation
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  };
+
   return (
     <footer className="footer">
       <div className="footer-container">
@@ -45,7 +57,7 @@ const Footer = () => {
               <ul className="footer-nav-list">
                 <li><a href="#">Our team</a></li>
                 <li><a href="#">Our values</a></li>
-                <li><a href="#">Blog</a></li>
+                <li><a href="/insights" onClick={handleBlogClick}>Blog</a></li>
               </ul>
             </div>
             <div className="footer-nav-group">

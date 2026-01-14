@@ -85,6 +85,10 @@ const Header = () => {
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     e.preventDefault();
     navigate(path);
+    // Scroll to top after navigation
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
   };
 
   const getInitials = (email: string) => {
@@ -120,9 +124,12 @@ const Header = () => {
             >
               Success Stories
             </a>
-            <a href="#resources" className="nav-link">
-              Resources
-              <span className="dropdown-arrow"></span>
+            <a 
+              href={ROUTES.INSIGHTS} 
+              className="nav-link"
+              onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS)}
+            >
+              Insights
             </a>
             <a href="#about" className="nav-link">About</a>
             {isLoggedIn && isAdmin && (
