@@ -25,6 +25,14 @@ export default defineConfig(({ mode }) => {
           } catch (error) {
             console.warn('⚠ Could not copy staticwebapp.config.json:', error)
           }
+          
+          // Also copy routes.json as fallback (some Azure versions look for this)
+          try {
+            copyFileSync('staticwebapp.config.json', 'dist/routes.json')
+            console.log('✓ Copied routes.json to dist/ (fallback)')
+          } catch (error) {
+            // Silent fail - this is just a fallback
+          }
         }
       }
     ],
