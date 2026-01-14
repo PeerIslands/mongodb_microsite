@@ -5,7 +5,6 @@ Includes request/response models for blog operations.
 Field naming convention: snake_case (matching frontend requirements)
 """
 
-from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
