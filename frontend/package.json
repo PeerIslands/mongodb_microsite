@@ -22,7 +22,9 @@
     "@toast-ui/react-editor": {
       "react": "$react",
       "react-dom": "$react-dom"
-    }
+    },
+    "dompurify": "^3.3.1",
+    "esbuild": "^0.27.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
