@@ -138,6 +138,11 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+.form-hint.limit-reached {
+  color: #ffa500;
+  font-weight: 500;
+}
+
 /* Form Row - Side by side fields */
 .form-row {
   display: grid;

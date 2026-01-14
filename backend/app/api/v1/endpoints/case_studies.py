@@ -258,6 +258,54 @@ async def get_all_case_studies(
 
 
 @router.get(
+    "/testimonials/debug",
+    response_model=List[Dict[str, Any]],
+    summary="Debug All Case Studies Testimonial Data",
+    description="""
+    DEBUG: Show all case studies with their testimonial fields for debugging.
+    """,
+)
+async def debug_testimonials(
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> List[Dict[str, Any]]:
+    """DEBUG: Get all case studies with testimonial field info."""
+    all_case_studies = await service.get_all_case_studies()
+    
+    debug_data = []
+    for cs in all_case_studies:
+        debug_data.append({
+            'id': cs.id,
+            'company_name': cs.company_name,
+            'status': cs.status,
+            'testimonial_quote': cs.testimonial_quote or '[EMPTY]',
+            'testimonial_author': cs.testimonial_author or '[EMPTY]',
+            'testimonial_position': cs.testimonial_position or '[EMPTY]',
+            'has_quote': bool(cs.testimonial_quote),
+            'has_author': bool(cs.testimonial_author),
+        })
+    
+    return debug_data
+
+
+@router.get(
+    "/testimonials",
+    response_model=List[Dict[str, Any]],
+    summary="Get All Testimonials",
+    description="""
+    Retrieve testimonials from all published case studies that have testimonial data.
+    
+    **Returns:** List of testimonials with company information.
+    Only includes case studies that have both testimonial_quote and testimonial_author.
+    """,
+)
+async def get_testimonials(
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> List[Dict[str, Any]]:
+    """Get all testimonials from published case studies."""
+    return await service.get_testimonials()
+
+
+@router.get(
     "/{case_id}",
     response_model=CaseStudyDetailResponse,
     summary="Get Case Study by ID",
