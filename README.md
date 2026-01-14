@@ -72,3 +72,27 @@ poetry run isort app/
 - `GET /api/v1/health` - Health check endpoint
 - `GET /docs` - Interactive API documentation (Swagger UI)
 - `GET /redoc` - Alternative API documentation (ReDoc)
+
+## 🔒 Security
+
+This repository includes security features to prevent accidental credential leaks:
+
+- **Pre-commit Hook**: Automatically scans for credentials before allowing commits
+- **Enhanced .gitignore**: Comprehensive patterns to prevent committing sensitive files
+- **Documentation**: See [SECURITY.md](SECURITY.md) for detailed security guidelines
+
+### Quick Security Tips
+
+✅ **DO**:
+- Use environment variables for all credentials
+- Keep `.env` files in `.gitignore` (already configured)
+- Use `.env.example` for documentation
+- Commit only non-sensitive configuration
+
+❌ **DON'T**:
+- Hardcode passwords, API keys, or tokens in code
+- Commit `.env` files or private keys
+- Share credentials in code comments
+- Bypass the pre-commit hook without review
+
+For complete security guidelines, see **[SECURITY.md](SECURITY.md)**
