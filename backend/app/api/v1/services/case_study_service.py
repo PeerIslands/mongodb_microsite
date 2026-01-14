@@ -322,8 +322,8 @@ class CaseStudyService:
         # Get all published case studies with testimonials
         docs = await self._repository.find_many({
             'status': 'published',
-            'testimonial_quote': {'$exists': True, '$ne': '', '$ne': None},
-            'testimonial_author': {'$exists': True, '$ne': '', '$ne': None}
+            'testimonial_quote': {'$exists': True, '$nin': ['', None]},
+            'testimonial_author': {'$exists': True, '$nin': ['', None]}
         })
         
         print(f"🔍 Found {len(docs)} case studies with testimonial data")
