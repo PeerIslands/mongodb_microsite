@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { copyFileSync } from 'fs'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -12,7 +13,21 @@ export default defineConfig(({ mode }) => {
   }
   
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: 'copy-static-web-app-config',
+        closeBundle() {
+          // Copy staticwebapp.config.json to dist folder after build
+          try {
+            copyFileSync('staticwebapp.config.json', 'dist/staticwebapp.config.json')
+            console.log('✓ Copied staticwebapp.config.json to dist/')
+          } catch (error) {
+            console.warn('⚠ Could not copy staticwebapp.config.json:', error)
+          }
+        }
+      }
+    ],
     server: {
       port: 5173,
       open: true,

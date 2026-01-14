@@ -58,6 +58,32 @@ jobs:
           VITE_AZURE_BLOB_BASE_URL: ${{ vars.VITE_AZURE_BLOB_BASE_URL || 'https://mmsuploads.blob.core.windows.net/casestudies' }}
         run: npm run build
 
+      - name: Verify build output
+        working-directory: ./frontend
+        run: |
+          echo "✓ Checking build output..."
+          ls -lah dist/
+          
+          # Verify staticwebapp.config.json exists
+          if [ -f "dist/staticwebapp.config.json" ]; then
+            echo "✓ staticwebapp.config.json found in dist/"
+          else
+            echo "⚠ staticwebapp.config.json NOT found, copying manually..."
+            cp staticwebapp.config.json dist/
+          fi
+          
+          # Verify index.html exists
+          if [ -f "dist/index.html" ]; then
+            echo "✓ index.html found"
+          else
+            echo "❌ index.html NOT found!"
+            exit 1
+          fi
+          
+          # Show JS files MIME type will be handled by config
+          echo "✓ JavaScript modules in assets:"
+          ls -lh dist/assets/*.js | head -5 || echo "No JS files found"
+
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
 

@@ -19,9 +19,10 @@
   ],
   "mimeTypes": {
     ".json": "application/json",
-    ".js": "text/javascript",
-    ".mjs": "text/javascript",
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
     ".css": "text/css",
+    ".html": "text/html",
     ".svg": "image/svg+xml",
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -33,7 +34,8 @@
     ".woff2": "font/woff2",
     ".ttf": "font/ttf",
     ".eot": "application/vnd.ms-fontobject",
-    ".pdf": "application/pdf"
+    ".pdf": "application/pdf",
+    ".map": "application/json"
   },
   "globalHeaders": {
     "content-security-policy": "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*;",
