@@ -62,10 +62,10 @@ jobs:
         working-directory: ./frontend
         run: |
           echo "✓ Checking build output..."
-          ls -lah dist/
+          ls -lah build/
           
           # Verify index.html exists
-          if [ -f "dist/index.html" ]; then
+          if [ -f "build/index.html" ]; then
             echo "✓ index.html found"
           else
             echo "❌ index.html NOT found!"
@@ -82,7 +82,7 @@ jobs:
           
           # Show JS files
           echo "✓ JavaScript modules in assets:"
-          ls -lh dist/assets/*.js 2>/dev/null | head -5 || echo "No JS files found"
+          ls -lh build/assets/*.js 2>/dev/null | head -5 || echo "No JS files found"
           
           echo "✓ Build verification complete!"
 
@@ -107,7 +107,7 @@ jobs:
           ###### Repository/Build Configurations ######
           app_location: "./frontend"
           api_location: ""
-          output_location: "dist"
+          output_location: "build"
           skip_app_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######

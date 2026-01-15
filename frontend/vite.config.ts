@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      outDir: 'dist',
+      outDir: 'build',
       sourcemap: true,
       assetsDir: 'assets',
       rollupOptions: {
