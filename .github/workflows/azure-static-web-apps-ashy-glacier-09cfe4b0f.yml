@@ -74,10 +74,17 @@ jobs:
           
           # Verify staticwebapp.config.json exists in frontend root (Azure will read from here)
           if [ -f "staticwebapp.config.json" ]; then
-            echo "✓ staticwebapp.config.json found in frontend root (Azure will use this)"
+            echo "✓ staticwebapp.config.json found in frontend root"
           else
             echo "❌ staticwebapp.config.json NOT found in frontend root!"
             exit 1
+          fi
+          
+          # Verify staticwebapp.config.json is also in build directory (best practice)
+          if [ -f "build/staticwebapp.config.json" ]; then
+            echo "✓ staticwebapp.config.json found in build directory (best practice)"
+          else
+            echo "⚠️  staticwebapp.config.json NOT found in build directory (not critical, but recommended)"
           fi
           
           # Show JS files
