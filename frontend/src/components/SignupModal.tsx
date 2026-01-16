@@ -141,7 +141,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     }
 
     // Validate phone number format
-    if (businessPhone && !isValidPhoneNumber(businessPhone)) {
+    if (!isValidPhoneNumber(businessPhone)) {
       showToast('Please enter a valid phone number.', 'error');
       return;
     }
