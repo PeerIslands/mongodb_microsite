@@ -19,7 +19,7 @@ import json
 import mimetypes
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form, HTTPException
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse
 
 from app.api.v1.models.accelerator import (
     CreateAcceleratorRequest,
