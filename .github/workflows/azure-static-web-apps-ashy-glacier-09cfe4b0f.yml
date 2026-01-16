@@ -67,19 +67,19 @@ jobs:
             exit 1
           fi
           
-          # Verify staticwebapp.config.json exists in frontend root (Azure will read from here)
-          if [ -f "staticwebapp.config.json" ]; then
-            echo "✓ staticwebapp.config.json found in frontend root"
+          # Verify staticwebapp.config.json is in build directory (REQUIRED - we deploy from build/)
+          if [ -f "build/staticwebapp.config.json" ]; then
+            echo "✓ staticwebapp.config.json found in build directory"
           else
-            echo "❌ staticwebapp.config.json NOT found in frontend root!"
+            echo "❌ staticwebapp.config.json NOT found in build directory!"
+            echo "Run: npm run copy-config"
             exit 1
           fi
           
-          # Verify staticwebapp.config.json is also in build directory (best practice)
-          if [ -f "build/staticwebapp.config.json" ]; then
-            echo "✓ staticwebapp.config.json found in build directory (best practice)"
-          else
-            echo "⚠️  staticwebapp.config.json NOT found in build directory (not critical, but recommended)"
+          # Security check: Ensure no source files in build directory
+          if [ -d "build/src" ] || [ -d "build/node_modules" ]; then
+            echo "❌ SECURITY ISSUE: Source files found in build directory!"
+            exit 1
           fi
           
           # Show JS files
@@ -109,5 +109,6 @@ jobs:
           api_location: ""
           output_location: "build"
           skip_app_build: true
+          skip_api_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
