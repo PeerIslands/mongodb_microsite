@@ -1,86 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import '@/styles/features/admin/AcceleratorList.css';
+import { acceleratorsService } from '@/api/services/accelerators.service';
+import type { AcceleratorDetail, AcceleratorStatus } from '@/types/models/accelerator';
 
 interface AcceleratorListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
 }
 
-// Mock data - will be replaced with API calls
-const mockAccelerators = [
-  {
-    id: '1',
-    name: 'HBase → MongoDB Accelerator',
-    category: 'Migration',
-    sourceTech: 'HBase',
-    version: '2.3.0',
-    status: 'active',
-    featured: true,
-    published: true,
-    downloads: 1234,
-    views: 5678,
-    createdAt: '2024-01-15'
-  },
-  {
-    id: '2',
-    name: 'Cassandra → MongoDB Toolkit',
-    category: 'Migration',
-    sourceTech: 'Cassandra',
-    version: '1.8.5',
-    status: 'active',
-    featured: true,
-    published: true,
-    downloads: 892,
-    views: 4234,
-    createdAt: '2024-02-20'
-  },
-  {
-    id: '3',
-    name: 'Cosmos DB → MongoDB Mapping Tool',
-    category: 'Migration',
-    sourceTech: 'Cosmos DB',
-    version: '1.5.2',
-    status: 'active',
-    featured: false,
-    published: true,
-    downloads: 567,
-    views: 2891,
-    createdAt: '2024-03-10'
-  },
-  {
-    id: '4',
-    name: 'MCP-based Migration Demo',
-    category: 'Modernization',
-    sourceTech: 'Monolithic',
-    version: '1.0.0',
-    status: 'beta',
-    featured: false,
-    published: false,
-    downloads: 445,
-    views: 1789,
-    createdAt: '2024-04-05'
-  }
-];
-
 const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
-  const [accelerators] = useState(mockAccelerators);
+  const [accelerators, setAccelerators] = useState<AcceleratorDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this accelerator?')) {
-      console.log('Delete accelerator:', id);
-      // API call to delete
+  // Ref to prevent duplicate API calls in React Strict Mode
+  const hasFetchedRef = useRef(false);
+
+  // Fetch accelerators on component mount
+  useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    fetchAccelerators();
+  }, []);
+
+  const fetchAccelerators = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await acceleratorsService.getAll();
+      setAccelerators(data);
+    } catch (err) {
+      console.error('Failed to fetch accelerators:', err);
+      setError('Failed to load accelerators. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleTogglePublish = (id: string) => {
-    console.log('Toggle publish status:', id);
-    // API call to toggle
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this accelerator?')) {
+      try {
+        await acceleratorsService.delete(id);
+        // Refresh the list after deletion
+        fetchAccelerators();
+      } catch (err) {
+        console.error('Failed to delete accelerator:', err);
+        alert('Failed to delete accelerator. Please try again.');
+      }
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    console.log('Toggle active status:', id);
-    // API call to change status
+  const handleToggleStatus = async (id: string, currentStatus: AcceleratorStatus) => {
+    try {
+      const newStatus: AcceleratorStatus = currentStatus === 'published' ? 'draft' : 'published';
+      await acceleratorsService.update(id, { status: newStatus });
+      // Refresh the list after update
+      fetchAccelerators();
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      alert('Failed to update status. Please try again.');
+    }
   };
+
+
+  if (loading) {
+    return (
+      <div className="accelerator-list">
+        <div className="loading-state">Loading accelerators...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="accelerator-list">
+        <div className="error-state">
+          <p>{error}</p>
+          <button onClick={fetchAccelerators} className="retry-button">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="accelerator-list">
@@ -108,22 +110,22 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <div className="stat-value">{accelerators.filter(a => a.published).length}</div>
+            <div className="stat-value">{accelerators.filter(a => a.status === 'published').length}</div>
             <div className="stat-label">Published</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">⭐</div>
           <div className="stat-content">
-            <div className="stat-value">{accelerators.filter(a => a.featured).length}</div>
+            <div className="stat-value">{accelerators.filter(a => a.feature_on_homepage).length}</div>
             <div className="stat-label">Featured</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📥</div>
+          <div className="stat-icon">📝</div>
           <div className="stat-content">
-            <div className="stat-value">{accelerators.reduce((sum, a) => sum + a.downloads, 0).toLocaleString()}</div>
-            <div className="stat-label">Total Downloads</div>
+            <div className="stat-value">{accelerators.filter(a => a.status === 'draft').length}</div>
+            <div className="stat-label">Drafts</div>
           </div>
         </div>
       </div>
@@ -133,72 +135,60 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
         <table className="accelerator-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Source Tech</th>
-              <th>Version</th>
+              <th>Title</th>
               <th>Status</th>
-              <th>Downloads</th>
-              <th>Views</th>
+              <th>Created On</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {accelerators.map((accelerator) => (
-              <tr key={accelerator.id}>
-                <td>
-                  <div className="title-cell">
-                    {accelerator.name}
-                    {accelerator.featured && <span className="featured-badge">Featured</span>}
-                  </div>
-                </td>
-                <td>
-                  <span className="category-tag">{accelerator.category}</span>
-                </td>
-                <td>{accelerator.sourceTech}</td>
-                <td>
-                  <span className="version-badge">v{accelerator.version}</span>
-                </td>
-                <td>
-                  <div className="status-buttons">
-                    <button 
-                      className={`status-badge ${accelerator.status}`}
-                      onClick={() => handleToggleStatus(accelerator.id)}
-                      title="Click to change status"
-                    >
-                      {accelerator.status}
-                    </button>
-                    <button 
-                      className={`publish-badge ${accelerator.published ? 'published' : 'draft'}`}
-                      onClick={() => handleTogglePublish(accelerator.id)}
-                      title="Click to toggle publish"
-                    >
-                      {accelerator.published ? 'Published' : 'Draft'}
-                    </button>
-                  </div>
-                </td>
-                <td>{accelerator.downloads.toLocaleString()}</td>
-                <td>{accelerator.views.toLocaleString()}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="action-button edit"
-                      onClick={() => onEdit(accelerator.id)}
-                      title="Edit"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="action-button delete"
-                      onClick={() => handleDelete(accelerator.id)}
-                      title="Delete"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+            {accelerators.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="empty-state">
+                  No accelerators found. Click "Add New Accelerator" to create one.
                 </td>
               </tr>
-            ))}
+            ) : (
+              accelerators.map((accelerator) => (
+                <tr key={accelerator.id}>
+                  <td>
+                    <div className="title-cell">
+                      {accelerator.title}
+                      {accelerator.feature_on_homepage && <span className="featured-badge">Featured</span>}
+                    </div>
+                  </td>
+                  <td>
+                    <button 
+                      className={`status-badge ${accelerator.status === 'published' ? 'published' : 'draft'}`}
+                      onClick={() => handleToggleStatus(accelerator.id, accelerator.status)}
+                      title="Click to toggle status"
+                    >
+                      {accelerator.status === 'published' ? 'Published' : 'Draft'}
+                    </button>
+                  </td>
+                  
+                  <td>{new Date(accelerator.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="action-button edit"
+                        onClick={() => onEdit(accelerator.id)}
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="action-button delete"
+                        onClick={() => handleDelete(accelerator.id)}
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -207,4 +197,3 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
 };
 
 export default AcceleratorList;
-

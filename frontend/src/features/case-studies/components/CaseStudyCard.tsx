@@ -1,5 +1,5 @@
 import '@/styles/features/case-studies/CaseStudyCard.css';
-import type { MetricItem } from '@/types/models/case-study';
+import type { MetricItem } from '@/types';
 
 export interface CaseStudyCardData {
   id: string;

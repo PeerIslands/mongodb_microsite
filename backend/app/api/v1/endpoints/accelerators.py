@@ -7,17 +7,19 @@ Endpoints:
 - GET /accelerators/{accelerator_id} - Get a single accelerator by ID
 - PUT /accelerators/{accelerator_id} - Update an accelerator
 - DELETE /accelerators/{accelerator_id} - Delete an accelerator
+- GET /accelerators/{accelerator_id}/files/{file_type} - Secure file proxy endpoint
 
 File Storage:
 - Videos and PDFs are uploaded to Azure Blob Storage
 - Folder structure: accelerators/{accelerator_id}/{field_name}.{ext}
-- MongoDB stores the blob path, full URL is constructed at retrieval time
+- MongoDB stores the blob path, files are served via secure proxy endpoints
 """
 
 import json
 import mimetypes
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form, HTTPException
+from fastapi.responses import StreamingResponse, Response
 
 from app.api.v1.models.accelerator import (
     CreateAcceleratorRequest,
@@ -29,8 +31,9 @@ from app.api.v1.models.accelerator import (
     MetricItem,
 )
 from app.api.v1.services.accelerator_service import AcceleratorService
-from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService, AzureBlobServiceError
 from app.api.v1.dependencies.services import get_accelerator_service
+from app.api.v1.exceptions.accelerator_exceptions import AcceleratorNotFoundError
 
 router = APIRouter(prefix="/accelerators")
 
@@ -502,4 +505,106 @@ async def delete_accelerator(
         await blob_service.delete_file(blob_paths["pdf_url"])
     
     return result
+
+
+# =============================================================================
+# FILE PROXY ENDPOINTS - Secure file serving without exposing Azure URLs
+# =============================================================================
+
+# Mapping of file types to their field names and default content types
+FILE_TYPE_CONFIG = {
+    "pdf": {"field": "pdf_url", "default_content_type": "application/pdf", "extension": ".pdf"},
+    "video": {"field": "video_url", "default_content_type": "video/mp4", "extension": ".mp4"},
+    "thumbnail": {"field": "thumbnail_url", "default_content_type": "image/jpeg", "extension": ".jpg"},
+}
+
+
+@router.get(
+    "/{accelerator_id}/files/{file_type}",
+    summary="Get Accelerator File (Secure Proxy)",
+    description="""
+    Securely serve accelerator files (PDF, video, thumbnail) through the backend.
+    
+    **Security Benefits:**
+    - Azure Blob SAS tokens are never exposed to the client
+    - Files are served through the backend, enabling access control
+    - Supports future authentication requirements
+    
+    **File Types:**
+    - `pdf` - PDF document
+    - `video` - Video file (MP4, WebM, etc.)
+    - `thumbnail` - Thumbnail image
+    
+    **Response:**
+    - Streams the file with appropriate Content-Type header
+    - Includes Content-Disposition for downloads
+    """,
+    responses={
+        200: {"description": "File stream"},
+        404: {"description": "Accelerator or file not found"},
+        400: {"description": "Invalid file type"},
+    },
+)
+async def get_accelerator_file(
+    accelerator_id: str,
+    file_type: str,
+    download: bool = Query(default=False, description="Force download instead of inline display"),
+    service: AcceleratorService = Depends(get_accelerator_service),
+) -> StreamingResponse:
+    """
+    Securely proxy files from Azure Blob Storage.
+    
+    This endpoint fetches files from Azure Blob Storage and streams them to the client,
+    keeping the Azure SAS token secure on the server side.
+    """
+    # Validate file type
+    if file_type not in FILE_TYPE_CONFIG:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type: {file_type}. Must be one of: {list(FILE_TYPE_CONFIG.keys())}"
+        )
+    
+    config = FILE_TYPE_CONFIG[file_type]
+    
+    # Get blob paths for this accelerator
+    try:
+        blob_paths = await service.get_blob_paths(accelerator_id)
+    except AcceleratorNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Accelerator not found: {accelerator_id}")
+    
+    # Get the blob path for the requested file type
+    blob_path = blob_paths.get(config["field"], "")
+    
+    if not blob_path:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No {file_type} file found for this accelerator"
+        )
+    
+    # Get Azure Blob Service and stream the file
+    blob_service = get_azure_blob_service()
+    
+    try:
+        # Get file info for headers
+        content_type, content_length = await blob_service.get_file_info(blob_path)
+        
+        # Determine filename for Content-Disposition
+        filename = f"{accelerator_id}_{file_type}{config['extension']}"
+        
+        # Set disposition based on download flag
+        disposition = "attachment" if download else "inline"
+        
+        # Stream the file
+        return StreamingResponse(
+            content=blob_service.stream_file(blob_path),
+            media_type=content_type or config["default_content_type"],
+            headers={
+                "Content-Disposition": f'{disposition}; filename="{filename}"',
+                "Content-Length": str(content_length) if content_length else "",
+                "Cache-Control": "private, max-age=3600",  # Cache for 1 hour
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+    except AzureBlobServiceError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 

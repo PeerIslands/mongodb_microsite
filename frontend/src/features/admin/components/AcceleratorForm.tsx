@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '@/styles/features/admin/AcceleratorForm.css';
-import FileUpload from './FileUpload';
-import VideoUploader from './VideoUploader';
-import FileManager from './FileManager';
+import FileUpload, { FileUploadResult } from './FileUpload';
+import { acceleratorsService } from '@/api/services/accelerators.service';
+import type { MetricItem, AcceleratorStatus, CreateAcceleratorDto, UpdateAcceleratorDto } from '@/types/models/accelerator';
 
 interface AcceleratorFormProps {
   editingId: string | null;
@@ -10,161 +10,248 @@ interface AcceleratorFormProps {
   onSuccess: () => void;
 }
 
-interface Feature {
-  icon: string;
+interface FormData {
   title: string;
+  subtitle: string;
   description: string;
+  status: AcceleratorStatus;
+  feature_on_homepage: boolean;
+  metrics: MetricItem[];
+  thumbnail_file: File | null;
+  video_file: File | null;
+  pdf_file: File | null;
+  // For displaying existing file previews in edit mode
+  existing_thumbnail_url: string;
+  existing_video_url: string;
+  existing_pdf_url: string;
 }
 
-interface Benefit {
-  title: string;
-  metric: string;
-  description: string;
-  category: string;
-}
-
-interface Download {
-  name: string;
-  description: string;
-  file_url: string;
-  version: string;
-}
+const MIN_METRICS = 3;
+const MAX_METRICS = 5;
 
 const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProps) => {
-  const [formData, setFormData] = useState({
-    // Section 1: Basic Information
-    name: '',
-    slug: '',
-    tagline: '',
-    category: '',
-    sourceTech: '',
-    targetTech: 'MongoDB Atlas',
-    migrationType: '',
-    status: 'active',
-    featured: false,
-    published: false,
-    
-    // Section 2: Overview
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    subtitle: '',
     description: '',
-    useCases: [''],
-    idealFor: [''],
-    techStack: [] as string[],
-    
-    // Section 3: Features
-    features: [{ icon: '', title: '', description: '' }] as Feature[],
-    
-    // Section 4: Benefits
-    benefits: [{ title: '', metric: '', description: '', category: 'Time' }] as Benefit[],
-    
-    // Section 5: Technical Specs
-    supportedVersions: [''],
-    prerequisites: [''],
-    limitations: [''],
-    compatibility: [] as string[],
-    
-    // Section 6: Demo Video
-    videoSource: 'upload',
-    videoFile: '',
-    videoUrl: '',
-    videoThumbnail: '',
-    videoDuration: '',
-    videoTitle: '',
-    
-    // Section 7: Media & Assets
-    cardImage: '',
-    heroImage: '',
-    logoImage: '',
-    screenshots: [] as string[],
-    architectureDiagram: '',
-    
-    // Section 8: Downloads
-    downloads: [{ name: '', description: '', file_url: '', version: '' }] as Download[],
-    
-    // Section 9: Documentation
-    gettingStartedUrl: '',
-    fullDocsUrl: '',
-    apiReferenceUrl: '',
-    githubUrl: '',
-    supportUrl: '',
-    
-    // Section 10: Performance Metrics
-    performanceMetrics: [{ name: '', value: '', description: '' }],
-    
-    // Section 11: Testimonials
-    testimonials: [{ quote: '', author: '', company: '', position: '' }],
-    
-    // Section 12: Pricing
-    pricingModel: 'Free',
-    price: '',
-    licenseType: 'Open Source',
-    
-    // Section 13: SEO
-    metaTitle: '',
-    metaDescription: '',
-    keywords: [] as string[]
+    status: 'draft',
+    feature_on_homepage: false,
+    metrics: [
+      { label: '', value: '' },
+      { label: '', value: '' },
+      { label: '', value: '' },
+    ],
+    thumbnail_file: null,
+    video_file: null,
+    pdf_file: null,
+    existing_thumbnail_url: '',
+    existing_video_url: '',
+    existing_pdf_url: '',
   });
 
-  const categories = ['Migration', 'Modernization', 'Integration', 'Analytics'];
-  const migrationTypes = ['Database', 'Application', 'Data', 'Full Stack'];
-  const statuses = ['active', 'beta', 'coming_soon', 'deprecated'];
-  const techOptions = ['MongoDB', 'HBase', 'Cassandra', 'Cosmos DB', 'PostgreSQL', 'MySQL', 'Oracle', 'Node.js', 'Python', 'Java', 'Kafka', 'Spark'];
-  const compatibilityOptions = ['Linux', 'macOS', 'Windows', 'Docker', 'Kubernetes'];
-  const benefitCategories = ['Time', 'Cost', 'Performance', 'Risk'];
-  const pricingModels = ['Free', 'Enterprise', 'Contact Sales'];
-  const licenseTypes = ['Open Source', 'Proprietary', 'Hybrid'];
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (field: string, value: any) => {
+  // Fetch existing accelerator data when editing
+  useEffect(() => {
+    if (editingId) {
+      const fetchAccelerator = async () => {
+        setFetchingData(true);
+        try {
+          const data = await acceleratorsService.getById(editingId);
+          setFormData({
+            title: data.title || '',
+            subtitle: data.subtitle || '',
+            description: data.description || '',
+            status: data.status || 'draft',
+            feature_on_homepage: data.feature_on_homepage || false,
+            metrics: data.metrics && data.metrics.length >= MIN_METRICS 
+              ? data.metrics 
+              : [
+                  ...data.metrics || [],
+                  ...Array(MIN_METRICS - (data.metrics?.length || 0)).fill({ label: '', value: '' })
+                ],
+            thumbnail_file: null,
+            video_file: null,
+            pdf_file: null,
+            existing_thumbnail_url: data.thumbnail_url || '',
+            existing_video_url: data.video_url || '',
+            existing_pdf_url: data.pdf_url || '',
+          });
+        } catch (err) {
+          console.error('Failed to fetch accelerator:', err);
+          setError('Failed to load accelerator data');
+        } finally {
+          setFetchingData(false);
+        }
+      };
+      fetchAccelerator();
+    }
+  }, [editingId]);
+
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleArrayItemChange = (field: string, index: number, value: string) => {
-    setFormData(prev => {
-      const fieldValue = prev[field as keyof typeof prev];
-      if (!Array.isArray(fieldValue)) return prev;
-      return {
+  const handleMetricChange = (index: number, field: 'label' | 'value', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      metrics: prev.metrics.map((metric, i) =>
+        i === index ? { ...metric, [field]: value } : metric
+      ),
+    }));
+  };
+
+  const handleAddMetric = () => {
+    if (formData.metrics.length < MAX_METRICS) {
+      setFormData(prev => ({
         ...prev,
-        [field]: fieldValue.map((item: any, i: number) => i === index ? value : item)
-      };
-    });
+        metrics: [...prev.metrics, { label: '', value: '' }],
+      }));
+    }
   };
 
-  const handleArrayItemAdd = (field: string, template: any = '') => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...prev[field as keyof typeof prev] as any[], template]
-    }));
+  const handleRemoveMetric = (index: number) => {
+    if (formData.metrics.length > MIN_METRICS) {
+      setFormData(prev => ({
+        ...prev,
+        metrics: prev.metrics.filter((_, i) => i !== index),
+      }));
+    }
   };
 
-  const handleArrayItemRemove = (field: string, index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: (prev[field as keyof typeof prev] as any[]).filter((_, i) => i !== index)
-    }));
+  const handleFileUpload = (field: 'thumbnail_file' | 'video_file' | 'pdf_file', result: FileUploadResult | FileUploadResult[]) => {
+    if (Array.isArray(result)) {
+      // Should not happen for single file uploads, but handle it
+      if (result.length > 0) {
+        setFormData(prev => ({ ...prev, [field]: result[0].file }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: result.file }));
+    }
   };
 
-  const handleFeatureChange = (index: number, field: keyof Feature, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.map((feature, i) => 
-        i === index ? { ...feature, [field]: value } : feature
-      )
-    }));
+  const validateForm = (): boolean => {
+    if (!formData.title.trim()) {
+      setError('Title is required');
+      return false;
+    }
+    if (!formData.subtitle.trim()) {
+      setError('Subtitle is required');
+      return false;
+    }
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      return false;
+    }
+
+    // Validate metrics
+    const filledMetrics = formData.metrics.filter(m => m.label.trim() && m.value.trim());
+    if (filledMetrics.length < MIN_METRICS) {
+      setError(`At least ${MIN_METRICS} complete metrics are required (both label and value)`);
+      return false;
+    }
+
+    // Check for metrics with only label or only value
+    const incompleteMetrics = formData.metrics.filter(
+      m => (m.label.trim() && !m.value.trim()) || (!m.label.trim() && m.value.trim())
+    );
+    if (incompleteMetrics.length > 0) {
+      setError('Each metric must have both a label and a value');
+      return false;
+    }
+
+    // For new accelerators, only PDF is required
+    if (!editingId) {
+      if (!formData.pdf_file) {
+        setError('PDF file is required');
+        return false;
+      }
+    }
+
+    return true;
   };
 
-  const handleBenefitChange = (index: number, field: keyof Benefit, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      benefits: prev.benefits.map((benefit, i) => 
-        i === index ? { ...benefit, [field]: value } : benefit
-      )
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting:', formData);
-    onSuccess();
+    setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Filter out empty metrics
+      const validMetrics = formData.metrics.filter(m => m.label.trim() && m.value.trim());
+
+      if (editingId) {
+        // Update existing accelerator
+        const updateData: UpdateAcceleratorDto = {
+          title: formData.title,
+          subtitle: formData.subtitle,
+          description: formData.description,
+          status: formData.status,
+          feature_on_homepage: formData.feature_on_homepage,
+          metrics: validMetrics,
+        };
+
+        // Only include files if new ones were uploaded
+        if (formData.thumbnail_file) {
+          updateData.thumbnail_file = formData.thumbnail_file;
+        }
+        if (formData.video_file) {
+          updateData.video_file = formData.video_file;
+        }
+        if (formData.pdf_file) {
+          updateData.pdf_file = formData.pdf_file;
+        }
+
+        await acceleratorsService.update(editingId, updateData);
+      } else {
+        // Create new accelerator
+        const createData: CreateAcceleratorDto = {
+          title: formData.title,
+          subtitle: formData.subtitle,
+          description: formData.description,
+          status: formData.status,
+          feature_on_homepage: formData.feature_on_homepage,
+          metrics: validMetrics,
+          pdf_file: formData.pdf_file!,
+        };
+
+        // Only include optional files if provided
+        if (formData.thumbnail_file) {
+          createData.thumbnail_file = formData.thumbnail_file;
+        }
+        if (formData.video_file) {
+          createData.video_file = formData.video_file;
+        }
+
+        await acceleratorsService.create(createData);
+      }
+
+      onSuccess();
+    } catch (err) {
+      console.error('Failed to save accelerator:', err);
+      setError('Failed to save accelerator. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (fetchingData) {
+    return (
+      <div className="accelerator-form-container">
+        <div className="form-loading">
+          <div className="spinner"></div>
+          <p>Loading accelerator data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="accelerator-form-container">
@@ -172,10 +259,18 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
         <h2 className="form-title">
           {editingId ? 'Edit Accelerator' : 'Add New Accelerator'}
         </h2>
-        <button className="cancel-button" onClick={onCancel}>
+        <button type="button" className="cancel-button" onClick={onCancel}>
           ← Back to List
         </button>
       </div>
+
+      {error && (
+        <div className="form-error">
+          <span className="error-icon">⚠️</span>
+          {error}
+          <button type="button" className="error-close" onClick={() => setError(null)}>×</button>
+        </div>
+      )}
 
       <form className="accelerator-form" onSubmit={handleSubmit}>
         {/* Section 1: Basic Information */}
@@ -184,107 +279,50 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
             <span className="section-number">1</span>
             Basic Information
           </h3>
-          
+
           <div className="form-grid">
             <div className="form-field full-width">
-              <label>Name *</label>
+              <label>Title *</label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., HBase → MongoDB Accelerator"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                placeholder="Enter accelerator title"
                 required
               />
-            </div>
-
-            <div className="form-field">
-              <label>Slug (URL) *</label>
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) => handleInputChange('slug', e.target.value)}
-                placeholder="hbase-mongodb-accelerator"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Category *</label>
-              <select
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
             </div>
 
             <div className="form-field full-width">
-              <label>Tagline *</label>
-              <textarea
-                value={formData.tagline}
-                onChange={(e) => handleInputChange('tagline', e.target.value)}
-                placeholder="Short description for card (max 150 chars)"
-                rows={2}
-                maxLength={150}
-                required
-              />
-              <span className="char-count">{formData.tagline.length}/150</span>
-            </div>
-
-            <div className="form-field">
-              <label>Source Technology *</label>
-              <select
-                value={formData.sourceTech}
-                onChange={(e) => handleInputChange('sourceTech', e.target.value)}
-                required
-              >
-                <option value="">Select Source</option>
-                {techOptions.map(tech => (
-                  <option key={tech} value={tech}>{tech}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label>Target Technology *</label>
+              <label>Subtitle *</label>
               <input
                 type="text"
-                value={formData.targetTech}
-                onChange={(e) => handleInputChange('targetTech', e.target.value)}
+                value={formData.subtitle}
+                onChange={(e) => handleInputChange('subtitle', e.target.value)}
+                placeholder="Enter accelerator subtitle"
                 required
               />
             </div>
 
-            <div className="form-field">
-              <label>Migration Type *</label>
-              <select
-                value={formData.migrationType}
-                onChange={(e) => handleInputChange('migrationType', e.target.value)}
+            <div className="form-field full-width">
+              <label>Description *</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Enter accelerator description"
+                rows={4}
                 required
-              >
-                <option value="">Select Type</option>
-                {migrationTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="form-field">
               <label>Status *</label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
+                onChange={(e) => handleInputChange('status', e.target.value as AcceleratorStatus)}
                 required
               >
-                {statuses.map(status => (
-                  <option key={status} value={status}>
-                    {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                  </option>
-                ))}
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
               </select>
             </div>
 
@@ -292,875 +330,97 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
               <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  checked={formData.featured}
-                  onChange={(e) => handleInputChange('featured', e.target.checked)}
+                  checked={formData.feature_on_homepage}
+                  onChange={(e) => handleInputChange('feature_on_homepage', e.target.checked)}
                 />
-                <span>Featured on Homepage</span>
+                <span>Feature on Homepage</span>
               </label>
             </div>
 
-            <div className="form-field checkbox-field">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.published}
-                  onChange={(e) => handleInputChange('published', e.target.checked)}
-                />
-                <span>Published (Visible to Public)</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Overview */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">2</span>
-            Overview
-          </h3>
-          
-          <div className="form-grid">
+            {/* Metrics Section */}
             <div className="form-field full-width">
-              <label>Description *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Detailed description (500-1000 chars)"
-                rows={6}
-                maxLength={1000}
-                required
-              />
-              <span className="char-count">{formData.description.length}/1000</span>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Use Cases * (Add at least 2)</label>
-              <div className="dynamic-list">
-                {formData.useCases.map((useCase, index) => (
-                  <div key={index} className="dynamic-item">
-                    <input
-                      type="text"
-                      value={useCase}
-                      onChange={(e) => handleArrayItemChange('useCases', index, e.target.value)}
-                      placeholder={`Use case ${index + 1}`}
-                      required
-                    />
-                    {formData.useCases.length > 1 && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => handleArrayItemRemove('useCases', index)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('useCases')}
-                >
-                  + Add Use Case
-                </button>
-              </div>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Ideal For * (Target scenarios)</label>
-              <div className="dynamic-list">
-                {formData.idealFor.map((item, index) => (
-                  <div key={index} className="dynamic-item">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => handleArrayItemChange('idealFor', index, e.target.value)}
-                      placeholder={`Scenario ${index + 1}`}
-                      required
-                    />
-                    {formData.idealFor.length > 1 && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => handleArrayItemRemove('idealFor', index)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('idealFor')}
-                >
-                  + Add Scenario
-                </button>
-              </div>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Tech Stack *</label>
-              <div className="checkbox-group">
-                {techOptions.map(tech => (
-                  <label key={tech} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.techStack.includes(tech)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleInputChange('techStack', [...formData.techStack, tech]);
-                        } else {
-                          handleInputChange('techStack', formData.techStack.filter(t => t !== tech));
-                        }
-                      }}
-                    />
-                    <span>{tech}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Features */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">3</span>
-            Features
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Feature List * (Add at least 3)</label>
-              <div className="features-builder">
-                {formData.features.map((feature, index) => (
-                  <div key={index} className="feature-builder-item">
-                    <div className="feature-builder-header">
-                      <h4>Feature {index + 1}</h4>
-                      {formData.features.length > 1 && (
-                        <button
-                          type="button"
-                          className="remove-button"
-                          onClick={() => handleArrayItemRemove('features', index)}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                    <div className="feature-builder-fields">
-                      <input
-                        type="text"
-                        value={feature.icon}
-                        onChange={(e) => handleFeatureChange(index, 'icon', e.target.value)}
-                        placeholder="Icon (emoji or identifier)"
-                        required
-                      />
-                      <input
-                        type="text"
-                        value={feature.title}
-                        onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
-                        placeholder="Feature title"
-                        required
-                      />
-                      <textarea
-                        value={feature.description}
-                        onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
-                        placeholder="Feature description"
-                        rows={3}
-                        required
-                      />
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('features', { icon: '', title: '', description: '' })}
-                >
-                  + Add Feature
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: Benefits */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">4</span>
-            Benefits
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Benefit List * (Add at least 3)</label>
-              <div className="benefits-builder">
-                {formData.benefits.map((benefit, index) => (
-                  <div key={index} className="benefit-builder-item">
-                    <div className="benefit-builder-header">
-                      <h4>Benefit {index + 1}</h4>
-                      {formData.benefits.length > 1 && (
-                        <button
-                          type="button"
-                          className="remove-button"
-                          onClick={() => handleArrayItemRemove('benefits', index)}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                    <div className="benefit-builder-fields">
-                      <div className="benefit-row">
-                        <input
-                          type="text"
-                          value={benefit.title}
-                          onChange={(e) => handleBenefitChange(index, 'title', e.target.value)}
-                          placeholder="Benefit title (e.g., 40% Faster)"
-                          required
-                        />
-                        <input
-                          type="text"
-                          value={benefit.metric}
-                          onChange={(e) => handleBenefitChange(index, 'metric', e.target.value)}
-                          placeholder="Metric (e.g., 40%)"
-                          required
-                        />
-                      </div>
-                      <select
-                        value={benefit.category}
-                        onChange={(e) => handleBenefitChange(index, 'category', e.target.value)}
-                        required
-                      >
-                        {benefitCategories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                      <textarea
-                        value={benefit.description}
-                        onChange={(e) => handleBenefitChange(index, 'description', e.target.value)}
-                        placeholder="Benefit description"
-                        rows={2}
-                        required
-                      />
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('benefits', { title: '', metric: '', description: '', category: 'Time' })}
-                >
-                  + Add Benefit
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 5: Technical Specifications */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">5</span>
-            Technical Specifications
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Supported Versions *</label>
-              <div className="dynamic-list">
-                {formData.supportedVersions.map((version, index) => (
-                  <div key={index} className="dynamic-item">
-                    <input
-                      type="text"
-                      value={version}
-                      onChange={(e) => handleArrayItemChange('supportedVersions', index, e.target.value)}
-                      placeholder="e.g., HBase 2.x"
-                      required
-                    />
-                    {formData.supportedVersions.length > 1 && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => handleArrayItemRemove('supportedVersions', index)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('supportedVersions')}
-                >
-                  + Add Version
-                </button>
-              </div>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Prerequisites *</label>
-              <div className="dynamic-list">
-                {formData.prerequisites.map((prereq, index) => (
-                  <div key={index} className="dynamic-item">
-                    <input
-                      type="text"
-                      value={prereq}
-                      onChange={(e) => handleArrayItemChange('prerequisites', index, e.target.value)}
-                      placeholder="e.g., Java 8+"
-                      required
-                    />
-                    {formData.prerequisites.length > 1 && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => handleArrayItemRemove('prerequisites', index)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('prerequisites')}
-                >
-                  + Add Prerequisite
-                </button>
-              </div>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Limitations (Optional)</label>
-              <div className="dynamic-list">
-                {formData.limitations.map((limitation, index) => (
-                  <div key={index} className="dynamic-item">
-                    <input
-                      type="text"
-                      value={limitation}
-                      onChange={(e) => handleArrayItemChange('limitations', index, e.target.value)}
-                      placeholder="Known limitation"
-                    />
-                    {formData.limitations.length > 1 && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => handleArrayItemRemove('limitations', index)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('limitations')}
-                >
-                  + Add Limitation
-                </button>
-              </div>
-            </div>
-
-            <div className="form-field full-width">
-              <label>Compatibility *</label>
-              <div className="checkbox-group">
-                {compatibilityOptions.map(platform => (
-                  <label key={platform} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.compatibility.includes(platform)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleInputChange('compatibility', [...formData.compatibility, platform]);
-                        } else {
-                          handleInputChange('compatibility', formData.compatibility.filter(p => p !== platform));
-                        }
-                      }}
-                    />
-                    <span>{platform}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 6: Demo Video */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">6</span>
-            Demo Video
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Video Source *</label>
-              <div className="radio-group">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    value="upload"
-                    checked={formData.videoSource === 'upload'}
-                    onChange={(e) => handleInputChange('videoSource', e.target.value)}
-                  />
-                  <span>Upload Video File</span>
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    value="youtube"
-                    checked={formData.videoSource === 'youtube'}
-                    onChange={(e) => handleInputChange('videoSource', e.target.value)}
-                  />
-                  <span>YouTube URL</span>
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    value="vimeo"
-                    checked={formData.videoSource === 'vimeo'}
-                    onChange={(e) => handleInputChange('videoSource', e.target.value)}
-                  />
-                  <span>Vimeo URL</span>
-                </label>
-              </div>
-            </div>
-
-            {formData.videoSource === 'upload' ? (
-              <div className="form-field full-width">
-                <label>Upload Video *</label>
-                <VideoUploader
-                  onUpload={(url) => handleInputChange('videoFile', url)}
-                  currentFile={formData.videoFile}
-                />
-              </div>
-            ) : (
-              <div className="form-field full-width">
-                <label>Video URL *</label>
-                <input
-                  type="url"
-                  value={formData.videoUrl}
-                  onChange={(e) => handleInputChange('videoUrl', e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                  required
-                />
-              </div>
-            )}
-
-            <div className="form-field full-width">
-              <label>Video Thumbnail *</label>
-              <FileUpload
-                accept="image/png,image/jpeg"
-                maxSize={5}
-                onUpload={(url) => handleInputChange('videoThumbnail', url)}
-                currentFile={formData.videoThumbnail}
-                hint="PNG or JPG (Max 5MB, 1920x1080 recommended)"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Duration *</label>
-              <input
-                type="text"
-                value={formData.videoDuration}
-                onChange={(e) => handleInputChange('videoDuration', e.target.value)}
-                placeholder="e.g., 8:45"
-                pattern="[0-9]{1,2}:[0-9]{2}"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Video Title *</label>
-              <input
-                type="text"
-                value={formData.videoTitle}
-                onChange={(e) => handleInputChange('videoTitle', e.target.value)}
-                placeholder="Video title"
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 7: Media & Assets */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">7</span>
-            Media & Assets
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Card Image *</label>
-              <FileUpload
-                accept="image/png,image/jpeg"
-                maxSize={5}
-                onUpload={(url) => handleInputChange('cardImage', url)}
-                currentFile={formData.cardImage}
-                hint="PNG or JPG (Max 5MB, 600x400px)"
-              />
-            </div>
-
-            <div className="form-field full-width">
-              <label>Hero Image *</label>
-              <FileUpload
-                accept="image/png,image/jpeg"
-                maxSize={5}
-                onUpload={(url) => handleInputChange('heroImage', url)}
-                currentFile={formData.heroImage}
-                hint="PNG or JPG (Max 5MB, 1920x600px)"
-              />
-            </div>
-
-            <div className="form-field full-width">
-              <label>Logo Image *</label>
-              <FileUpload
-                accept="image/png"
-                maxSize={2}
-                onUpload={(url) => handleInputChange('logoImage', url)}
-                currentFile={formData.logoImage}
-                hint="PNG with transparency (Max 2MB, 200x200px)"
-              />
-            </div>
-
-            <div className="form-field full-width">
-              <label>Screenshots (Optional, Max 8)</label>
-              <FileUpload
-                accept="image/png,image/jpeg"
-                maxSize={3}
-                multiple
-                maxFiles={8}
-                onUpload={(urls) => handleInputChange('screenshots', urls)}
-                currentFile={formData.screenshots}
-                hint="PNG or JPG (Max 3MB each)"
-              />
-            </div>
-
-            <div className="form-field full-width">
-              <label>Architecture Diagram (Optional)</label>
-              <FileUpload
-                accept="image/png,image/jpeg"
-                maxSize={5}
-                onUpload={(url) => handleInputChange('architectureDiagram', url)}
-                currentFile={formData.architectureDiagram}
-                hint="PNG or JPG (Max 5MB)"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 8: Downloads */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">8</span>
-            Downloads & Files
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Download Files * (Add at least 1)</label>
-              <FileManager
-                files={formData.downloads}
-                onChange={(files) => handleInputChange('downloads', files)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 9: Documentation Links */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">9</span>
-            Documentation Links
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field">
-              <label>Getting Started URL *</label>
-              <input
-                type="url"
-                value={formData.gettingStartedUrl}
-                onChange={(e) => handleInputChange('gettingStartedUrl', e.target.value)}
-                placeholder="https://docs.example.com/quickstart"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Full Documentation URL</label>
-              <input
-                type="url"
-                value={formData.fullDocsUrl}
-                onChange={(e) => handleInputChange('fullDocsUrl', e.target.value)}
-                placeholder="https://docs.example.com"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>API Reference URL</label>
-              <input
-                type="url"
-                value={formData.apiReferenceUrl}
-                onChange={(e) => handleInputChange('apiReferenceUrl', e.target.value)}
-                placeholder="https://docs.example.com/api"
-              />
-            </div>
-
-            <div className="form-field">
-              <label>GitHub URL</label>
-              <input
-                type="url"
-                value={formData.githubUrl}
-                onChange={(e) => handleInputChange('githubUrl', e.target.value)}
-                placeholder="https://github.com/..."
-              />
-            </div>
-
-            <div className="form-field">
-              <label>Support URL</label>
-              <input
-                type="url"
-                value={formData.supportUrl}
-                onChange={(e) => handleInputChange('supportUrl', e.target.value)}
-                placeholder="https://support.example.com"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 10: Performance Metrics */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">10</span>
-            Performance Metrics (Optional)
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Metrics</label>
+              <label>Metrics * (Min {MIN_METRICS}, Max {MAX_METRICS})</label>
               <div className="metrics-builder">
-                {formData.performanceMetrics.map((metric, index) => (
+                {formData.metrics.map((metric, index) => (
                   <div key={index} className="metric-row">
                     <input
                       type="text"
-                      value={metric.name}
-                      onChange={(e) => {
-                        const newMetrics = [...formData.performanceMetrics];
-                        newMetrics[index].name = e.target.value;
-                        handleInputChange('performanceMetrics', newMetrics);
-                      }}
-                      placeholder="Metric name (e.g., Migration Speed)"
+                      value={metric.label}
+                      onChange={(e) => handleMetricChange(index, 'label', e.target.value)}
+                      placeholder="Label (e.g., Speed)"
+                      className="metric-label-input"
                     />
                     <input
                       type="text"
                       value={metric.value}
-                      onChange={(e) => {
-                        const newMetrics = [...formData.performanceMetrics];
-                        newMetrics[index].value = e.target.value;
-                        handleInputChange('performanceMetrics', newMetrics);
-                      }}
+                      onChange={(e) => handleMetricChange(index, 'value', e.target.value)}
                       placeholder="Value (e.g., 10x faster)"
+                      className="metric-value-input"
                     />
-                    <button
-                      type="button"
-                      className="remove-button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          performanceMetrics: prev.performanceMetrics.filter((_, i) => i !== index)
-                        }));
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('performanceMetrics', { name: '', value: '', description: '' })}
-                >
-                  + Add Metric
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 11: Testimonials */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">11</span>
-            Testimonials (Optional)
-          </h3>
-          
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Client Testimonials</label>
-              <div className="testimonials-builder">
-                {formData.testimonials.map((testimonial, index) => (
-                  <div key={index} className="testimonial-builder-item">
-                    <div className="testimonial-builder-header">
-                      <h4>Testimonial {index + 1}</h4>
+                    {formData.metrics.length > MIN_METRICS && (
                       <button
                         type="button"
                         className="remove-button"
-                        onClick={() => handleArrayItemRemove('testimonials', index)}
+                        onClick={() => handleRemoveMetric(index)}
+                        title="Remove metric"
                       >
                         ×
                       </button>
-                    </div>
-                    <textarea
-                      value={testimonial.quote}
-                      onChange={(e) => {
-                        const newTestimonials = [...formData.testimonials];
-                        newTestimonials[index].quote = e.target.value;
-                        handleInputChange('testimonials', newTestimonials);
-                      }}
-                      placeholder="Testimonial quote"
-                      rows={3}
-                    />
-                    <div className="testimonial-fields">
-                      <input
-                        type="text"
-                        value={testimonial.author}
-                        onChange={(e) => {
-                          const newTestimonials = [...formData.testimonials];
-                          newTestimonials[index].author = e.target.value;
-                          handleInputChange('testimonials', newTestimonials);
-                        }}
-                        placeholder="Author name"
-                      />
-                      <input
-                        type="text"
-                        value={testimonial.position}
-                        onChange={(e) => {
-                          const newTestimonials = [...formData.testimonials];
-                          newTestimonials[index].position = e.target.value;
-                          handleInputChange('testimonials', newTestimonials);
-                        }}
-                        placeholder="Position"
-                      />
-                      <input
-                        type="text"
-                        value={testimonial.company}
-                        onChange={(e) => {
-                          const newTestimonials = [...formData.testimonials];
-                          newTestimonials[index].company = e.target.value;
-                          handleInputChange('testimonials', newTestimonials);
-                        }}
-                        placeholder="Company"
-                      />
-                    </div>
+                    )}
                   </div>
                 ))}
-                <button
-                  type="button"
-                  className="add-item-button"
-                  onClick={() => handleArrayItemAdd('testimonials', { quote: '', author: '', company: '', position: '' })}
-                >
-                  + Add Testimonial
-                </button>
+                {formData.metrics.length < MAX_METRICS && (
+                  <button
+                    type="button"
+                    className="add-item-button"
+                    onClick={handleAddMetric}
+                  >
+                    + Add Metric
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section 12: Pricing */}
+        {/* Section 2: Media Upload */}
         <div className="form-section">
           <h3 className="section-title">
-            <span className="section-number">12</span>
-            Pricing (Optional)
+            <span className="section-number">2</span>
+            Media Upload
           </h3>
-          
-          <div className="form-grid">
-            <div className="form-field">
-              <label>Pricing Model *</label>
-              <select
-                value={formData.pricingModel}
-                onChange={(e) => handleInputChange('pricingModel', e.target.value)}
-                required
-              >
-                {pricingModels.map(model => (
-                  <option key={model} value={model}>{model}</option>
-                ))}
-              </select>
-            </div>
 
-            {formData.pricingModel !== 'Contact Sales' && (
-              <div className="form-field">
-                <label>Price</label>
-                <input
-                  type="text"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', e.target.value)}
-                  placeholder="e.g., $5,000 or Free"
-                />
-              </div>
-            )}
-
-            <div className="form-field">
-              <label>License Type *</label>
-              <select
-                value={formData.licenseType}
-                onChange={(e) => handleInputChange('licenseType', e.target.value)}
-                required
-              >
-                {licenseTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 13: SEO & Metadata */}
-        <div className="form-section">
-          <h3 className="section-title">
-            <span className="section-number">13</span>
-            SEO & Metadata
-          </h3>
-          
           <div className="form-grid">
             <div className="form-field full-width">
-              <label>Meta Title *</label>
-              <input
-                type="text"
-                value={formData.metaTitle}
-                onChange={(e) => handleInputChange('metaTitle', e.target.value)}
-                placeholder="SEO title (max 60 chars)"
-                maxLength={60}
-                required
+              <label>PDF Document * (.pdf)</label>
+              <FileUpload
+                accept="application/pdf"
+                maxSize={20}
+                onUpload={(result) => handleFileUpload('pdf_file', result)}
+                currentFile={formData.existing_pdf_url || undefined}
+                hint="Max 20MB"
               />
-              <span className="char-count">{formData.metaTitle.length}/60</span>
             </div>
 
             <div className="form-field full-width">
-              <label>Meta Description *</label>
-              <textarea
-                value={formData.metaDescription}
-                onChange={(e) => handleInputChange('metaDescription', e.target.value)}
-                placeholder="SEO description (max 160 chars)"
-                rows={3}
-                maxLength={160}
-                required
+              <label>Thumbnail Image (Optional) (.jpeg, .png)</label>
+              <FileUpload
+                accept="image/jpeg,image/png"
+                maxSize={5}
+                onUpload={(result) => handleFileUpload('thumbnail_file', result)}
+                currentFile={formData.existing_thumbnail_url || undefined}
+                hint="Max 5MB. Recommended size: 600x400px"
               />
-              <span className="char-count">{formData.metaDescription.length}/160</span>
             </div>
 
             <div className="form-field full-width">
-              <label>Keywords (Comma-separated)</label>
-              <input
-                type="text"
-                placeholder="hbase, mongodb, migration, toolkit"
-                onChange={(e) => {
-                  const keywords = e.target.value.split(',').map(k => k.trim()).filter(k => k);
-                  handleInputChange('keywords', keywords);
-                }}
+              <label>Video (Optional) (.mp4, .mov)</label>
+              <FileUpload
+                accept="video/mp4,video/quicktime"
+                maxSize={100}
+                onUpload={(result) => handleFileUpload('video_file', result)}
+                currentFile={formData.existing_video_url || undefined}
+                hint="Max 100MB. Supported formats: MP4, MOV"
               />
             </div>
           </div>
@@ -1168,11 +428,18 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
 
         {/* Form Actions */}
         <div className="form-actions">
-          <button type="button" className="cancel-btn" onClick={onCancel}>
+          <button type="button" className="cancel-btn" onClick={onCancel} disabled={loading}>
             Cancel
           </button>
-          <button type="submit" className="submit-btn">
-            {editingId ? 'Update Accelerator' : 'Create Accelerator'}
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="btn-spinner"></span>
+                {editingId ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              editingId ? 'Update Accelerator' : 'Create Accelerator'
+            )}
           </button>
         </div>
       </form>
@@ -1181,4 +448,3 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
 };
 
 export default AcceleratorForm;
-
