@@ -20,20 +20,36 @@ class UserCreateRequest(BaseModel):
     Attributes:
         first_name: User's first name (required, non-empty)
         last_name: User's last name (required, non-empty)
-        user_email: User's email address (required, valid email format)
+        user_email: User's business email address (required, valid email format)
         user_password: User's password (required, min 6 characters)
+        company: User's company name (required, non-empty)
+        job_function: User's job function (required, must be from enum)
+        business_phone: User's business phone number (required, non-empty)
+        country: User's country (required, non-empty)
     """
     first_name: str = Field(..., min_length=1, description="User's first name")
     last_name: str = Field(..., min_length=1, description="User's last name")
-    user_email: EmailStr = Field(..., description="User's email address")
+    user_email: EmailStr = Field(..., description="User's business email address")
     user_password: str = Field(..., min_length=6, description="User's password")
+    company: str = Field(..., min_length=1, description="User's company name")
+    job_function: str = Field(..., min_length=1, description="User's job function")
+    business_phone: str = Field(..., min_length=1, description="User's business phone number")
+    country: str = Field(..., min_length=1, description="User's country")
 
-    @field_validator("first_name", "last_name")
+    @field_validator("first_name", "last_name", "company", "job_function", "country")
     @classmethod
-    def validate_names(cls, v: str) -> str:
-        """Validate names are not empty or whitespace only."""
+    def validate_text_fields(cls, v: str) -> str:
+        """Validate text fields are not empty or whitespace only."""
         if not v or not v.strip():
-            raise ValueError("Name cannot be empty or whitespace")
+            raise ValueError("Field cannot be empty or whitespace")
+        return v.strip()
+
+    @field_validator("business_phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        """Validate phone number is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Business phone number cannot be empty")
         return v.strip()
 
     @field_validator("user_password")
@@ -148,6 +164,10 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     user_email: str
+    company: str
+    job_function: str
+    business_phone: str
+    country: str
     is_internal: bool
     is_admin: bool
     created_at: str
@@ -265,6 +285,10 @@ class UserModel(BaseModel):
         first_name: char
         last_name: char
         user_email: char (indexed for match/like)
+        company: char
+        job_function: char
+        business_phone: char
+        country: char
         is_internal: boolean
         is_admin: boolean (default false)
         totp_enabled: boolean (NEW - MFA status)
@@ -281,6 +305,10 @@ class UserModel(BaseModel):
     first_name: str
     last_name: str
     user_email: str
+    company: str
+    job_function: str
+    business_phone: str
+    country: str
     is_internal: bool = False
     is_admin: bool = False  # Always defaults to False per business rule
     
@@ -314,6 +342,10 @@ class UserModel(BaseModel):
             "first_name": self.first_name,
             "last_name": self.last_name,
             "user_email": self.user_email,
+            "company": self.company,
+            "job_function": self.job_function,
+            "business_phone": self.business_phone,
+            "country": self.country,
             "is_internal": self.is_internal,
             "is_admin": self.is_admin,
             

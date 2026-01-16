@@ -54,6 +54,10 @@ class UserRepository:
         first_name: str,
         last_name: str,
         user_email: str,
+        company: str,
+        job_function: str,
+        business_phone: str,
+        country: str,
         is_internal: bool,
         encrypted_password: str,
     ) -> str:
@@ -65,6 +69,10 @@ class UserRepository:
             first_name: User's first name
             last_name: User's last name
             user_email: User's email address
+            company: User's company name
+            job_function: User's job function
+            business_phone: User's business phone number
+            country: User's country
             is_internal: Whether user is internal
             encrypted_password: Bcrypt hashed password
             
@@ -91,6 +99,10 @@ class UserRepository:
             first_name=first_name,
             last_name=last_name,
             user_email=user_email,
+            company=company,
+            job_function=job_function,
+            business_phone=business_phone,
+            country=country,
             is_internal=is_internal,
             is_admin=False,
             # MFA fields - new user starts with MFA pending

@@ -128,6 +128,12 @@
   letter-spacing: 0.3px;
 }
 
+.required-asterisk {
+  color: #ff4757;
+  margin-left: 2px;
+  font-weight: 600;
+}
+
 .form-input {
   width: 100%;
   padding: 14px 16px;
@@ -150,6 +156,66 @@
 
 .form-input::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+/* Phone Input Styling */
+.phone-input-wrapper {
+  width: 100%;
+}
+
+.phone-input-wrapper .PhoneInputCountry {
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px 0 0 12px;
+  margin-right: -1px;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  outline: none;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+  width: 0.3em;
+  height: 0.3em;
+}
+
+.phone-input-wrapper .phone-input-field {
+  border-radius: 0 12px 12px 0 !important;
+  border-left: none !important;
+  padding-left: 12px !important;
+}
+
+.phone-input-wrapper .phone-input-field:focus {
+  outline: none;
+  border-color: #5b6cff !important;
+  background: rgba(91, 108, 255, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1) !important;
+}
+
+.phone-input-wrapper:has(.phone-input-field:focus) .PhoneInputCountry {
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+}
+
+.phone-input-wrapper .phone-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .signup-submit-button {
