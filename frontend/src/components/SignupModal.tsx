@@ -32,7 +32,7 @@ type RegistrationStep =
   | 'complete';
 
 // Helper to convert country name to ISO country code for PhoneInput
-const getCountryCode = (countryName: string): any => {
+const getCountryCode = (countryName: string): string => {
   const countryMap: { [key: string]: string } = {
     'United States': 'US',
     'United Kingdom': 'GB',
@@ -194,8 +194,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Verification failed. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed. Please try again.';
       console.error('TOTP Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
@@ -227,8 +227,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
           onSwitchToLogin();
         }
       }, 2000);
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Failed to complete registration. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Failed to complete registration. Please try again.';
       showToast(errorMsg, 'error');
       setVerifying(false);
     }

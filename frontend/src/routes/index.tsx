@@ -160,5 +160,6 @@ export const AppRouter = () => {
   return <RouterProvider router={router} />;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export default router;
 

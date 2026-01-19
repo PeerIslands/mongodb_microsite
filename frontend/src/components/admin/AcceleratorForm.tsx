@@ -113,7 +113,7 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
   const pricingModels = ['Free', 'Enterprise', 'Contact Sales'];
   const licenseTypes = ['Open Source', 'Proprietary', 'Hybrid'];
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -123,22 +123,22 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
       if (!Array.isArray(fieldValue)) return prev;
       return {
         ...prev,
-        [field]: fieldValue.map((item: any, i: number) => i === index ? value : item)
+        [field]: fieldValue.map((item: string | Feature | Benefit | Download | Record<string, unknown>, i: number) => i === index ? value : item)
       };
     });
   };
 
-  const handleArrayItemAdd = (field: string, template: any = '') => {
+  const handleArrayItemAdd = (field: string, template: string | Feature | Benefit | Download | Record<string, unknown> = '') => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field as keyof typeof prev] as any[], template]
+      [field]: [...prev[field as keyof typeof prev] as (string | Feature | Benefit | Download | Record<string, unknown>)[], template]
     }));
   };
 
   const handleArrayItemRemove = (field: string, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (prev[field as keyof typeof prev] as any[]).filter((_, i) => i !== index)
+      [field]: (prev[field as keyof typeof prev] as (string | Feature | Benefit | Download | Record<string, unknown>)[]).filter((_, i) => i !== index)
     }));
   };
 

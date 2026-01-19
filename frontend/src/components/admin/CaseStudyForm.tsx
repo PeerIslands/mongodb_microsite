@@ -59,7 +59,7 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess }: CaseStudyFormProps) =
   const techOptions = ['MongoDB', 'PostgreSQL', 'MySQL', 'Node.js', 'Python', 'React', 'Vue.js', 'Angular', 'Java', 'Kafka', 'Spark'];
   const migrationTypes = ['SQL to MongoDB', 'Cloud Migration', 'Modernization', 'Data Lake', 'Microservices'];
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -69,7 +69,7 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess }: CaseStudyFormProps) =
       if (!Array.isArray(fieldValue)) return prev;
       return {
         ...prev,
-        [field]: fieldValue.map((item: any, i: number) => i === index ? value : item)
+        [field]: fieldValue.map((item: string, i: number) => i === index ? value : item)
       };
     });
   };
@@ -77,14 +77,14 @@ const CaseStudyForm = ({ editingId, onCancel, onSuccess }: CaseStudyFormProps) =
   const handleArrayItemAdd = (field: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field as keyof typeof prev] as any[], '']
+      [field]: [...prev[field as keyof typeof prev] as string[], '']
     }));
   };
 
   const handleArrayItemRemove = (field: string, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (prev[field as keyof typeof prev] as any[]).filter((_, i) => i !== index)
+      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
     }));
   };
 

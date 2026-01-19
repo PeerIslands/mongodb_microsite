@@ -32,7 +32,7 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
     'Community'
   ];
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

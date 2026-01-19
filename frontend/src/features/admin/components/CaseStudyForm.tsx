@@ -97,6 +97,7 @@ const CaseStudyForm = ({
     if (editingId) {
       fetchCaseStudyData(editingId);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);
 
   const fetchCaseStudyData = async (id: string) => {
@@ -107,12 +108,12 @@ const CaseStudyForm = ({
       
       // Map API response (snake_case) to form data (camelCase)
       // The API response uses snake_case field names
-      const apiData = data as any;
+      const apiData = data as Record<string, unknown>;
       
       // Parse metrics from API (ensure at least 3 metrics)
       let metricsFromApi: MetricItem[] = [];
       if (Array.isArray(apiData.metrics)) {
-        metricsFromApi = apiData.metrics.map((m: any) => ({
+        metricsFromApi = apiData.metrics.map((m: {label?: string; value?: string}) => ({
           label: m.label || '',
           value: m.value || ''
         }));
@@ -207,7 +208,7 @@ const CaseStudyForm = ({
     handleInputChange('industry', '');
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean | string[] | MetricItem[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -348,9 +349,9 @@ const CaseStudyForm = ({
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      const message = error?.response?.data?.detail || error?.message || 'An error occurred while saving the case study.';
+      const message = (error as {response?: {data?: {detail?: string}}; message?: string})?.response?.data?.detail || (error as {message?: string})?.message || 'An error occurred while saving the case study.';
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);

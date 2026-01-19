@@ -25,7 +25,6 @@ const DemoVideoSection = ({
         <div className="video-hero-container">
           <div className="video-hero-wrapper">
             <div className="video-player-large">
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 src={videoUrl}
                 title={title}

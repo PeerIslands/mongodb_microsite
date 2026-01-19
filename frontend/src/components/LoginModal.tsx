@@ -146,8 +146,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Verification failed';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed';
       console.error('TOTP Login Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
