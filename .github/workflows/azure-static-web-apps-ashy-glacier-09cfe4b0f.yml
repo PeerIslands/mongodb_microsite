@@ -3,7 +3,11 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - develop
+      - Pre-Build-001
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/azure-static-web-apps-ashy-glacier-09cfe4b0f.yml'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
