@@ -5,6 +5,22 @@
   },
   "routes": [
     {
+      "route": "/src/*",
+      "statusCode": 404
+    },
+    {
+      "route": "/node_modules/*",
+      "statusCode": 404
+    },
+    {
+      "route": "/*.ts",
+      "statusCode": 404
+    },
+    {
+      "route": "/*.tsx",
+      "statusCode": 404
+    },
+    {
       "route": "/assets/*.js",
       "headers": {
         "Content-Type": "text/javascript; charset=utf-8",
