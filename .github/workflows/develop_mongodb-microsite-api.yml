@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - mongodb-microsite-api
 on:
   push:
     branches:
-      - Pre-Build-001
+      - develop
   workflow_dispatch:
 
 jobs:
