@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - develop
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/azure-static-web-apps-ashy-glacier-09cfe4b0f.yml'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
