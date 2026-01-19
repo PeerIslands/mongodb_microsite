@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
-import type { User } from '@/types/models/user';
+import type { User, SignupResponse } from '@/types/models/user';
 
 interface UseAuthReturn {
   user: User | null;
@@ -16,7 +16,7 @@ interface UseAuthReturn {
     jobFunction: string,
     businessPhone: string,
     country: string
-  ) => Promise<{ success: boolean; data?: Record<string, unknown>; error?: string }>;
+  ) => Promise<{ success: boolean; data?: SignupResponse; error?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
@@ -37,7 +37,7 @@ export const useAuth = (): UseAuthReturn => {
     jobFunction: string,
     businessPhone: string,
     country: string
-  ): Promise<{ success: boolean; data?: Record<string, unknown>; error?: string }> => {
+  ): Promise<{ success: boolean; data?: SignupResponse; error?: string }> => {
     setLoading(true);
     setError(null);
     

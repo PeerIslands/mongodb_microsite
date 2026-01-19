@@ -32,7 +32,7 @@ type RegistrationStep =
   | 'complete';
 
 // Helper to convert country name to ISO country code for PhoneInput
-const getCountryCode = (countryName: string): string => {
+const getCountryCode = (countryName: string) => {
   const countryMap: { [key: string]: string } = {
     'United States': 'US',
     'United Kingdom': 'GB',
@@ -54,7 +54,7 @@ const getCountryCode = (countryName: string): string => {
     'Switzerland': 'CH',
     'Sweden': 'SE',
   };
-  return countryMap[countryName] || 'US';
+  return (countryMap[countryName] || 'US') as any;
 };
 
 const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => {
