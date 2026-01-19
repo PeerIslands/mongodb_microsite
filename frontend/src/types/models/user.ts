@@ -3,6 +3,10 @@ export interface User {
   first_name: string;
   last_name: string;
   user_email: string;
+  company: string;
+  job_function: string;
+  business_phone: string;
+  country: string;
   is_internal: boolean;
   is_admin: boolean;
   created_at: string;
@@ -13,6 +17,10 @@ export interface CreateUserDto {
   last_name: string;
   user_email: string;
   user_password: string;
+  company: string;
+  job_function: string;
+  business_phone: string;
+  country: string;
 }
 
 export interface LoginDto {

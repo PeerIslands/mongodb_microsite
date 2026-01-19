@@ -7,7 +7,16 @@ interface UseAuthReturn {
   userId: string | null;
   loading: boolean;
   error: string | null;
-  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+  signup: (
+    firstName: string, 
+    lastName: string, 
+    email: string, 
+    password: string,
+    company: string,
+    jobFunction: string,
+    businessPhone: string,
+    country: string
+  ) => Promise<{ success: boolean; data?: any; error?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
@@ -23,7 +32,11 @@ export const useAuth = (): UseAuthReturn => {
     firstName: string, 
     lastName: string, 
     email: string, 
-    password: string
+    password: string,
+    company: string,
+    jobFunction: string,
+    businessPhone: string,
+    country: string
   ): Promise<{ success: boolean; data?: any; error?: string }> => {
     setLoading(true);
     setError(null);
@@ -34,6 +47,10 @@ export const useAuth = (): UseAuthReturn => {
         last_name: lastName,
         user_email: email,
         user_password: password,
+        company: company,
+        job_function: jobFunction,
+        business_phone: businessPhone,
+        country: country,
       });
       
       // Store user ID from response
