@@ -312,6 +312,43 @@ class CaseStudyService:
             message="Case study updated successfully",
         )
 
+    async def get_testimonials(self) -> List[Dict[str, Any]]:
+        """
+        Get all testimonials from case studies that have testimonial data.
+        
+        Returns:
+            List of testimonials with company info
+        """
+        # Get all published case studies with testimonials
+        docs = await self._repository.find_many({
+            'status': 'published',
+            'testimonial_quote': {'$exists': True, '$nin': ['', None]},
+            'testimonial_author': {'$exists': True, '$nin': ['', None]}
+        })
+        
+        print(f"🔍 Found {len(docs)} case studies with testimonial data")
+        
+        testimonials = []
+        for doc in docs:
+            testimonial_quote = doc.get('testimonial_quote', '')
+            testimonial_author = doc.get('testimonial_author', '')
+            testimonial_position = doc.get('testimonial_position', '')
+            
+            print(f"📝 Processing: {doc.get('company_name')} - Author: '{testimonial_author}', Quote: '{testimonial_quote[:50]}...'")
+            
+            # Only include if we have both quote and author
+            if testimonial_quote and testimonial_author:
+                testimonials.append({
+                    'id': str(doc['_id']),
+                    'company_name': doc.get('company_name', ''),
+                    'testimonial_quote': testimonial_quote,
+                    'testimonial_author': testimonial_author,
+                    'testimonial_position': testimonial_position or ''
+                })
+        
+        print(f"✅ Returning {len(testimonials)} testimonials")
+        return testimonials
+
     async def delete_case_study(self, case_id: str) -> DeleteCaseStudyResponse:
         """
         Delete a case study by its ID.
