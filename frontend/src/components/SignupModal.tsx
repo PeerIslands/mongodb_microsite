@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
-import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber, Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import QRCodeDisplay from './QRCodeDisplay';
 import TOTPVerificationInput from './TOTPVerificationInput';
@@ -32,8 +32,8 @@ type RegistrationStep =
   | 'complete';
 
 // Helper to convert country name to ISO country code for PhoneInput
-const getCountryCode = (countryName: string) => {
-  const countryMap: { [key: string]: string } = {
+const getCountryCode = (countryName: string): Country => {
+  const countryMap: { [key: string]: Country } = {
     'United States': 'US',
     'United Kingdom': 'GB',
     'Canada': 'CA',
@@ -54,7 +54,7 @@ const getCountryCode = (countryName: string) => {
     'Switzerland': 'CH',
     'Sweden': 'SE',
   };
-  return (countryMap[countryName] || 'US') as any;
+  return countryMap[countryName] || 'US';
 };
 
 const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => {
