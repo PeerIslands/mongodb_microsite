@@ -97,7 +97,6 @@ const CaseStudyForm = ({
     if (editingId) {
       fetchCaseStudyData(editingId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);
 
   const fetchCaseStudyData = async (id: string) => {
@@ -106,60 +105,41 @@ const CaseStudyForm = ({
       setErrorMessage(null);
       const data = await caseStudiesService.getById(id);
       
-      // Map API response (snake_case) to form data (camelCase)
-      // The API response uses snake_case field names
-      const apiData = data as Record<string, unknown>;
-      
-      // Parse metrics from API (ensure at least 3 metrics)
-      let metricsFromApi: MetricItem[] = [];
-      if (Array.isArray(apiData.metrics)) {
-        metricsFromApi = apiData.metrics.map((m: {label?: string; value?: string}) => ({
-          label: m.label || '',
-          value: m.value || ''
-        }));
-      }
-      // Ensure minimum 3 metrics
+      // Parse metrics from API response (ensure at least MIN_METRICS)
+      const metricsFromApi: MetricItem[] = Array.isArray(data.metrics)
+        ? data.metrics.map((m) => ({ label: m.label || '', value: m.value || '' }))
+        : [];
       while (metricsFromApi.length < MIN_METRICS) {
         metricsFromApi.push(createEmptyMetric());
       }
       
-      // Parse industry - get single value
-      let industryFromApi = '';
-      if (Array.isArray(apiData.industry) && apiData.industry.length > 0) {
-        industryFromApi = apiData.industry[0];
-      } else if (typeof apiData.industry === 'string') {
-        industryFromApi = apiData.industry;
-      }
-      
+      // Map snake_case API response to camelCase form data
       setFormData({
-        title: apiData.title || '',
-        featured: apiData.featured || false,
-        status: apiData.status || 'draft',
-        industry: industryFromApi,
-        techStack: apiData.tech_stack || [],
-        migrationType: apiData.migration_type || '',
-        companyName: apiData.company_name || '',
-        description: apiData.description || '',
-        challenges: apiData.challenges || '',
-        approach: apiData.approach || '',
+        title: data.title || '',
+        featured: data.featured || false,
+        status: data.status || 'draft',
+        industry: data.industry || '',
+        techStack: data.tech_stack || [],
+        migrationType: data.migration_type || '',
+        companyName: data.company_name || '',
+        description: data.description || '',
+        challenges: data.challenges || '',
+        approach: data.approach || '',
         metrics: metricsFromApi,
-        businessOutcomes: apiData.business_outcomes || '',
-        testimonialQuote: apiData.testimonial_quote || '',
-        testimonialAuthor: apiData.testimonial_author || '',
-        testimonialPosition: apiData.testimonial_position || '',
+        businessOutcomes: data.business_outcomes || '',
+        testimonialQuote: data.testimonial_quote || '',
+        testimonialAuthor: data.testimonial_author || '',
+        testimonialPosition: data.testimonial_position || '',
       });
 
-      // Set file preview URLs for existing files
       setFileData({
-        pdfFile: { 
-          file: null, 
-          previewUrl: apiData.pdf_url || '' 
-        },
+        pdfFile: { file: null, previewUrl: data.pdf_url || '' },
       });
 
       // Check if industry is custom (not in predefined options)
-      if (industryFromApi && !industryOptions.includes(industryFromApi)) {
-        setCustomIndustry(industryFromApi);
+      const industry = data.industry || '';
+      if (industry && !industryOptions.includes(industry)) {
+        setCustomIndustry(industry);
         setShowCustomIndustryInput(true);
       }
     } catch (err) {
@@ -208,7 +188,7 @@ const CaseStudyForm = ({
     handleInputChange('industry', '');
   };
 
-  const handleInputChange = (field: string, value: string | boolean | string[] | MetricItem[]) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -349,9 +329,9 @@ const CaseStudyForm = ({
       }
 
       onSuccess();
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      const message = (error as {response?: {data?: {detail?: string}}; message?: string})?.response?.data?.detail || (error as {message?: string})?.message || 'An error occurred while saving the case study.';
+      const message = error?.response?.data?.detail || error?.message || 'An error occurred while saving the case study.';
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
