@@ -8,9 +8,9 @@ import { lazy, Suspense } from 'react';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const AcceleratorsPage = lazy(() => import('@/pages/AcceleratorsPage'));
-const AcceleratorDetailPage = lazy(() => import('@/pages/AcceleratorDetailPage'));
+// const AcceleratorDetailPage = lazy(() => import('@/pages/AcceleratorDetailPage'));
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
-const CaseStudyDetailPage = lazy(() => import('@/pages/CaseStudyDetailPage'));
+// const CaseStudyDetailPage = lazy(() => import('@/pages/CaseStudyDetailPage'));
 const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -63,22 +63,22 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
-          {
-            path: ROUTES.ACCELERATOR_DETAIL,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AcceleratorDetailPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: ROUTES.CASE_STUDIES,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <CaseStudiesPage />
-              </Suspense>
-            ),
-          },
+          // {
+          //   path: ROUTES.ACCELERATOR_DETAIL,
+          //   element: (
+          //     <Suspense fallback={<PageLoader />}>
+          //       <AcceleratorDetailPage />
+          //     </Suspense>
+          //   ),
+          // },
+          // {
+            // path: ROUTES.CASE_STUDIES,
+          //   element: (
+          //     <Suspense fallback={<PageLoader />}>
+          //       <CaseStudiesPage />
+          //     </Suspense>
+          //   ),
+          // },
           {
             path: ROUTES.SUCCESS_STORIES,
             element: (
@@ -87,14 +87,14 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
-          {
-            path: ROUTES.CASE_STUDY_DETAIL,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <CaseStudyDetailPage />
-              </Suspense>
-            ),
-          },
+          // {
+          //   path: ROUTES.CASE_STUDY_DETAIL,
+          //   element: (
+          //     <Suspense fallback={<PageLoader />}>
+          //       <CaseStudyDetailPage />
+          //     </Suspense>
+          //   ),
+          // },
           {
             path: ROUTES.INSIGHTS,
             element: (

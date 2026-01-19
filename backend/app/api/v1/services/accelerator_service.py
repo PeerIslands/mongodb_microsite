@@ -22,7 +22,6 @@ from app.api.v1.models.accelerator import (
 )
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.exceptions.accelerator_exceptions import AcceleratorNotFoundError
-from app.api.v1.services.azure_blob_service import get_azure_blob_service
 
 
 class AcceleratorService:
@@ -45,10 +44,30 @@ class AcceleratorService:
             updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
         )
 
+    def _build_proxy_url(self, accelerator_id: str, file_type: str, blob_path: str) -> str:
+        """
+        Build a secure proxy URL for file access.
+        
+        Instead of exposing Azure Blob URLs with SAS tokens, we return
+        a backend proxy URL that streams the file securely.
+        
+        Args:
+            accelerator_id: The accelerator ID
+            file_type: Type of file (pdf, video, thumbnail)
+            blob_path: The blob path (to check if file exists)
+            
+        Returns:
+            Proxy URL like /api/v1/accelerators/{id}/files/{type}
+        """
+        if not blob_path:
+            return ""
+        return f"/api/v1/accelerators/{accelerator_id}/files/{file_type}"
+
     def _to_detail_response(self, doc: dict) -> AcceleratorDetailResponse:
         """Convert MongoDB document to AcceleratorDetailResponse.
         
-        Constructs full Azure URLs from blob paths for thumbnail_url, video_url and pdf_url.
+        Returns secure proxy URLs instead of direct Azure Blob URLs.
+        Files are served through /api/v1/accelerators/{id}/files/{type} endpoint.
         """
         # Parse metrics
         metrics_data = doc.get("metrics", [])
@@ -57,20 +76,21 @@ class AcceleratorService:
             if isinstance(m, dict) and "label" in m and "value" in m:
                 metrics.append(MetricItem(label=m["label"], value=m["value"]))
 
-        # Get Azure Blob Service to construct full URLs
-        blob_service = get_azure_blob_service()
+        # Get accelerator ID
+        accelerator_id = str(doc.get("id", doc.get("_id", "")))
         
-        # Convert blob paths to full Azure URLs
+        # Get blob paths (used to check if files exist)
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
         pdf_blob_path = doc.get("pdf_url", "")
         
-        thumbnail_url = blob_service.get_full_url(thumbnail_blob_path) if thumbnail_blob_path else ""
-        video_url = blob_service.get_full_url(video_blob_path) if video_blob_path else ""
-        pdf_url = blob_service.get_full_url(pdf_blob_path) if pdf_blob_path else ""
+        # Build secure proxy URLs instead of direct Azure URLs
+        thumbnail_url = self._build_proxy_url(accelerator_id, "thumbnail", thumbnail_blob_path)
+        video_url = self._build_proxy_url(accelerator_id, "video", video_blob_path)
+        pdf_url = self._build_proxy_url(accelerator_id, "pdf", pdf_blob_path)
 
         return AcceleratorDetailResponse(
-            id=str(doc.get("id", doc.get("_id", ""))),
+            id=accelerator_id,
             title=doc.get("title", ""),
             subtitle=doc.get("subtitle", ""),
             description=doc.get("description", ""),

@@ -10,11 +10,12 @@ interface LoginModalProps {
   onClose: () => void;
   onSwitchToSignup?: () => void;
   onSwitchToForgotPassword?: () => void;
+  onLoginSuccess?: () => void;
 }
 
 type LoginStep = 'credentials' | 'verify-totp';
 
-const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPassword }: LoginModalProps) => {
+const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }: LoginModalProps) => {
   // Credentials form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -83,9 +84,14 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         // Close modal
         onClose();
 
+        // Execute success callback if provided (e.g., download PDF)
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+
         // Reload page to update UI state and show logged-in header
         setTimeout(() => {
-          window.location.reload();
+          globalThis.location.reload();
         }, 1000);
       }
     } else {
@@ -125,9 +131,14 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         // Close modal
         onClose();
         
+        // Execute success callback if provided (e.g., download PDF)
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
         // Reload page
         setTimeout(() => {
-          window.location.reload();
+          globalThis.location.reload();
         }, 1000);
       } else {
         const errorMsg = response.data?.detail || 'Invalid code';

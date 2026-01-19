@@ -6,8 +6,8 @@ Field naming convention: snake_case (matching frontend requirements)
 
 File Storage:
 - PDFs are stored in Azure Blob Storage
-- MongoDB stores blob paths (e.g., "abc123/pdf_url.pdf")
-- Full URLs are constructed at retrieval time using the Azure Blob Service
+- MongoDB stores blob paths (e.g., "casestudies/abc123/pdf_url.pdf")
+- Secure proxy URLs are returned instead of direct Azure URLs
 """
 
 from typing import List, Optional, Dict, Any
@@ -49,22 +49,44 @@ class CaseStudyService:
     # HELPER METHODS
     # =========================================================================
 
-    def _get_file_value(self, doc: dict, field: str) -> str:
+    def _build_proxy_url(self, case_id: str, file_type: str, blob_path: str) -> str:
         """
-        Get file field value, constructing full Azure Blob URL from blob path.
+        Build a secure proxy URL for file access.
+        
+        Instead of exposing Azure Blob URLs with SAS tokens, we return
+        a backend proxy URL that streams the file securely.
+        
+        Args:
+            case_id: The case study ID
+            file_type: Type of file (pdf)
+            blob_path: The blob path (to check if file exists)
+            
+        Returns:
+            Proxy URL like /api/v1/case-studies/{id}/files/{type}
+        """
+        if not blob_path:
+            return ""
+        return f"/api/v1/case-studies/{case_id}/files/{file_type}"
+
+    def _get_file_value(self, doc: dict, field: str, case_id: str) -> str:
+        """
+        Get file field value as a secure proxy URL.
         
         Args:
             doc: MongoDB document
             field: Field name (pdf_url, etc.)
+            case_id: The case study ID for building proxy URL
             
         Returns:
-            Full Azure Blob URL if blob path exists, otherwise empty string
+            Proxy URL if blob path exists, otherwise empty string
         """
         value = doc.get(field, "")
         
         if isinstance(value, str) and value:
-            # Value is a blob path - construct full URL
-            return self._blob_service.get_full_url(value)
+            # Map field name to file type
+            file_type_map = {"pdf_url": "pdf"}
+            file_type = file_type_map.get(field, "pdf")
+            return self._build_proxy_url(case_id, file_type, value)
         else:
             return ""
     
@@ -130,9 +152,15 @@ class CaseStudyService:
         )
 
     def _to_detail_response(self, doc: dict) -> CaseStudyDetailResponse:
-        """Convert document to CaseStudyDetailResponse."""
+        """Convert document to CaseStudyDetailResponse.
+        
+        Returns secure proxy URLs instead of direct Azure Blob URLs.
+        Files are served through /api/v1/case-studies/{id}/files/{type} endpoint.
+        """
+        case_id = str(doc.get("id", doc.get("_id", "")))
+        
         return CaseStudyDetailResponse(
-            id=str(doc.get("id", doc.get("_id", ""))),
+            id=case_id,
             title=doc.get("title", ""),
             featured=doc.get("featured", False),
             status=doc.get("status", "draft"),
@@ -150,7 +178,7 @@ class CaseStudyService:
             testimonial_quote=doc.get("testimonial_quote"),
             testimonial_author=doc.get("testimonial_author"),
             testimonial_position=doc.get("testimonial_position"),
-            pdf_url=self._get_file_value(doc, "pdf_url"),
+            pdf_url=self._get_file_value(doc, "pdf_url", case_id),
         )
 
     # =========================================================================
