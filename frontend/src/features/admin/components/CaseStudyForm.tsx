@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import '@/styles/features/admin/CaseStudyForm.css';
 import FileUpload, { FileUploadResult } from './FileUpload';
 import RichTextEditor from './RichTextEditor';
@@ -92,14 +92,7 @@ const CaseStudyForm = ({
   const [customIndustry, setCustomIndustry] = useState('');
   const [showCustomIndustryInput, setShowCustomIndustryInput] = useState(false);
 
-  // Fetch case study data when editing
-  useEffect(() => {
-    if (editingId) {
-      fetchCaseStudyData(editingId);
-    }
-  }, [editingId]);
-
-  const fetchCaseStudyData = async (id: string) => {
+  const fetchCaseStudyData = useCallback(async (id: string) => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -148,7 +141,14 @@ const CaseStudyForm = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [industryOptions]);
+
+  // Fetch case study data when editing
+  useEffect(() => {
+    if (editingId) {
+      fetchCaseStudyData(editingId);
+    }
+  }, [editingId, fetchCaseStudyData]);
 
   // Tech Stack handlers
   const handleAddCustomTech = () => {
@@ -188,7 +188,7 @@ const CaseStudyForm = ({
     handleInputChange('industry', '');
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | string[] | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -329,9 +329,10 @@ const CaseStudyForm = ({
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      const message = error?.response?.data?.detail || error?.message || 'An error occurred while saving the case study.';
+      const axiosError = error as { response?: { data?: { detail?: string } }; message?: string };
+      const message = axiosError?.response?.data?.detail || axiosError?.message || 'An error occurred while saving the case study.';
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
