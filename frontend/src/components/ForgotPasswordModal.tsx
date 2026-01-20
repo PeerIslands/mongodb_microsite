@@ -106,8 +106,8 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
       } else {
         setVerificationError(response.data?.detail || 'Invalid code. Please try again.');
       }
-    } catch (error: any) {
-      setVerificationError(error.response?.data?.detail || 'Verification failed. Please try again.');
+    } catch (error: unknown) {
+      setVerificationError((error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -151,8 +151,8 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
       } else {
         showToast(response.data?.detail || 'Failed to reset password', 'error');
       }
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Network error. Please try again.', 'error');
+    } catch (error: unknown) {
+      showToast((error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Network error. Please try again.', 'error');
     } finally {
       setLoading(false);
     }

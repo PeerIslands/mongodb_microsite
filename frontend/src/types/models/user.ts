@@ -28,10 +28,20 @@ export interface LoginDto {
   user_password: string;
 }
 
+export interface TOTPSetup {
+  secret: string;
+  qr_code: string;
+  manual_entry_key: string;
+  issuer: string;
+  account_name: string;
+  otpauth_url: string;
+}
+
 export interface SignupResponse {
   user_id: string;
   is_internal: boolean;
   message: string;
+  totp_setup: TOTPSetup;
 }
 
 export interface LoginResponse {

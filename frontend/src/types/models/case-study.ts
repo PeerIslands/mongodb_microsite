@@ -1,8 +1,5 @@
-// Single metric item (matches backend MetricItem)
-export interface MetricItem {
-  label: string;
-  value: string;
-}
+// Import MetricItem from accelerator (single source of truth)
+import type { MetricItem } from './accelerator';
 
 // Metrics is now an array of MetricItem (max 5 items)
 export type CaseStudyMetrics = MetricItem[];

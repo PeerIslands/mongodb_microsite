@@ -453,6 +453,111 @@ class AzureBlobService:
         
         return f"{self._base_url}/{blob_path}?{self._sas_token}"
 
+    async def download_file(self, blob_path: str) -> tuple[bytes, str, int]:
+        """
+        Download a file from Azure Blob Storage.
+        
+        Args:
+            blob_path: Blob path stored in MongoDB
+            
+        Returns:
+            Tuple of (file_content, content_type, content_length)
+            
+        Raises:
+            AzureBlobServiceError: If file cannot be downloaded
+        """
+        if not blob_path or not self._sas_url:
+            raise AzureBlobServiceError("Invalid blob path or SAS URL not configured")
+        
+        download_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    download_url,
+                    timeout=120.0,  # 2 minute timeout for large files
+                )
+                response.raise_for_status()
+                
+                content_type = response.headers.get("content-type", "application/octet-stream")
+                content_length = int(response.headers.get("content-length", 0))
+                
+                return response.content, content_type, content_length
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise AzureBlobServiceError(f"File not found: {blob_path}")
+            raise AzureBlobServiceError(f"Failed to download file: {e}")
+        except Exception as e:
+            raise AzureBlobServiceError(f"Failed to download file: {e}")
+
+    async def stream_file(self, blob_path: str):
+        """
+        Stream a file from Azure Blob Storage as an async generator.
+        
+        Args:
+            blob_path: Blob path stored in MongoDB
+            
+        Yields:
+            Chunks of file content
+            
+        Raises:
+            AzureBlobServiceError: If file cannot be streamed
+        """
+        if not blob_path or not self._sas_url:
+            raise AzureBlobServiceError("Invalid blob path or SAS URL not configured")
+        
+        download_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                async with client.stream("GET", download_url, timeout=300.0) as response:
+                    response.raise_for_status()
+                    async for chunk in response.aiter_bytes(chunk_size=65536):  # 64KB chunks
+                        yield chunk
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise AzureBlobServiceError(f"File not found: {blob_path}")
+            raise AzureBlobServiceError(f"Failed to stream file: {e}")
+        except Exception as e:
+            raise AzureBlobServiceError(f"Failed to stream file: {e}")
+
+    async def get_file_info(self, blob_path: str) -> tuple[str, int]:
+        """
+        Get file metadata (content type and size) without downloading.
+        
+        Args:
+            blob_path: Blob path stored in MongoDB
+            
+        Returns:
+            Tuple of (content_type, content_length)
+            
+        Raises:
+            AzureBlobServiceError: If file info cannot be retrieved
+        """
+        if not blob_path or not self._sas_url:
+            raise AzureBlobServiceError("Invalid blob path or SAS URL not configured")
+        
+        head_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.head(
+                    head_url,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                
+                content_type = response.headers.get("content-type", "application/octet-stream")
+                content_length = int(response.headers.get("content-length", 0))
+                
+                return content_type, content_length
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise AzureBlobServiceError(f"File not found: {blob_path}")
+            raise AzureBlobServiceError(f"Failed to get file info: {e}")
+        except Exception as e:
+            raise AzureBlobServiceError(f"Failed to get file info: {e}")
+
 
 # Singleton instance
 _azure_blob_service: Optional[AzureBlobService] = None
