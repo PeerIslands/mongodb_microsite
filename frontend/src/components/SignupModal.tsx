@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
-import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import PhoneInput, { isValidPhoneNumber, Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import QRCodeDisplay from './QRCodeDisplay';
 import TOTPVerificationInput from './TOTPVerificationInput';
@@ -32,8 +32,8 @@ type RegistrationStep =
   | 'complete';
 
 // Helper to convert country name to ISO country code for PhoneInput
-const getCountryCode = (countryName: string): any => {
-  const countryMap: { [key: string]: string } = {
+const getCountryCode = (countryName: string): Country => {
+  const countryMap: { [key: string]: Country } = {
     'United States': 'US',
     'United Kingdom': 'GB',
     'Canada': 'CA',
@@ -194,8 +194,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Verification failed. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed. Please try again.';
       console.error('TOTP Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
@@ -227,8 +227,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
           onSwitchToLogin();
         }
       }, 2000);
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Failed to complete registration. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Failed to complete registration. Please try again.';
       showToast(errorMsg, 'error');
       setVerifying(false);
     }

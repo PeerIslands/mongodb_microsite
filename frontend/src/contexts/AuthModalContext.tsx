@@ -23,6 +23,7 @@ interface AuthModalContextValue {
 
 const AuthModalContext = createContext<AuthModalContextValue | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthModal = () => {
   const context = useContext(AuthModalContext);
   if (!context) {
