@@ -13,6 +13,7 @@ class ContactInquiryRequest(BaseModel):
     Attributes:
         first_name: Contact's first name
         last_name: Contact's last name
+        user_email: Contact's email address (optional, auto-filled for logged-in users)
         company: Company name
         job_function: Job role/function
         business_phone: Business phone number (with country code)
@@ -21,6 +22,7 @@ class ContactInquiryRequest(BaseModel):
     """
     first_name: str = Field(..., min_length=1, description="First name")
     last_name: str = Field(..., min_length=1, description="Last name")
+    user_email: EmailStr = Field(..., description="Email address")
     company: str = Field(..., min_length=1, description="Company name")
     job_function: str = Field(..., min_length=1, description="Job function")
     business_phone: str = Field(..., min_length=1, description="Business phone number")

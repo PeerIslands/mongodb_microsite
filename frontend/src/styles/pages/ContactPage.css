@@ -161,10 +161,32 @@
   line-height: 1.6;
 }
 
+.form-hint-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  gap: 1rem;
+}
+
 .form-hint {
   font-family: 'Inter', sans-serif;
   font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.form-validation-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.form-validation-success {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: #51cf66;
+  font-weight: 500;
 }
 
 /* Phone Input Styling */

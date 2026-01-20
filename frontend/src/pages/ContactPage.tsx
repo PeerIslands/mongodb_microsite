@@ -3,6 +3,7 @@ import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/ContactPage.css';
 
 // Helper to convert country name to ISO country code
@@ -37,6 +38,7 @@ const ContactPage = () => {
   // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [company, setCompany] = useState('');
   const [jobFunction, setJobFunction] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
@@ -49,19 +51,19 @@ const ContactPage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const authToken = localStorage.getItem('authToken');
-      const userId = localStorage.getItem('userId');
       
-      if (authToken && userId) {
+      if (authToken) {
         setIsLoggedIn(true);
         
         try {
-          // Fetch user data from API
-          const response = await apiClient.get(`/api/v1/users/${userId}`);
+          // Fetch user data from authenticated profile endpoint
+          const response = await apiClient.get('/api/v1/profile');
           const userData = response.data;
           
           // Pre-fill form fields
           setFirstName(userData.first_name || '');
           setLastName(userData.last_name || '');
+          setUserEmail(userData.user_email || '');
           setCompany(userData.company || '');
           setJobFunction(userData.job_function || '');
           setBusinessPhone(userData.business_phone || '');
@@ -80,7 +82,7 @@ const ContactPage = () => {
     e.preventDefault();
 
     // Validation
-    if (!firstName.trim() || !lastName.trim() || !company.trim() || 
+    if (!firstName.trim() || !lastName.trim() || !userEmail.trim() || !company.trim() || 
         !jobFunction.trim() || !businessPhone || !country.trim() || !inquiry.trim()) {
       showToast('Please fill in all required fields.', 'error');
       return;
@@ -97,6 +99,7 @@ const ContactPage = () => {
       await apiClient.post('/api/v1/contact/inquiry', {
         first_name: firstName,
         last_name: lastName,
+        user_email: userEmail,
         company: company,
         job_function: jobFunction,
         business_phone: businessPhone,
@@ -113,6 +116,7 @@ const ContactPage = () => {
         // Clear all fields if not logged in
         setFirstName('');
         setLastName('');
+        setUserEmail('');
         setCompany('');
         setJobFunction('');
         setBusinessPhone('');
@@ -129,6 +133,7 @@ const ContactPage = () => {
 
   return (
     <div className="contact-page">
+      {submitting && <LeafLoader />}
       <div className="contact-container">
         {/* Left Side - Email Us Box */}
         <div className="contact-sidebar">
@@ -180,6 +185,22 @@ const ContactPage = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="userEmail" className="form-label">
+                Business Email <span className="required-asterisk">*</span>
+              </label>
+              <input
+                type="email"
+                id="userEmail"
+                className="form-input"
+                placeholder="Enter your business email"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                disabled={submitting || (isLoggedIn && !!userEmail)}
+                required
+              />
             </div>
 
             <div className="form-group">
@@ -298,13 +319,25 @@ const ContactPage = () => {
                 required
                 rows={6}
               />
-              <span className="form-hint">Markdown supported</span>
+              <div className="form-hint-container">
+                <span className="form-hint">Markdown supported</span>
+                {inquiry.length > 0 && inquiry.length < 10 && (
+                  <span className="form-validation-message">
+                    Minimum 10 characters required ({inquiry.length}/10)
+                  </span>
+                )}
+                {inquiry.length >= 10 && (
+                  <span className="form-validation-success">
+                    ✓ {inquiry.length} characters
+                  </span>
+                )}
+              </div>
             </div>
 
             <button 
               type="submit" 
               className="contact-submit-button"
-              disabled={submitting}
+              disabled={submitting || inquiry.length < 10}
             >
               {submitting ? 'Submitting...' : 'Submit Inquiry'}
             </button>
