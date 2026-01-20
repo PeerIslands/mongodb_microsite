@@ -205,7 +205,7 @@ const Header = () => {
                 )}
               </div>
             )}
-            <button className="demo-button">Contact Us</button>
+            <button className="demo-button" onClick={() => navigate('/contact')}>Contact Us</button>
           </div>
         </div>
       </header>

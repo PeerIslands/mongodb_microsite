@@ -1,0 +1,341 @@
+/* Contact Page */
+.contact-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #020916 0%, #0a1628 100%);
+  padding: 8rem 2rem 5rem;
+}
+
+.contact-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+/* ============================================================================
+   LEFT SIDEBAR - Email Us
+   ============================================================================ */
+
+.contact-sidebar {
+  position: sticky;
+  top: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Email Us Card */
+.email-us-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 3rem;
+  backdrop-filter: blur(10px);
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.email-us-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(1.75rem, 2.5vw, 2rem);
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.2;
+}
+
+.email-us-address {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.25rem;
+  color: #5b6cff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  word-break: break-all;
+  display: block;
+}
+
+.email-us-address:hover {
+  color: #7b8cff;
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   RIGHT SIDE - Contact Form
+   ============================================================================ */
+
+.contact-form-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 4rem;
+  backdrop-filter: blur(10px);
+}
+
+.contact-form-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+}
+
+.contact-form-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 3rem 0;
+}
+
+/* Form Styles */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.3px;
+}
+
+.required-asterisk {
+  color: #ff4757;
+  margin-left: 2px;
+  font-weight: 600;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #ffffff;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 150px;
+  line-height: 1.6;
+}
+
+.form-hint {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Phone Input Styling */
+.phone-input-wrapper {
+  width: 100%;
+}
+
+.phone-input-wrapper .PhoneInputCountry {
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px 0 0 12px;
+  margin-right: -1px;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  outline: none;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelectArrow {
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+  width: 0.3em;
+  height: 0.3em;
+}
+
+.phone-input-wrapper .phone-input-field {
+  border-radius: 0 12px 12px 0 !important;
+  border-left: none !important;
+  padding-left: 12px !important;
+}
+
+.phone-input-wrapper .phone-input-field:focus {
+  outline: none;
+  border-color: #5b6cff !important;
+  background: rgba(91, 108, 255, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1) !important;
+}
+
+.phone-input-wrapper:has(.phone-input-field:focus) .PhoneInputCountry {
+  border-color: #5b6cff;
+  background: rgba(91, 108, 255, 0.1);
+}
+
+.phone-input-wrapper .phone-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Submit Button */
+.contact-submit-button {
+  padding: 18px 32px;
+  background: #5b6cff;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  box-shadow: 0 4px 20px rgba(91, 108, 255, 0.3);
+}
+
+.contact-submit-button:hover {
+  background: #4a5ae8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(91, 108, 255, 0.4);
+}
+
+.contact-submit-button:active {
+  transform: translateY(0);
+}
+
+.contact-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+  .contact-container {
+    grid-template-columns: 360px 1fr;
+    gap: 3rem;
+  }
+
+  .contact-form-section {
+    padding: 3rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .contact-page {
+    padding: 7rem 1.5rem 4rem;
+  }
+
+  .contact-container {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .contact-sidebar {
+    position: static;
+  }
+
+  .email-us-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-page {
+    padding: 6rem 1rem 3rem;
+  }
+
+  .contact-form-section {
+    padding: 2rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form-title {
+    font-size: 1.75rem;
+  }
+
+  .contact-form-subtitle {
+    font-size: 1rem;
+  }
+
+  .email-us-card {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-page {
+    padding: 5rem 0.75rem 2rem;
+  }
+
+  .contact-form-section {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .email-us-card {
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+
+  .contact-form {
+    gap: 1.25rem;
+  }
+}
+

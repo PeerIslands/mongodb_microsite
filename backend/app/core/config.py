@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     # Time Window Tolerance
     TOTP_TIME_WINDOW_TOLERANCE: int = 1  # ±1 window (30 seconds each way)
     TOTP_ALLOW_CODE_REUSE: bool = False
+    
+    # SMTP Email Settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_TLS: bool = True
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@peerislands.io"
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
