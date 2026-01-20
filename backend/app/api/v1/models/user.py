@@ -96,6 +96,70 @@ class TOTPVerificationRequest(BaseModel):
         return v
 
 
+class UserProfileUpdateRequest(BaseModel):
+    """Request model for updating user profile (excluding email)."""
+    first_name: Optional[str] = Field(None, min_length=1, description="User's first name")
+    last_name: Optional[str] = Field(None, min_length=1, description="User's last name")
+    company: Optional[str] = Field(None, min_length=1, description="User's company name")
+    job_function: Optional[str] = Field(None, min_length=1, description="User's job function")
+    business_phone: Optional[str] = Field(None, min_length=1, description="User's business phone number")
+    country: Optional[str] = Field(None, min_length=1, description="User's country")
+
+    @field_validator("first_name", "last_name", "company", "job_function", "country")
+    @classmethod
+    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        """Validate text fields are not empty or whitespace only."""
+        if v is not None:
+            if not v.strip():
+                raise ValueError("Field cannot be empty or whitespace")
+            return v.strip()
+        return v
+
+    @field_validator("business_phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        """Validate phone number is not empty."""
+        if v is not None:
+            if not v.strip():
+                raise ValueError("Business phone number cannot be empty")
+            return v.strip()
+        return v
+
+
+class UserProfileResponse(BaseModel):
+    """Response model for user profile."""
+    id: str = Field(..., description="User ID")
+    first_name: str = Field(..., description="User's first name")
+    last_name: str = Field(..., description="User's last name")
+    user_email: str = Field(..., description="User's email (read-only)")
+    company: Optional[str] = Field("", description="User's company name")
+    job_function: Optional[str] = Field("", description="User's job function")
+    business_phone: Optional[str] = Field("", description="User's business phone number")
+    country: Optional[str] = Field("", description="User's country")
+    is_admin: bool = Field(..., description="Whether user is an admin")
+    totp_enabled: bool = Field(..., description="Whether TOTP/MFA is enabled")
+    registration_completed_at: Optional[datetime] = Field(None, description="When registration was completed")
+    created_at: datetime = Field(..., description="Account creation date")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "first_name": "John",
+                "last_name": "Doe",
+                "user_email": "john.doe@example.com",
+                "company": "Example Corp",
+                "job_function": "Software Engineer",
+                "business_phone": "+1234567890",
+                "country": "United States",
+                "is_admin": False,
+                "totp_enabled": True,
+                "registration_completed_at": "2024-01-01T00:00:00Z",
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        }
+
+
 class TOTPVerificationResponse(BaseModel):
     """Response after successful TOTP verification."""
     success: bool = Field(default=True)
@@ -164,10 +228,10 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     user_email: str
-    company: str
-    job_function: str
-    business_phone: str
-    country: str
+    company: Optional[str] = ""
+    job_function: Optional[str] = ""
+    business_phone: Optional[str] = ""
+    country: Optional[str] = ""
     is_internal: bool
     is_admin: bool
     created_at: str
@@ -305,10 +369,10 @@ class UserModel(BaseModel):
     first_name: str
     last_name: str
     user_email: str
-    company: str
-    job_function: str
-    business_phone: str
-    country: str
+    company: Optional[str] = ""
+    job_function: Optional[str] = ""
+    business_phone: Optional[str] = ""
+    country: Optional[str] = ""
     is_internal: bool = False
     is_admin: bool = False  # Always defaults to False per business rule
     

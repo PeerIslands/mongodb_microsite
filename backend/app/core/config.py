@@ -46,6 +46,20 @@ class Settings(BaseSettings):
     # Full SAS URL for the blob container (includes SAS token)
     AZURE_BLOB_SAS_URL: str = ""
     
+    # Azure Communication Services Email Settings
+    AZURE_COMMUNICATION_CONNECTION_STRING: str = ""
+    AZURE_COMMUNICATION_SENDER_ADDRESS: str = ""
+    
+    # Contact Form Email Settings
+    CONTACTUS_RECEIVER_EMAIL: str = ""
+    CONTACTUS_RECEIVER_CC_EMAIL: str = ""  # Comma-separated email addresses
+    
+    def get_contactus_cc_emails(self) -> List[str]:
+        """Parse comma-separated CC email addresses into a list"""
+        if not self.CONTACTUS_RECEIVER_CC_EMAIL:
+            return []
+        return [email.strip() for email in self.CONTACTUS_RECEIVER_CC_EMAIL.split(",") if email.strip()]
+    
     # TOTP/MFA Settings
     TOTP_ENABLED: bool = True
     TOTP_ISSUER_NAME: str = "MongoDB Microsite"
