@@ -144,6 +144,19 @@ const Header = () => {
                       <div className="user-menu-email">{userEmail}</div>
                     </div>
                     <div className="user-menu-divider" />
+                    <button
+                      className="user-menu-item"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/profile');
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M9 0C6.79 0 5 1.79 5 4C5 6.21 6.79 8 9 8C11.21 8 13 6.21 13 4C13 1.79 11.21 0 9 0ZM9 6C7.9 6 7 5.1 7 4C7 2.9 7.9 2 9 2C10.1 2 11 2.9 11 4C11 5.1 10.1 6 9 6ZM15 16V18H3V16C3 13.34 8.33 12 9 12C9.67 12 15 13.34 15 16ZM13 16C13 15.36 10.95 14 9 14C7.05 14 5 15.36 5 16H13Z" fill="currentColor"/>
+                      </svg>
+                      Profile
+                    </button>
+                    <div className="user-menu-divider" />
                     {isAdmin && (
                       <>
                         <button
@@ -182,7 +195,12 @@ const Header = () => {
               Login
             </button>
           )}
-          <button className="demo-button">Contact Us</button>
+          <button 
+            className="demo-button"
+            onClick={(e) => handleNavigation(e as any, '/contact')}
+          >
+            Contact Us
+          </button>
         </div>
       </div>
     </header>

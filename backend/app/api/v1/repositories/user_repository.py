@@ -207,7 +207,7 @@ class UserRepository:
 
     async def update_user(
         self, user_id: str, update_data: Dict[str, Any]
-    ) -> bool:
+    ) -> Optional[UserModel]:
         """
         Update a user's information.
         
@@ -216,7 +216,7 @@ class UserRepository:
             update_data: Dictionary of fields to update
             
         Returns:
-            True if updated, False if user not found
+            Updated UserModel if successful, None if user not found
         """
         # Remove _id from update data if present
         update_data = {k: v for k, v in update_data.items() if k != "_id"}
@@ -225,7 +225,14 @@ class UserRepository:
             {"_id": user_id},
             {"$set": update_data}
         )
-        return result.modified_count > 0 or result.matched_count > 0
+        
+        if result.modified_count > 0 or result.matched_count > 0:
+            # Return the updated user
+            updated_user = await self.users_collection.find_one({"_id": user_id})
+            if updated_user:
+                return UserModel(**updated_user)
+        
+        return None
 
     async def delete_user(self, user_id: str) -> bool:
         """

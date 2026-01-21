@@ -19,9 +19,12 @@ from app.api.v1.models.user import (
     TOTPVerificationRequest,
     TOTPVerificationResponse,
     BackupCodesAcknowledgeRequest,
+    UserProfileResponse,
+    UserProfileUpdateRequest,
+    UserModel,
 )
 from app.api.v1.services.user_service import UserService
-from app.api.v1.dependencies.services import get_user_service
+from app.api.v1.dependencies.services import get_user_service, get_current_active_user
 from app.api.v1.exceptions.user_exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
@@ -300,4 +303,161 @@ async def acknowledge_backup_codes(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to acknowledge backup codes: {str(e)}",
+        )
+
+
+# =============================================================================
+# PROFILE ENDPOINTS
+# =============================================================================
+
+@router.get(
+    "/profile",
+    response_model=UserProfileResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Profile retrieved successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Get current user profile",
+    description="Retrieve the profile of the currently logged-in user.",
+)
+async def get_profile(
+    current_user: UserModel = Depends(get_current_active_user),
+) -> UserProfileResponse:
+    """
+    Get the profile of the currently authenticated user.
+    
+    Returns:
+        UserProfileResponse: User's profile information
+    
+    Raises:
+        HTTPException: If user is not authenticated
+    """
+    try:
+        return UserProfileResponse(
+            id=current_user.id,
+            first_name=current_user.first_name,
+            last_name=current_user.last_name,
+            user_email=current_user.user_email,
+            company=current_user.company,
+            job_function=current_user.job_function,
+            business_phone=current_user.business_phone,
+            country=current_user.country,
+            is_admin=current_user.is_admin,
+            totp_enabled=current_user.totp_enabled,
+            registration_completed_at=current_user.registration_completed_at,
+            created_at=current_user.created_at,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve profile: {str(e)}",
+        )
+
+
+@router.put(
+    "/profile",
+    response_model=UserProfileResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Profile updated successfully"},
+        400: {"model": ErrorResponse, "description": "Validation error"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Update current user profile",
+    description="Update the profile of the currently logged-in user. Email cannot be updated.",
+)
+async def update_profile(
+    profile_data: UserProfileUpdateRequest,
+    current_user: UserModel = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> UserProfileResponse:
+    """
+    Update the profile of the currently authenticated user.
+    
+    Only updates fields that are provided (partial update).
+    Email field cannot be updated for security reasons.
+    
+    Args:
+        profile_data: Fields to update
+        current_user: Current authenticated user
+        user_service: User service instance
+    
+    Returns:
+        UserProfileResponse: Updated user profile
+    
+    Raises:
+        HTTPException: If update fails or validation errors occur
+    """
+    try:
+        # Build update data dictionary with only provided fields
+        update_data = {}
+        if profile_data.first_name is not None:
+            update_data["first_name"] = profile_data.first_name
+        if profile_data.last_name is not None:
+            update_data["last_name"] = profile_data.last_name
+        if profile_data.company is not None:
+            update_data["company"] = profile_data.company
+        if profile_data.job_function is not None:
+            update_data["job_function"] = profile_data.job_function
+        if profile_data.business_phone is not None:
+            update_data["business_phone"] = profile_data.business_phone
+        if profile_data.country is not None:
+            update_data["country"] = profile_data.country
+        
+        # If no fields to update, return current profile
+        if not update_data:
+            return UserProfileResponse(
+                id=current_user.id,
+                first_name=current_user.first_name,
+                last_name=current_user.last_name,
+                user_email=current_user.user_email,
+                company=current_user.company,
+                job_function=current_user.job_function,
+                business_phone=current_user.business_phone,
+                country=current_user.country,
+                is_admin=current_user.is_admin,
+                totp_enabled=current_user.totp_enabled,
+                registration_completed_at=current_user.registration_completed_at,
+                created_at=current_user.created_at,
+            )
+        
+        # Update user profile
+        updated_user = await user_service.update_user_profile(
+            user_id=current_user.id,
+            update_data=update_data
+        )
+        
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+        return UserProfileResponse(
+            id=updated_user.id,
+            first_name=updated_user.first_name,
+            last_name=updated_user.last_name,
+            user_email=updated_user.user_email,
+            company=updated_user.company,
+            job_function=updated_user.job_function,
+            business_phone=updated_user.business_phone,
+            country=updated_user.country,
+            is_admin=updated_user.is_admin,
+            totp_enabled=updated_user.totp_enabled,
+            registration_completed_at=updated_user.registration_completed_at,
+            created_at=updated_user.created_at,
+        )
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update profile: {str(e)}",
         )

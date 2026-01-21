@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import type { CreateUserDto, LoginDto, SignupResponse, LoginResponse, User } from '@/types/models/user';
+import type { CreateUserDto, LoginDto, SignupResponse, LoginResponse, User, UserProfile, UserProfileUpdate } from '@/types/models/user';
 
 export const userService = {
   // Register/Signup a new user
@@ -27,7 +27,19 @@ export const userService = {
     });
     return response.data;
   },
+
+  // Get current user profile
+  async getProfile(): Promise<UserProfile> {
+    const response = await apiClient.get<UserProfile>('/api/v1/profile');
+    return response.data;
+  },
+
+  // Update current user profile
+  async updateProfile(profileData: UserProfileUpdate): Promise<UserProfile> {
+    const response = await apiClient.put<UserProfile>('/api/v1/profile', profileData);
+    return response.data;
+  },
 };
 
-export type { CreateUserDto, LoginDto, SignupResponse, LoginResponse };
+export type { CreateUserDto, LoginDto, SignupResponse, LoginResponse, UserProfile, UserProfileUpdate };
 
