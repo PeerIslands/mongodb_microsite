@@ -273,7 +273,7 @@ const ProfilePage: React.FC = () => {
                   </label>
                   <PhoneInput
                     international
-                    defaultCountry={getCountryCode(formData.country)}
+                    defaultCountry={getCountryCode(formData.country || '')}
                     value={formData.business_phone}
                     onChange={handlePhoneChange}
                     placeholder="Enter phone number"

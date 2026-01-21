@@ -195,7 +195,12 @@ const Header = () => {
               Login
             </button>
           )}
-          <button className="demo-button">Contact Us</button>
+          <button 
+            className="demo-button"
+            onClick={(e) => handleNavigation(e as any, '/contact')}
+          >
+            Contact Us
+          </button>
         </div>
       </div>
     </header>
