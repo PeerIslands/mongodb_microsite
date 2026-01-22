@@ -3,6 +3,7 @@ import '@/styles/features/admin/CaseStudyForm.css';
 import FileUpload, { FileUploadResult } from './FileUpload';
 import RichTextEditor from './RichTextEditor';
 import { caseStudiesService } from '@/api/services/case-studies.service';
+import { aiExtractService } from '@/api/services/ai-extract.service';
 
 const INDUSTRY_OPTIONS = [
   'Healthcare',
@@ -87,6 +88,10 @@ const CaseStudyForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // AI Extraction states
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   const [customTech, setCustomTech] = useState('');
   const [customIndustry, setCustomIndustry] = useState('');
@@ -277,6 +282,65 @@ const CaseStudyForm = ({
     }));
   };
 
+  // AI Extraction handlers
+  const handleAIFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setExtractionError('File size exceeds 10MB limit');
+      return;
+    }
+
+    await handleAIExtraction(file);
+  };
+
+  const handleAIExtraction = async (file: File) => {
+    setIsExtracting(true);
+    setExtractionError(null);
+
+    try {
+      const response = await aiExtractService.extractCaseStudy(file);
+      
+      if (response.success && response.data) {
+        const extracted = response.data;
+        
+        // Auto-fill form with extracted data
+        setFormData(prev => ({
+          ...prev,
+          title: extracted.title || prev.title,
+          companyName: extracted.companyName || prev.companyName,
+          description: extracted.description || prev.description,
+          industry: extracted.industry || prev.industry,
+          techStack: extracted.techStack?.length > 0 ? extracted.techStack : prev.techStack,
+          migrationType: extracted.migrationType || prev.migrationType,
+          challenges: extracted.challenges || prev.challenges,
+          approach: extracted.approach || prev.approach,
+          businessOutcomes: extracted.businessOutcomes || prev.businessOutcomes,
+          testimonialQuote: extracted.testimonialQuote || prev.testimonialQuote,
+          testimonialAuthor: extracted.testimonialAuthor || prev.testimonialAuthor,
+          testimonialPosition: extracted.testimonialPosition || prev.testimonialPosition,
+        }));
+
+        // Handle metrics
+        if (extracted.metrics && extracted.metrics.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            metrics: extracted.metrics as MetricItem[]
+          }));
+        }
+      }
+    } catch (error: any) {
+      console.error('AI extraction error:', error);
+      const message = error?.response?.data?.detail || error?.message || 'Failed to extract data from document';
+      setExtractionError(message);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -387,6 +451,50 @@ const CaseStudyForm = ({
       </div>
 
       <form className="case-study-form" onSubmit={handleSubmit}>
+        {/* AI-Powered Auto-Fill Section */}
+        <div className="form-section ai-extract-section">
+          <div className="ai-extract-glow"></div>
+          
+          <h3 className="ai-section-title">AI-Powered Auto-Fill</h3>
+          
+          <p className="ai-extract-description">
+            Upload a document to automatically extract and fill case study information.
+          </p>
+          
+          <div className="ai-upload-area">
+            <input
+              type="file"
+              id="ai-extract-file"
+              accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png,.gif,.bmp"
+              onChange={handleAIFileUpload}
+              disabled={isExtracting}
+              style={{ display: 'none' }}
+            />
+            <label 
+              htmlFor="ai-extract-file" 
+              className={`ai-upload-button ${isExtracting ? 'disabled' : ''}`}
+            >
+              {isExtracting ? (
+                <>
+                  <span className="spinner"></span>
+                  Extracting data...
+                </>
+              ) : (
+                'Upload here'
+              )}
+            </label>
+            <p className="ai-upload-hint">
+              Supported: PDF, PPT, PPTX, DOC, DOCX, JPG, PNG, GIF, BMP (Max 10MB)
+            </p>
+          </div>
+          
+          {extractionError && (
+            <div className="extraction-error">
+              ⚠️ {extractionError}
+            </div>
+          )}
+        </div>
+
         {/* Section 1: Basic Information */}
         <div className="form-section">
           <h3 className="section-title">

@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     # Time Window Tolerance
     TOTP_TIME_WINDOW_TOLERANCE: int = 1  # ±1 window (30 seconds each way)
     TOTP_ALLOW_CODE_REUSE: bool = False
+    
+    # Azure OpenAI Configuration
+    AZURE_OPENAI_API_KEY: str = ""
+    AZURE_OPENAI_ENDPOINT: str = ""
+    AZURE_OPENAI_DEPLOYMENT_NAME: str = "gpt-4-turbo"
+    AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
@@ -78,4 +84,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Get application settings instance."""
+    return settings
 
