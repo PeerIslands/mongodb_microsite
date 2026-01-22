@@ -35,7 +35,8 @@ app = FastAPI(
 allowed_origins = [
     "http://localhost:5173",  # Vite dev server
     "http://localhost:3000",  # Alternative dev port
-    "https://ashy-glacier-09cfe4b0f.5.azurestaticapps.net",  # Azure Static Web App
+    "https://ashy-glacier-09cfe4b0f.5.azurestaticapps.net",
+    "https://ashy-glacier-09cfe4b0f.1.azurestaticapps.net"  # Azure Static Web App
 ]
 
 # Add custom CORS origins from settings if configured
