@@ -15,6 +15,7 @@ node_modules/
 .pnp.js
 dist/
 build/
+build/
 coverage/
 *.log
 npm-debug.log*
@@ -49,3 +50,157 @@ logs/
 Thumbs.db
 
 uploads/
+
+# Additional Python patterns
+*.egg
+*.egg-info
+dist-python/
+build-python/
+*.whl
+pip-log.txt
+.tox/
+.nox/
+.hypothesis/
+*.cover
+*.py,cover
+.dmypy.json
+dmypy.json
+
+# Additional Node.js patterns
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# Additional IDE patterns
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+.vs/
+
+# Additional Environment & Secrets
+.env.*
+!.env.example
+.env.backup
+.env.production
+.env.development
+.env.staging
+secrets.yml
+secrets.yaml
+secrets.json
+credentials.json
+service-account*.json
+
+# Security & Certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+id_rsa
+id_dsa
+*.ppk
+authorized_keys
+known_hosts
+
+# API Keys and Tokens (be careful with wildcards)
+*secret*.json
+*secret*.yml
+*secret*.yaml
+*token*.json
+*apikey*.json
+*api_key*.json
+*credentials*.json
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+*.backup
+*.bak
+*.mdf
+*.ldf
+
+# Additional Logs
+*.log.*
+*.out
+*.pid
+*.seed
+*.pid.lock
+debug/
+trace/
+
+# Additional Testing
+.coverage.*
+.nyc_output
+junit.xml
+test-results/
+.jest/
+
+# Additional OS Files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary Files
+*.tmp
+*.temp
+*.orig
+.#*
+\#*#
+
+# Cache Directories
+.cache/
+*.cache
+.parcel-cache/
+.next/
+.nuxt/
+.sass-cache/
+.webpack/
+
+# Compiled Files
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.class
+*.jar
+*.war
+*.ear
+
+# Archives (optional - only if you don't want to commit them)
+# *.zip
+# *.tar
+# *.tar.gz
+# *.tgz
+# *.rar
+# *.7z
+
+# Cloud & Infrastructure
+.azure/
+azure-pipelines/
+.terraform/
+*.tfstate
+*.tfstate.*
+.serverless/
+
+# Application Specific
+media/
+static_collected/
+staticfiles/

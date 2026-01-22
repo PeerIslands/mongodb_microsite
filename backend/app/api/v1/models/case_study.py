@@ -172,3 +172,12 @@ class DeleteCaseStudyResponse(BaseModel):
     """Response model for successful case study deletion."""
     id: str = Field(..., description="Deleted case study ID")
     message: str = Field(..., description="Success message")
+
+
+class TestimonialResponse(BaseModel):
+    """Response model for testimonial data only."""
+    id: str = Field(..., description="Case study ID")
+    company_name: str = Field(..., description="Company name")
+    testimonial_quote: str = Field(..., description="Testimonial quote")
+    testimonial_author: str = Field(..., description="Author name")
+    testimonial_position: str = Field(..., description="Author position")

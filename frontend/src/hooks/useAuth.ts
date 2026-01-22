@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
-import type { User } from '@/types/models/user';
+import type { User, SignupResponse } from '@/types/models/user';
 
 interface UseAuthReturn {
   user: User | null;
   userId: string | null;
   loading: boolean;
   error: string | null;
-  signup: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+  signup: (
+    firstName: string, 
+    lastName: string, 
+    email: string, 
+    password: string,
+    company: string,
+    jobFunction: string,
+    businessPhone: string,
+    country: string
+  ) => Promise<{ success: boolean; data?: SignupResponse; error?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
@@ -23,8 +32,12 @@ export const useAuth = (): UseAuthReturn => {
     firstName: string, 
     lastName: string, 
     email: string, 
-    password: string
-  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+    password: string,
+    company: string,
+    jobFunction: string,
+    businessPhone: string,
+    country: string
+  ): Promise<{ success: boolean; data?: SignupResponse; error?: string }> => {
     setLoading(true);
     setError(null);
     
@@ -34,6 +47,10 @@ export const useAuth = (): UseAuthReturn => {
         last_name: lastName,
         user_email: email,
         user_password: password,
+        company: company,
+        job_function: jobFunction,
+        business_phone: businessPhone,
+        country: country,
       });
       
       // Store user ID from response
@@ -44,8 +61,8 @@ export const useAuth = (): UseAuthReturn => {
       
       // UPDATED: Return full response data (includes totp_setup)
       return { success: true, data: response };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Signup failed. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage = (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.detail || (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.message || 'Signup failed. Please try again.';
       setError(errorMessage);
       setLoading(false);
       return { success: false, error: errorMessage };
@@ -85,8 +102,8 @@ export const useAuth = (): UseAuthReturn => {
         isAdmin: response.is_admin, 
         isInternal: response.is_internal 
       };
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Login failed. Please check your credentials.';
+    } catch (err: unknown) {
+      const errorMessage = (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.detail || (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       setLoading(false);
       return { success: false, error: errorMessage };

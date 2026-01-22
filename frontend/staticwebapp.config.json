@@ -5,9 +5,53 @@
   },
   "routes": [
     {
+      "route": "/src/*",
+      "statusCode": 404
+    },
+    {
+      "route": "/node_modules/*",
+      "statusCode": 404
+    },
+    {
+      "route": "/*.ts",
+      "statusCode": 404
+    },
+    {
+      "route": "/*.tsx",
+      "statusCode": 404
+    },
+    {
+      "route": "/assets/*.js",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/assets/*.mjs",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/assets/*.css",
+      "headers": {
+        "Content-Type": "text/css; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "route": "/assets/*",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/*.js",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8",
+        "cache-control": "must-revalidate, max-age=3600"
       }
     },
     {
@@ -22,6 +66,7 @@
     ".js": "text/javascript",
     ".mjs": "text/javascript",
     ".css": "text/css",
+    ".html": "text/html",
     ".svg": "image/svg+xml",
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -33,7 +78,8 @@
     ".woff2": "font/woff2",
     ".ttf": "font/ttf",
     ".eot": "application/vnd.ms-fontobject",
-    ".pdf": "application/pdf"
+    ".pdf": "application/pdf",
+    ".map": "application/json"
   },
   "globalHeaders": {
     "content-security-policy": "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*;",

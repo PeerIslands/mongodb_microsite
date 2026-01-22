@@ -7,19 +7,21 @@ Endpoints:
 - GET /case-studies/{case_id} - Get a single case study by ID
 - PUT /case-studies/{case_id} - Update a case study
 - DELETE /case-studies/{case_id} - Delete a case study
+- GET /case-studies/{case_id}/files/{file_type} - Secure file proxy endpoint
 
 Field naming convention: snake_case (matching frontend requirements)
 
 File Storage:
 - PDFs are uploaded to Azure Blob Storage
-- Folder structure: {case_id}/{field_name}.{ext}
-- MongoDB stores the blob path, full URL is constructed at retrieval time
+- Folder structure: casestudies/{case_id}/{field_name}.{ext}
+- MongoDB stores the blob path, files are served via secure proxy endpoints
 """
 
 import json
 import mimetypes
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form, HTTPException
+from fastapi.responses import StreamingResponse
 
 from app.api.v1.models.case_study import (
     CreateCaseStudyRequest,
@@ -32,8 +34,9 @@ from app.api.v1.models.case_study import (
     MetricItem,
 )
 from app.api.v1.services.case_study_service import CaseStudyService
-from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService, AzureBlobServiceError
 from app.api.v1.dependencies.services import get_case_study_service
+from app.api.v1.exceptions.case_study_exceptions import CaseStudyNotFoundError
 
 router = APIRouter(prefix="/case-studies")
 
@@ -49,7 +52,8 @@ def is_valid_file(f) -> bool:
 
 async def upload_file_to_blob(
     file: UploadFile,
-    case_id: str,
+    category: str,
+    item_id: str,
     field_name: str,
     blob_service: AzureBlobService,
 ) -> str:
@@ -58,12 +62,13 @@ async def upload_file_to_blob(
     
     Args:
         file: The uploaded file
-        case_id: Case study ID (used in folder name)
+        category: Category folder - "casestudies", "accelerators", or "blogs"
+        item_id: Item ID (case study ID, accelerator ID, or blog ID)
         field_name: Field name (pdf_url, etc.)
         blob_service: Azure Blob Service instance
         
     Returns:
-        Blob path to store in MongoDB
+        Blob path to store in MongoDB (full URL constructed on GET)
     """
     content = await file.read()
     
@@ -75,7 +80,8 @@ async def upload_file_to_blob(
     
     blob_path = await blob_service.upload_file(
         file_content=content,
-        slug=case_id,  # Using case_id instead of slug for folder path
+        category=category,
+        item_id=item_id,
         field_name=field_name,
         original_filename=file.filename,
         content_type=mime_type,
@@ -137,7 +143,7 @@ def parse_metrics(metrics_json: str) -> List[MetricItem]:
     - pdf_file: PDF only (max 10MB)
     
     **Storage format:** Files are uploaded to Azure Blob with folder structure:
-    `{case_id}/{field_name}.{ext}`
+    `casestudies/{case_id}/{field_name}.{ext}`
     
     **Metrics format:** JSON array with max 5 items:
     `[{"label": "Time Reduction", "value": "50%"}, {"label": "Accuracy", "value": "99%"}]`
@@ -212,11 +218,11 @@ async def create_case_study(
     result = await service.create_case_study(request)
     case_id = result.id
     
-    # Upload PDF file if provided (using case_id for folder path)
+    # Upload PDF file if provided (using category folder structure)
     if is_valid_file(pdf_file):
         blob_service = get_azure_blob_service()
         pdf_blob_path = await upload_file_to_blob(
-            pdf_file, case_id, "pdf_url", blob_service
+            pdf_file, "casestudies", case_id, "pdf_url", blob_service
         )
         # Update the case study with the PDF path
         update_request = UpdateCaseStudyRequest(pdf_url=pdf_blob_path)
@@ -252,6 +258,54 @@ async def get_all_case_studies(
         status=status,
         featured=featured,
     )
+
+
+@router.get(
+    "/testimonials/debug",
+    response_model=List[Dict[str, Any]],
+    summary="Debug All Case Studies Testimonial Data",
+    description="""
+    DEBUG: Show all case studies with their testimonial fields for debugging.
+    """,
+)
+async def debug_testimonials(
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> List[Dict[str, Any]]:
+    """DEBUG: Get all case studies with testimonial field info."""
+    all_case_studies = await service.get_all_case_studies()
+    
+    debug_data = []
+    for cs in all_case_studies:
+        debug_data.append({
+            'id': cs.id,
+            'company_name': cs.company_name,
+            'status': cs.status,
+            'testimonial_quote': cs.testimonial_quote or '[EMPTY]',
+            'testimonial_author': cs.testimonial_author or '[EMPTY]',
+            'testimonial_position': cs.testimonial_position or '[EMPTY]',
+            'has_quote': bool(cs.testimonial_quote),
+            'has_author': bool(cs.testimonial_author),
+        })
+    
+    return debug_data
+
+
+@router.get(
+    "/testimonials",
+    response_model=List[Dict[str, Any]],
+    summary="Get All Testimonials",
+    description="""
+    Retrieve testimonials from all published case studies that have testimonial data.
+    
+    **Returns:** List of testimonials with company information.
+    Only includes case studies that have both testimonial_quote and testimonial_author.
+    """,
+)
+async def get_testimonials(
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> List[Dict[str, Any]]:
+    """Get all testimonials from published case studies."""
+    return await service.get_testimonials()
 
 
 @router.get(
@@ -384,9 +438,9 @@ async def update_case_study(
         # Delete old file if exists
         if existing_blob_paths.get("pdf_url"):
             await blob_service.delete_file(existing_blob_paths["pdf_url"])
-        # Upload new file (using case_id for folder path)
+        # Upload new file (using category folder structure)
         update_data["pdf_url"] = await upload_file_to_blob(
-            pdf_file, case_id, "pdf_url", blob_service
+            pdf_file, "casestudies", case_id, "pdf_url", blob_service
         )
     
     # Create update request
@@ -415,3 +469,101 @@ async def delete_case_study(
 ) -> DeleteCaseStudyResponse:
     """Delete a case study by its unique ID."""
     return await service.delete_case_study(case_id)
+
+
+# =============================================================================
+# FILE PROXY ENDPOINTS - Secure file serving without exposing Azure URLs
+# =============================================================================
+
+# Mapping of file types to their field names and default content types
+CASE_STUDY_FILE_TYPE_CONFIG = {
+    "pdf": {"field": "pdf_url", "default_content_type": "application/pdf", "extension": ".pdf"},
+}
+
+
+@router.get(
+    "/{case_id}/files/{file_type}",
+    summary="Get Case Study File (Secure Proxy)",
+    description="""
+    Securely serve case study files (PDF) through the backend.
+    
+    **Security Benefits:**
+    - Azure Blob SAS tokens are never exposed to the client
+    - Files are served through the backend, enabling access control
+    - Supports future authentication requirements
+    
+    **File Types:**
+    - `pdf` - PDF document
+    
+    **Response:**
+    - Streams the file with appropriate Content-Type header
+    - Includes Content-Disposition for downloads
+    """,
+    responses={
+        200: {"description": "File stream"},
+        404: {"description": "Case study or file not found"},
+        400: {"description": "Invalid file type"},
+    },
+)
+async def get_case_study_file(
+    case_id: str,
+    file_type: str,
+    download: bool = Query(default=False, description="Force download instead of inline display"),
+    service: CaseStudyService = Depends(get_case_study_service),
+) -> StreamingResponse:
+    """
+    Securely proxy files from Azure Blob Storage.
+    
+    This endpoint fetches files from Azure Blob Storage and streams them to the client,
+    keeping the Azure SAS token secure on the server side.
+    """
+    # Validate file type
+    if file_type not in CASE_STUDY_FILE_TYPE_CONFIG:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type: {file_type}. Must be one of: {list(CASE_STUDY_FILE_TYPE_CONFIG.keys())}"
+        )
+    
+    config = CASE_STUDY_FILE_TYPE_CONFIG[file_type]
+    
+    # Get blob paths for this case study
+    try:
+        blob_paths = await service.get_blob_paths(case_id)
+    except CaseStudyNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case study not found: {case_id}")
+    
+    # Get the blob path for the requested file type
+    blob_path = blob_paths.get(config["field"], "")
+    
+    if not blob_path:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No {file_type} file found for this case study"
+        )
+    
+    # Get Azure Blob Service and stream the file
+    blob_service = get_azure_blob_service()
+    
+    try:
+        # Get file info for headers
+        content_type, content_length = await blob_service.get_file_info(blob_path)
+        
+        # Determine filename for Content-Disposition
+        filename = f"{case_id}_{file_type}{config['extension']}"
+        
+        # Set disposition based on download flag
+        disposition = "attachment" if download else "inline"
+        
+        # Stream the file
+        return StreamingResponse(
+            content=blob_service.stream_file(blob_path),
+            media_type=content_type or config["default_content_type"],
+            headers={
+                "Content-Disposition": f'{disposition}; filename="{filename}"',
+                "Content-Length": str(content_length) if content_length else "",
+                "Cache-Control": "private, max-age=3600",  # Cache for 1 hour
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+    except AzureBlobServiceError as e:
+        raise HTTPException(status_code=404, detail=str(e))

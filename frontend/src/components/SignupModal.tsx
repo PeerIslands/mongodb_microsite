@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
+import PhoneInput, { isValidPhoneNumber, Country } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import QRCodeDisplay from './QRCodeDisplay';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import BackupCodesDisplay from './BackupCodesDisplay';
@@ -29,6 +31,32 @@ type RegistrationStep =
   | 'backup-codes' 
   | 'complete';
 
+// Helper to convert country name to ISO country code for PhoneInput
+const getCountryCode = (countryName: string): Country => {
+  const countryMap: { [key: string]: Country } = {
+    'United States': 'US',
+    'United Kingdom': 'GB',
+    'Canada': 'CA',
+    'India': 'IN',
+    'Australia': 'AU',
+    'Germany': 'DE',
+    'France': 'FR',
+    'Singapore': 'SG',
+    'Japan': 'JP',
+    'China': 'CN',
+    'Brazil': 'BR',
+    'Mexico': 'MX',
+    'Netherlands': 'NL',
+    'Spain': 'ES',
+    'Italy': 'IT',
+    'South Korea': 'KR',
+    'United Arab Emirates': 'AE',
+    'Switzerland': 'CH',
+    'Sweden': 'SE',
+  };
+  return countryMap[countryName] || 'US';
+};
+
 const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => {
   // Registration form state
   const [firstName, setFirstName] = useState('');
@@ -36,6 +64,10 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [company, setCompany] = useState('');
+  const [jobFunction, setJobFunction] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [country, setCountry] = useState('');
 
   // MFA setup state
   const [step, setStep] = useState<RegistrationStep>('registration');
@@ -55,6 +87,10 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setCompany('');
+    setJobFunction('');
+    setBusinessPhone('');
+    setCountry('');
     setStep('registration');
     setUserId('');
     setTotpSetupData(null);
@@ -97,9 +133,30 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
       showToast('Password must be at least 6 characters long.', 'error');
       return;
     }
+
+    // Validate required fields
+    if (!company.trim() || !jobFunction.trim() || !businessPhone || !country.trim()) {
+      showToast('Please fill in all required fields.', 'error');
+      return;
+    }
+
+    // Validate phone number format
+    if (!isValidPhoneNumber(businessPhone)) {
+      showToast('Please enter a valid phone number.', 'error');
+      return;
+    }
     
     // Call signup API
-    const result = await signup(firstName, lastName, email, password);
+    const result = await signup(
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      company, 
+      jobFunction, 
+      businessPhone, 
+      country
+    );
 
     if (result.success && result.data) {
       // NEW: Store TOTP setup data and move to MFA setup
@@ -137,8 +194,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
         setVerificationError(errorMsg);
         showToast(errorMsg, 'error');
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Verification failed. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed. Please try again.';
       console.error('TOTP Verification Error:', error);
       setVerificationError(errorMsg);
       showToast(errorMsg, 'error');
@@ -170,8 +227,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
           onSwitchToLogin();
         }
       }, 2000);
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || 'Failed to complete registration. Please try again.';
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Failed to complete registration. Please try again.';
       showToast(errorMsg, 'error');
       setVerifying(false);
     }
@@ -253,7 +310,9 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
             <form className="signup-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="firstName" className="form-label">First Name</label>
+                  <label htmlFor="firstName" className="form-label">
+                    First Name <span className="required-asterisk">*</span>
+                  </label>
                   <input
                     type="text"
                     id="firstName"
@@ -267,7 +326,9 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="lastName" className="form-label">Last Name</label>
+                  <label htmlFor="lastName" className="form-label">
+                    Last Name <span className="required-asterisk">*</span>
+                  </label>
                   <input
                     type="text"
                     id="lastName"
@@ -282,12 +343,14 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               </div>
 
               <div className="form-group">
-                <label htmlFor="email" className="form-label">Email</label>
+                <label htmlFor="email" className="form-label">
+                  Business Email <span className="required-asterisk">*</span>
+                </label>
                 <input
                   type="email"
                   id="email"
                   className="form-input"
-                  placeholder="Enter your email"
+                  placeholder="Enter your business email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -296,7 +359,109 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               </div>
 
               <div className="form-group">
-                <label htmlFor="password" className="form-label">Password</label>
+                <label htmlFor="company" className="form-label">
+                  Company <span className="required-asterisk">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="company"
+                  className="form-input"
+                  placeholder="Enter your company name"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="jobFunction" className="form-label">
+                  Job Function <span className="required-asterisk">*</span>
+                </label>
+                <select
+                  id="jobFunction"
+                  className="form-input"
+                  value={jobFunction}
+                  onChange={(e) => setJobFunction(e.target.value)}
+                  disabled={loading}
+                  required
+                >
+                  <option value="">Select job function</option>
+                  <option value="IT Executive (CIO, CTO, VP Engineering, etc.)">IT Executive (CIO, CTO, VP Engineering, etc.)</option>
+                  <option value="Business Executive (CEO, COO, CMO, etc.)">Business Executive (CEO, COO, CMO, etc.)</option>
+                  <option value="Architect">Architect</option>
+                  <option value="Business Development / Alliance Manager">Business Development / Alliance Manager</option>
+                  <option value="DBA">DBA</option>
+                  <option value="Technical Operations">Technical Operations</option>
+                  <option value="Director / Development Manager">Director / Development Manager</option>
+                  <option value="Product / Project Manager">Product / Project Manager</option>
+                  <option value="Software Developer / Engineer">Software Developer / Engineer</option>
+                  <option value="Business Analyst">Business Analyst</option>
+                  <option value="Data Scientist">Data Scientist</option>
+                  <option value="Student">Student</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="country" className="form-label">
+                  Country <span className="required-asterisk">*</span>
+                </label>
+                <select
+                  id="country"
+                  className="form-input"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  disabled={loading}
+                  required
+                >
+                  <option value="">Select country</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="India">India</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Germany">Germany</option>
+                  <option value="France">France</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="Japan">Japan</option>
+                  <option value="China">China</option>
+                  <option value="Brazil">Brazil</option>
+                  <option value="Mexico">Mexico</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="Spain">Spain</option>
+                  <option value="Italy">Italy</option>
+                  <option value="South Korea">South Korea</option>
+                  <option value="United Arab Emirates">United Arab Emirates</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="Sweden">Sweden</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="businessPhone" className="form-label">
+                  Business Phone <span className="required-asterisk">*</span>
+                </label>
+                <PhoneInput
+                  international
+                  defaultCountry={getCountryCode(country)}
+                  value={businessPhone}
+                  onChange={(value) => setBusinessPhone(value || '')}
+                  placeholder="Enter phone number"
+                  disabled={loading}
+                  className="phone-input-wrapper"
+                  numberInputProps={{
+                    className: 'form-input phone-input-field',
+                    required: true,
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">
+                  Password <span className="required-asterisk">*</span>
+                </label>
                 <input
                   type="password"
                   id="password"
@@ -311,7 +476,9 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
               </div>
 
               <div className="form-group">
-                <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                <label htmlFor="confirmPassword" className="form-label">
+                  Confirm Password <span className="required-asterisk">*</span>
+                </label>
                 <input
                   type="password"
                   id="confirmPassword"

@@ -141,7 +141,9 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .testimonial-name {
@@ -152,6 +154,9 @@
   line-height: 1.5;
   color: #f4f0ff;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .testimonial-handle {
@@ -162,6 +167,9 @@
   line-height: 1.4;
   color: rgba(239, 237, 253, 0.6);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 /* Card content section */
@@ -179,6 +187,13 @@
   line-height: 1.5;
   color: rgba(239, 237, 253, 0.7);
   white-space: normal;
+  
+  /* Limit to 2 lines with ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .testimonial-text .highlight {
@@ -298,4 +313,14 @@
   .testimonial-text {
     font-size: 14px;
   }
+}
+
+/* Loading and Empty States */
+.testimonials-loading,
+.testimonials-empty {
+  padding: 4rem 2rem;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
 }

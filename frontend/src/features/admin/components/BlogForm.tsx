@@ -33,6 +33,12 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<BlogFormData>>({});
+  const [descriptionWordCount, setDescriptionWordCount] = useState(0);
+
+  // Count words in a string
+  const countWords = (text: string): number => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
 
   // Load existing blog data if editing
   useEffect(() => {
@@ -52,6 +58,8 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
               tags: blog.tags?.join(', ') || '',
               status: blog.status || 'draft',
             });
+            // Update word count for loaded description
+            setDescriptionWordCount(countWords(blog.description));
           }
         } catch (error) {
           console.error('Failed to fetch blog data:', error);
@@ -65,6 +73,32 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Enforce 30 word limit for description
+    if (name === 'description') {
+      // Split into words and filter out empty strings
+      const words = value.split(/\s+/).filter(word => word.length > 0);
+      
+      // If word count exceeds 30, prevent the change
+      if (words.length > 30) {
+        // Keep only first 30 words and preserve trailing space if present
+        const truncated = words.slice(0, 30).join(' ');
+        const hasTrailingSpace = value.endsWith(' ');
+        const finalValue = hasTrailingSpace ? truncated + ' ' : truncated;
+        
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
+        setDescriptionWordCount(30);
+        
+        // Clear error for this field
+        if (errors.description) {
+          setErrors(prev => ({ ...prev, description: '' }));
+        }
+        return; // Don't update with the original value
+      }
+      
+      setDescriptionWordCount(words.length);
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
     // Clear error for this field
     if (errors[name as keyof BlogFormData]) {
@@ -85,6 +119,18 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
 
     if (!formData.category.trim()) {
       newErrors.category = 'Category is required';
+    }
+
+    if (!formData.author.trim()) {
+      newErrors.author = 'Author is required';
+    }
+
+    if (!formData.date.trim()) {
+      newErrors.date = 'Published date is required';
+    }
+
+    if (!formData.tags.trim()) {
+      newErrors.tags = 'Tags are required';
     }
 
     if (!formData.url.trim()) {
@@ -188,10 +234,13 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
             value={formData.description}
             onChange={handleChange}
             className={`form-textarea ${errors.description ? 'error' : ''}`}
-            placeholder="Enter blog description"
+            placeholder="Enter blog description (max 30 words)"
             rows={4}
           />
           {errors.description && <span className="error-message">{errors.description}</span>}
+          <span className={`form-hint ${descriptionWordCount >= 30 ? 'limit-reached' : ''}`}>
+            {descriptionWordCount}/30 words {descriptionWordCount >= 30 && '(limit reached)'}
+          </span>
         </div>
 
         {/* Category */}
@@ -214,7 +263,7 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
         {/* Author */}
         <div className="form-group">
           <label htmlFor="author" className="form-label">
-            Author
+            Author <span className="required">*</span>
           </label>
           <input
             type="text"
@@ -222,9 +271,10 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
             name="author"
             value={formData.author}
             onChange={handleChange}
-            className="form-input"
+            className={`form-input ${errors.author ? 'error' : ''}`}
             placeholder="Enter author name"
           />
+          {errors.author && <span className="error-message">{errors.author}</span>}
         </div>
 
         {/* URL and Date Row */}
@@ -247,7 +297,7 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
 
           <div className="form-group">
             <label htmlFor="date" className="form-label">
-              Published Date
+              Published Date <span className="required">*</span>
             </label>
             <input
               type="date"
@@ -255,15 +305,16 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className="form-input"
+              className={`form-input ${errors.date ? 'error' : ''}`}
             />
+            {errors.date && <span className="error-message">{errors.date}</span>}
           </div>
         </div>
 
         {/* Tags */}
         <div className="form-group">
           <label htmlFor="tags" className="form-label">
-            Tags
+            Tags <span className="required">*</span>
           </label>
           <input
             type="text"
@@ -271,9 +322,10 @@ const BlogForm = ({ editingId, onCancel, onSuccess }: BlogFormProps) => {
             name="tags"
             value={formData.tags}
             onChange={handleChange}
-            className="form-input"
+            className={`form-input ${errors.tags ? 'error' : ''}`}
             placeholder="Enter tags separated by commas (e.g., MongoDB, Cloud, Tutorial)"
           />
+          {errors.tags && <span className="error-message">{errors.tags}</span>}
           <span className="form-hint">Separate multiple tags with commas</span>
         </div>
 

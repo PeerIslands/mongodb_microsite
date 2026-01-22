@@ -3,6 +3,10 @@ export interface User {
   first_name: string;
   last_name: string;
   user_email: string;
+  company: string;
+  job_function: string;
+  business_phone: string;
+  country: string;
   is_internal: boolean;
   is_admin: boolean;
   created_at: string;
@@ -13,6 +17,10 @@ export interface CreateUserDto {
   last_name: string;
   user_email: string;
   user_password: string;
+  company: string;
+  job_function: string;
+  business_phone: string;
+  country: string;
 }
 
 export interface LoginDto {
@@ -20,10 +28,20 @@ export interface LoginDto {
   user_password: string;
 }
 
+export interface TOTPSetup {
+  secret: string;
+  qr_code: string;
+  manual_entry_key: string;
+  issuer: string;
+  account_name: string;
+  otpauth_url: string;
+}
+
 export interface SignupResponse {
   user_id: string;
   is_internal: boolean;
   message: string;
+  totp_setup: TOTPSetup;
 }
 
 export interface LoginResponse {
@@ -36,3 +54,26 @@ export interface LoginResponse {
   session_token?: string;
 }
 
+export interface UserProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  user_email: string;
+  company: string;
+  job_function: string;
+  business_phone: string;
+  country: string;
+  is_admin: boolean;
+  totp_enabled: boolean;
+  registration_completed_at: string | null;
+  created_at: string;
+}
+
+export interface UserProfileUpdate {
+  first_name?: string;
+  last_name?: string;
+  company?: string;
+  job_function?: string;
+  business_phone?: string;
+  country?: string;
+}

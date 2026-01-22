@@ -46,6 +46,20 @@ class Settings(BaseSettings):
     # Full SAS URL for the blob container (includes SAS token)
     AZURE_BLOB_SAS_URL: str = ""
     
+    # Azure Communication Services Email Settings
+    AZURE_COMMUNICATION_CONNECTION_STRING: str = ""
+    AZURE_COMMUNICATION_SENDER_ADDRESS: str = ""
+    
+    # Contact Form Email Settings
+    CONTACTUS_RECEIVER_EMAIL: str = ""
+    CONTACTUS_RECEIVER_CC_EMAIL: str = ""  # Comma-separated email addresses
+    
+    def get_contactus_cc_emails(self) -> List[str]:
+        """Parse comma-separated CC email addresses into a list"""
+        if not self.CONTACTUS_RECEIVER_CC_EMAIL:
+            return []
+        return [email.strip() for email in self.CONTACTUS_RECEIVER_CC_EMAIL.split(",") if email.strip()]
+    
     # TOTP/MFA Settings
     TOTP_ENABLED: bool = True
     TOTP_ISSUER_NAME: str = "MongoDB Microsite"
@@ -69,6 +83,15 @@ class Settings(BaseSettings):
     # Time Window Tolerance
     TOTP_TIME_WINDOW_TOLERANCE: int = 1  # ±1 window (30 seconds each way)
     TOTP_ALLOW_CODE_REUSE: bool = False
+    
+    # SMTP Email Settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_TLS: bool = True
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@peerislands.io"
+
     
     # Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: str = ""

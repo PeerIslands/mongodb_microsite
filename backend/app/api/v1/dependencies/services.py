@@ -2,20 +2,30 @@
 Dependency injection for services.
 Provides singleton instances of services for FastAPI endpoints.
 Updated to include TOTP repository for MFA support.
+Updated to include Accelerator repository and service.
+Updated to include authentication dependency for protected endpoints.
 """
 
 from functools import lru_cache
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
 from app.api.v1.repositories.totp_repository import TOTPRepository
 from app.api.v1.repositories.blog_repository import BlogRepository
+from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.password_reset_service import PasswordResetService
 from app.api.v1.services.blog_service import BlogService
+from app.api.v1.services.accelerator_service import AcceleratorService
+from app.api.v1.models.user import UserModel
 from app.core.database import Database
+
+# Security scheme for JWT authentication
+security = HTTPBearer()
 
 
 # =============================================================================
@@ -64,6 +74,17 @@ def get_blog_repository() -> BlogRepository:
     """
     db = Database.get_db()
     return BlogRepository(db)
+
+
+def get_accelerator_repository() -> AcceleratorRepository:
+    """
+    Get AcceleratorRepository instance with MongoDB connection.
+    
+    Returns:
+        AcceleratorRepository instance
+    """
+    db = Database.get_db()
+    return AcceleratorRepository(db)
 
 
 # =============================================================================
@@ -126,4 +147,94 @@ def get_blog_service() -> BlogService:
     """
     repository = get_blog_repository()
     return BlogService(repository)
+
+
+def get_accelerator_service() -> AcceleratorService:
+    """
+    Get AcceleratorService instance.
+    
+    Returns:
+        AcceleratorService instance with injected repository
+    """
+    repository = get_accelerator_repository()
+    return AcceleratorService(repository)
+
+
+# =============================================================================
+# AUTHENTICATION DEPENDENCIES
+# =============================================================================
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> UserModel:
+    """
+    Get current authenticated user from JWT token.
+    
+    Args:
+        credentials: HTTP Bearer token credentials
+        auth_service: Auth service instance
+    
+    Returns:
+        Current authenticated user
+    
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
+    try:
+        # Decode the JWT token
+        payload = auth_service.decode_token(credentials.credentials)
+        email: str = payload.get("sub")
+        
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Get user from database
+        user_repository = get_user_repository()
+        user_data = await user_repository.get_user_by_email(email)
+        
+        if user_data is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        return UserModel(**user_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not validate credentials: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+async def get_current_active_user(
+    current_user: UserModel = Depends(get_current_user),
+) -> UserModel:
+    """
+    Get current active user (not disabled).
+    
+    Args:
+        current_user: Current authenticated user
+    
+    Returns:
+        Current active user
+    
+    Raises:
+        HTTPException: If user is inactive/disabled
+    """
+    if not current_user.account_active or not current_user.can_login:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user account"
+        )
+    return current_user
 

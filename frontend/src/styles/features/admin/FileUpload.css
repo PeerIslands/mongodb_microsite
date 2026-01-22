@@ -125,17 +125,72 @@
   object-fit: cover;
 }
 
+/* Video Preview */
+.preview-video {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.preview-video video {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+/* PDF Preview */
 .preview-pdf {
   padding: 2rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .pdf-icon {
-  font-size: 2rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 3rem;
+}
+
+.pdf-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  word-break: break-all;
+  max-width: 100%;
+}
+
+/* Generic File Preview */
+.preview-file {
+  padding: 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-icon {
+  font-size: 3rem;
+}
+
+.file-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  word-break: break-all;
+  max-width: 100%;
 }
 
 /* Preview Actions */

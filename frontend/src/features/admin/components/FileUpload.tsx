@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import '@/styles/features/admin/FileUpload.css';
 
 export interface FileUploadResult {
@@ -26,11 +26,32 @@ const FileUpload = ({
   hint 
 }: FileUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [preview, setPreview] = useState<string | string[] | null>(
-    currentFile || null
-  );
+  const [preview, setPreview] = useState<string | string[] | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'image' | 'video' | 'pdf' | 'other' | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Set preview from currentFile prop (for edit mode)
+  useEffect(() => {
+    if (currentFile && typeof currentFile === 'string' && currentFile.length > 0) {
+      setPreview(currentFile);
+      // Determine file type from URL
+      const lowerUrl = currentFile.toLowerCase();
+      if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/)) {
+        setFileType('image');
+      } else if (lowerUrl.match(/\.(mp4|mov|webm|avi)(\?|$)/)) {
+        setFileType('video');
+      } else if (lowerUrl.match(/\.pdf(\?|$)/)) {
+        setFileType('pdf');
+        // Extract filename from URL
+        const urlParts = currentFile.split('/');
+        setFileName(urlParts[urlParts.length - 1].split('?')[0]);
+      } else {
+        setFileType('other');
+      }
+    }
+  }, [currentFile]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -53,6 +74,13 @@ const FileUpload = ({
       const files = Array.from(e.target.files);
       handleFiles(files);
     }
+  };
+
+  const getFileType = (file: File): 'image' | 'video' | 'pdf' | 'other' => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    if (file.type === 'application/pdf') return 'pdf';
+    return 'other';
   };
 
   const handleFiles = async (files: File[]) => {
@@ -103,10 +131,13 @@ const FileUpload = ({
       } else {
         // Single file upload - return File object with preview URL
         const file = files[0];
+        const detectedFileType = getFileType(file);
+        setFileType(detectedFileType);
+        setFileName(file.name);
+        
         let previewUrl = '';
         
-        // Create preview for images
-        if (file.type.startsWith('image/')) {
+        if (detectedFileType === 'image') {
           const reader = new FileReader();
           const previewPromise = new Promise<string>((resolve) => {
             reader.onload = (e) => {
@@ -117,8 +148,11 @@ const FileUpload = ({
             reader.readAsDataURL(file);
           });
           previewUrl = await previewPromise;
-        } else if (file.type === 'application/pdf') {
-          previewUrl = '📄 ' + file.name;
+        } else if (detectedFileType === 'video') {
+          previewUrl = URL.createObjectURL(file);
+          setPreview(previewUrl);
+        } else if (detectedFileType === 'pdf') {
+          previewUrl = URL.createObjectURL(file);
           setPreview(previewUrl);
         } else {
           previewUrl = URL.createObjectURL(file);
@@ -137,6 +171,8 @@ const FileUpload = ({
 
   const handleRemove = () => {
     setPreview(null);
+    setFileName(null);
+    setFileType(null);
     onUpload(multiple ? [] : { file: null, previewUrl: '' });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -158,19 +194,39 @@ const FileUpload = ({
       );
     }
 
-    if (typeof preview === 'string' && preview.startsWith('📄')) {
-      return (
-        <div className="preview-pdf">
-          <span className="pdf-icon">{preview}</span>
-        </div>
-      );
+    switch (fileType) {
+      case 'image':
+        return (
+          <div className="preview-single">
+            <img src={preview} alt="Preview" />
+          </div>
+        );
+      
+      case 'video':
+        return (
+          <div className="preview-video">
+            <video src={preview} controls muted>
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        );
+      
+      case 'pdf':
+        return (
+          <div className="preview-pdf">
+            <span className="pdf-icon">📄</span>
+            <span className="pdf-name">{fileName || 'PDF Document'}</span>
+          </div>
+        );
+      
+      default:
+        return (
+          <div className="preview-file">
+            <span className="file-icon">📁</span>
+            <span className="file-name">{fileName || 'File'}</span>
+          </div>
+        );
     }
-
-    return (
-      <div className="preview-single">
-        <img src={preview} alt="Preview" />
-      </div>
-    );
   };
 
   return (
@@ -233,4 +289,3 @@ const FileUpload = ({
 };
 
 export default FileUpload;
-

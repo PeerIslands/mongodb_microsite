@@ -162,6 +162,10 @@ class UserService:
             first_name=request.first_name,
             last_name=request.last_name,
             user_email=request.user_email,
+            company=request.company,
+            job_function=request.job_function,
+            business_phone=request.business_phone,
+            country=request.country,
             is_internal=is_internal,
             encrypted_password=encrypted_password,
         )
@@ -217,6 +221,10 @@ class UserService:
             "first_name": user["first_name"],
             "last_name": user["last_name"],
             "user_email": user["user_email"],
+            "company": user.get("company", ""),
+            "job_function": user.get("job_function", ""),
+            "business_phone": user.get("business_phone", ""),
+            "country": user.get("country", ""),
             "is_internal": user["is_internal"],
             "is_admin": user["is_admin"],
             "created_at": user["created_at"],
@@ -419,4 +427,50 @@ class UserService:
         )
         
         return True
+    
+    async def update_user_profile(
+        self,
+        user_id: str,
+        update_data: Dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Update user profile information.
+        
+        Args:
+            user_id: ID of the user to update
+            update_data: Dictionary of fields to update
+        
+        Returns:
+            Updated user object or None if user not found
+        
+        Raises:
+            UserNotFoundError: If user doesn't exist
+            ValueError: If update_data contains invalid fields
+        """
+        # Prevent updating email through this method
+        if "user_email" in update_data:
+            raise ValueError("Email cannot be updated through profile update")
+        
+        # Prevent updating security/system fields
+        protected_fields = [
+            "_id", "id", "user_password", "totp_secret", 
+            "is_admin", "is_internal", "totp_enabled",
+            "registration_status", "account_active", "can_login",
+            "created_at", "totp_setup_at", "registration_completed_at"
+        ]
+        
+        for field in protected_fields:
+            if field in update_data:
+                raise ValueError(f"Field '{field}' cannot be updated")
+        
+        # Update user in repository
+        updated_user = await self._repository.update_user(
+            user_id=user_id,
+            update_data=update_data
+        )
+        
+        if not updated_user:
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        return updated_user
 
