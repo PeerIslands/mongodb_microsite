@@ -3,7 +3,6 @@ Text Extraction Service - Extract text from various file formats.
 """
 
 import io
-from typing import Optional
 from fastapi import UploadFile
 import PyPDF2
 from pptx import Presentation
