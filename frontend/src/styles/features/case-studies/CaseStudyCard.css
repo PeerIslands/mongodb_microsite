@@ -192,7 +192,7 @@
   font-weight: 500;
   line-height: 1.06;
   letter-spacing: 0.01875em;
-  color: #5b6cff;
+  color: #00ED64;
 }
 
 /* Link icon */
@@ -206,6 +206,8 @@
 
 .case-study-card__link-icon svg {
   transition: transform 0.2s ease;
+  color: #00ED64;
+
 }
 
 .case-study-card__link:hover .case-study-card__link-icon svg {

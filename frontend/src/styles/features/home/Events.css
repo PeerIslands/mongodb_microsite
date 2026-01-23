@@ -1,289 +1,109 @@
+/* Events section - carousel layout */
 .events {
   position: relative;
+  width: 100%;
+  max-width: 1447px;
+  margin: 0 auto;
+  overflow: hidden;
   background: #020916;
-  padding: clamp(3rem, 10vw, 163px) clamp(1rem, 10vw, 220px);
+  padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 4rem);
+  padding-bottom: clamp(4rem, 10vw, 8rem);
+  box-sizing: border-box;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: clamp(2rem, 5vw, 4rem);
 }
 
-.events-container {
-  max-width: 1000px;
-  width: 100%;
+/* Title */
+.events-title {
   position: relative;
-}
-
-.event-card {
-  position: relative;
-  width: 100%;
-  max-width: 1000px;
-  min-height: clamp(300px, 40vw, 372px);
-  border-radius: clamp(24px, 4vw, 48px);
-  overflow: hidden;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-}
-
-/* Background image with mix-blend-mode - matches Figma node 17:1536 exactly */
-.event-bg-wrapper {
-  position: absolute;
-  inset: 0;
-  border-radius: clamp(24px, 4vw, 48px);
-  overflow: hidden;
-}
-
-.event-bg-image {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0;
-  top: 0;
-  object-fit: cover;
-  object-position: center;
-  mix-blend-mode: difference;
-  pointer-events: none;
-  max-width: none;
-}
-
-.event-content {
-  position: relative;
-  flex: 1 1 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: clamp(1.5rem, 4vw, 64px);
-  padding-bottom: clamp(2rem, 5vw, 64px);
-  z-index: 2;
-  gap: 1rem;
-}
-
-.event-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  flex-grow: 1;
-}
-
-.event-title {
   font-family: 'Manrope', sans-serif;
   font-size: clamp(32px, 5vw, 56px);
   font-weight: 300;
   font-style: normal;
-  line-height: 1.2;
+  line-height: 1.35;
   margin: 0;
-  background: linear-gradient(175.459deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
+  background: linear-gradient(168.239deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.event-spacer {
-  display: none;
-}
-
-.event-details {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+  z-index: 1;
 }
 
-.event-name {
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(18px, 2.5vw, 24px);
-  font-weight: 500;
-  font-style: normal;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.4;
+.events-title span {
+  display: block;
   margin: 0;
 }
 
-.event-date {
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(13px, 1.5vw, 15px);
-  font-weight: 500;
-  font-style: normal;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.event-register-btn {
-  background: #000000;
-  color: #ffffff;
-  border: none;
-  border-radius: 10px;
-  padding: clamp(10px, 1.5vw, 13px) clamp(12px, 2vw, 16px);
+/* Loading state */
+.events-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(14px, 1.5vw, 16px);
-  font-weight: 600;
-  font-style: normal;
-  line-height: 1;
-  white-space: nowrap;
-  transition: opacity 0.2s, transform 0.2s;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 1;
 }
 
-.event-register-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+.events-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #00ED64;
+  border-radius: 50%;
+  animation: events-spin 1s linear infinite;
 }
 
-.event-arrow {
-  width: 8px;
-  height: 14px;
-  display: block;
-  flex-shrink: 0;
-}
-
-.event-image-container {
-  position: relative;
-  flex: 0 1 370px;
-  min-width: 200px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.event-image {
-  width: 100%;
-  height: auto;
-  max-height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  border-radius: 16px 16px 0 0;
-  pointer-events: none;
-  max-width: none;
-}
-
-/* Browser icons overlay - hidden on responsive as they're decorative */
-.event-icons {
-  position: absolute;
-  bottom: 50%;
-  left: 60%;
-  width: 24px;
-  height: 30px;
-  overflow: hidden;
-  z-index: 3;
-}
-
-.event-icon {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.event-icon img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  max-width: none;
-}
-
-.event-icon-1 {
-  inset: 4.03px 3.94px 3.97px 5.06px;
-  width: 15px;
-  height: 16px;
-}
-
-.event-icon-2 {
-  inset: 3.03px 2.94px 2.97px 4.06px;
-  width: 17px;
-  height: 18px;
-}
-
-.event-icon-3 {
-  inset: 12.59px 7.12px 6.41px 15.88px;
-  width: 1px;
-  height: 5px;
-}
-
-.event-icon-4 {
-  inset: 12.59px 9.12px 6.41px 13.88px;
-  width: 1px;
-  height: 5px;
-}
-
-.event-icon-5 {
-  inset: 12.59px 11.12px 6.41px 11.88px;
-  width: 1px;
-  height: 5px;
-}
-
-/* Floating screenshot image - matches Figma node 17:1574 exactly */
-.event-screenshot {
-  position: absolute;
-  right: -15%;
-  top: 50%;
-  transform: translateY(-30%);
-  width: clamp(150px, 20vw, 297px);
-  height: auto;
-  aspect-ratio: 297 / 255;
-  border-radius: 30px;
-  overflow: hidden;
-  box-shadow: 0px 4px 34px 0px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-  background-color: lightgray;
-  z-index: 2;
-}
-
-.event-screenshot-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  max-width: none;
-  border-radius: 30px;
-}
-
-/* Large desktop */
-@media (min-width: 1400px) {
-  .event-screenshot {
-    right: -200px;
+@keyframes events-spin {
+  to {
+    transform: rotate(360deg);
   }
+}
+
+/* Empty state */
+.events-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+/* Card button wrapper - resets button styles */
+.event-card-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.event-card-button:focus-visible {
+  outline: 2px solid #00ED64;
+  outline-offset: 4px;
+  border-radius: 30px;
 }
 
 /* Tablet */
 @media (max-width: 1024px) {
   .events {
     padding: 3rem 1.5rem;
-  }
-
-  .event-card {
-    flex-direction: column;
-  }
-
-  .event-content {
-    padding: 2rem;
-  }
-
-  .event-image-container {
-    width: 100%;
-    flex: 0 0 auto;
-    max-height: 250px;
-  }
-
-  .event-image {
-    border-radius: 0;
-  }
-
-  .event-screenshot {
-    display: none;
-  }
-
-  .event-icons {
-    display: none;
+    padding-bottom: 4rem;
   }
 }
 
@@ -291,54 +111,240 @@
 @media (max-width: 768px) {
   .events {
     padding: 2rem 1rem;
+    padding-bottom: 3rem;
   }
 
-  .event-card {
-    min-height: auto;
-    border-radius: 24px;
-  }
-
-  .event-content {
-    padding: 1.5rem;
-  }
-
-  .event-title {
+  .events-title {
     font-size: 28px;
-  }
-
-  .event-name {
-    font-size: 18px;
-  }
-
-  .event-date {
-    font-size: 13px;
-  }
-
-  .event-register-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .event-image-container {
-    max-height: 200px;
   }
 }
 
 /* Small mobile */
 @media (max-width: 480px) {
-  .event-title {
+  .events-title {
     font-size: 24px;
   }
+}
 
-  .event-name {
-    font-size: 16px;
-  }
+/* =============================================================================
+   SWIPER CAROUSEL STYLES
+   ============================================================================= */
 
-  .event-content {
-    padding: 1rem;
-  }
+/* Swiper container */
+.events-swiper {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  padding: 20px 0;
+  overflow: hidden;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
 
-  .event-image-container {
-    max-height: 150px;
+.events-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+/* Ensure swiper slides stay within bounds */
+.events-swiper .swiper-slide {
+  overflow: hidden;
+}
+
+/* Swiper slide */
+.event-slide {
+  height: auto;
+  opacity: 0.7;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.event-slide.swiper-slide-active,
+.event-slide.swiper-slide-next,
+.event-slide.swiper-slide-prev {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* For single slide or two slides */
+.events-swiper:not(.swiper-loop) .event-slide {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Card inside slide - needs full height */
+.event-slide .event-card {
+  height: 100%;
+  min-height: 420px;
+  max-width: none;
+  flex: none;
+}
+
+/* Card button inside slide */
+.event-slide .event-card-button {
+  height: 100%;
+}
+
+.event-slide .event-card-button .event-card {
+  height: 100%;
+}
+
+/* Carousel wrapper - contains arrows and cards */
+.events-carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 2vw, 2rem);
+  width: 100%;
+  max-width: 1400px;
+  z-index: 1;
+  isolation: isolate;
+}
+
+/* Carousel navigation arrows */
+.events-carousel-arrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.events-carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.events-carousel-arrow:active {
+  transform: scale(0.95);
+}
+
+.events-carousel-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .events-carousel-wrapper {
+    gap: 1rem;
   }
+  
+  .events-carousel-arrow {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .events-carousel-arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .events-carousel-wrapper {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .events-carousel-arrow {
+    display: none;
+  }
+  
+  /* Show arrows below cards on mobile as a row */
+  .events-carousel-wrapper::after {
+    content: '';
+    display: none;
+  }
+}
+
+/* Mobile carousel controls - show arrows in a row below cards */
+@media (max-width: 768px) {
+  .events-carousel-wrapper {
+    position: relative;
+  }
+  
+  .events-carousel-arrow {
+    display: flex;
+    position: static;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .events-carousel-arrow-left,
+  .events-carousel-arrow-right {
+    position: absolute;
+    bottom: -60px;
+  }
+  
+  .events-carousel-arrow-left {
+    left: calc(50% - 54px);
+  }
+  
+  .events-carousel-arrow-right {
+    right: calc(50% - 54px);
+  }
+  
+  /* Add padding to section to accommodate arrows */
+  .events:has(.events-carousel-wrapper) {
+    padding-bottom: calc(3rem + 60px);
+  }
+  
+  /* Mobile Swiper adjustments */
+  .event-slide {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .event-slide .event-card {
+    min-height: 350px;
+  }
+}
+
+/* =============================================================================
+   SWIPER ANIMATION ENHANCEMENTS
+   ============================================================================= */
+
+/* Smooth entrance animation for cards */
+@keyframes events-slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-slide {
+  animation: events-slideInUp 0.6s ease-out forwards;
+}
+
+.event-slide:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.event-slide:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.event-slide:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.event-slide:nth-child(4) {
+  animation-delay: 0.4s;
 }
