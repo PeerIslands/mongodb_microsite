@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
 import { markdownToHtml } from '@/utils/markdown';
+import { useAuthModal } from '@/contexts/AuthModalContext';
 import type { EventCardData } from './EventCard';
 import RegistrationConfirmModal from '@/features/events/RegistrationConfirmModal';
 import '@/styles/features/events/EventDetailPanel.css';
@@ -34,8 +35,14 @@ const formatDate = (dateString?: string): string => {
  * Shows all event information with markdown support
  */
 const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => {
+  const { openLoginModal } = useAuthModal();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Check if user is logged in
+  const isLoggedIn = () => {
+    return !!localStorage.getItem('authToken');
+  };
 
   // Handle escape key press
   const handleEscapeKey = useCallback((e: KeyboardEvent) => {
@@ -68,9 +75,19 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
     };
   }, [isOpen, handleEscapeKey]);
 
-  // Handle register button click
-  const handleRegisterClick = () => {
+  // Show registration confirmation modal
+  const showRegistrationModal = () => {
     setShowConfirmModal(true);
+  };
+
+  // Handle register button click - requires login
+  const handleRegisterClick = () => {
+    if (isLoggedIn()) {
+      showRegistrationModal();
+    } else {
+      // Open login modal with callback to show registration after successful login
+      openLoginModal(showRegistrationModal);
+    }
   };
 
   // Handle registration confirmation
