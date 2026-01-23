@@ -1,0 +1,75 @@
+/* About Partnerships Section Styles */
+.about-partnerships {
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(91, 108, 255, 0.05) 50%, transparent 100%);
+}
+
+.about-partnerships__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-partnerships__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 0.5rem;
+}
+
+.about-partnerships__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  margin: 10px 0 10px 0;
+}
+
+.about-partnerships__logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  padding: 2rem;
+  flex-wrap: wrap;
+}
+
+.about-partnerships__logo {
+  max-width: 100px;
+  max-height: 80px;
+  object-fit: contain;
+  filter: brightness(1.1);
+  transition: transform 0.3s ease;
+}
+
+.about-partnerships__logo-secondary {
+  max-width: 150px;
+  max-height: 60px;
+  object-fit: contain;
+  filter: brightness(1.1);
+  transition: transform 0.3s ease;
+}
+
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .about-partnerships {
+    padding: 3rem 1.5rem;
+  }
+
+  .about-partnerships__subtitle {
+    margin-bottom: 2rem;
+  }
+
+  .about-partnerships__badges {
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .about-partnerships__badge {
+    max-width: 80px;
+    max-height: 60px;
+  }
+}

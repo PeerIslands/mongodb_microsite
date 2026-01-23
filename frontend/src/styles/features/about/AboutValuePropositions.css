@@ -1,0 +1,105 @@
+/* About Value Propositions Section Styles */
+.about-values {
+  padding: 3rem 2rem;
+}
+
+.about-values__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-values__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.about-values__card {
+  position: relative;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.about-values__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(91, 108, 255, 0.3),
+    transparent
+  );
+}
+
+.about-values__card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(91, 108, 255, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(91, 108, 255, 0.15);
+}
+
+.about-values__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(91, 108, 255, 0.2), rgba(0, 237, 100, 0.1));
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  color: #5b6cff;
+}
+
+.about-values__card-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.75rem;
+}
+
+.about-values__card-description {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .about-values__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-values {
+    padding: 2rem 1.5rem;
+  }
+
+  .about-values__grid {
+    gap: 1rem;
+  }
+
+  .about-values__card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .about-values__grid {
+    grid-template-columns: 1fr;
+  }
+}

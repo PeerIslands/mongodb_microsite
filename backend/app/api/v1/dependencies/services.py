@@ -10,11 +10,16 @@ from functools import lru_cache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+
 from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
 from app.api.v1.repositories.totp_repository import TOTPRepository
 from app.api.v1.repositories.blog_repository import BlogRepository
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
+from app.api.v1.repositories.event_repository import EventRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
@@ -22,6 +27,7 @@ from app.api.v1.services.password_reset_service import PasswordResetService
 from app.api.v1.services.blog_service import BlogService
 from app.api.v1.services.accelerator_service import AcceleratorService
 from app.api.v1.models.user import UserModel
+from app.api.v1.services.event_service import EventService
 from app.core.database import Database
 
 # Security scheme for JWT authentication
@@ -85,6 +91,17 @@ def get_accelerator_repository() -> AcceleratorRepository:
     """
     db = Database.get_db()
     return AcceleratorRepository(db)
+
+
+def get_event_repository() -> EventRepository:
+    """
+    Get EventRepository instance with MongoDB connection.
+    
+    Returns:
+        EventRepository instance
+    """
+    db = Database.get_db()
+    return EventRepository(db)
 
 
 # =============================================================================
@@ -237,4 +254,13 @@ async def get_current_active_user(
             detail="Inactive user account"
         )
     return current_user
+def get_event_service() -> EventService:
+    """
+    Get EventService instance.
+    
+    Returns:
+        EventService instance with injected repository
+    """
+    repository = get_event_repository()
+    return EventService(repository)
 

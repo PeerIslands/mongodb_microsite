@@ -101,6 +101,18 @@
   margin: 0;
 }
 
+.case-study-card:hover .case-study-card__title {
+  background: linear-gradient(
+    to right,
+    #2563eb,
+    #1d4ed8,
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Metrics container - vertical stack layout */
 .case-study-card__metrics {
   display: flex;
@@ -169,7 +181,7 @@
   margin-top: auto;
 }
 
-.case-study-card__link:hover {
+.case-study-card:hover .case-study-card__link {
   gap: 0.75rem;
 }
 
