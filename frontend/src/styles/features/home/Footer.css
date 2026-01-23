@@ -36,7 +36,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(2rem, 5vw, 4rem);
+  gap: 40px;
   flex: 1 1 250px;
   min-width: 200px;
 }
@@ -90,6 +90,7 @@
   display: flex;
   gap: 1.25rem;
   align-items: center;
+  margin-left: 7px;
 }
 
 .social-link {

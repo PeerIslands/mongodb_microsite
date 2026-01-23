@@ -7,10 +7,12 @@ import {
   AcceleratorForm,
   BlogList,
   BlogForm,
+  EventList,
+  EventForm,
   AnalyticsDashboard,
 } from '@/features/admin/components';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'analytics';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics';
 type SubView = 'list' | 'add' | 'edit';
 
 const AdminDashboard = () => {
@@ -18,9 +20,11 @@ const AdminDashboard = () => {
   const [caseView, setCaseView] = useState<SubView>('list');
   const [accView, setAccView] = useState<SubView>('list');
   const [blogView, setBlogView] = useState<SubView>('list');
+  const [eventView, setEventView] = useState<SubView>('list');
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   // Case Study handlers
   const handleCaseAddNew = () => {
@@ -70,6 +74,22 @@ const AdminDashboard = () => {
     setEditingBlogId(null);
   };
 
+  // Event handlers
+  const handleEventAddNew = () => {
+    setEditingEventId(null);
+    setEventView('add');
+  };
+
+  const handleEventEdit = (id: string) => {
+    setEditingEventId(id);
+    setEventView('edit');
+  };
+
+  const handleEventBackToList = () => {
+    setEventView('list');
+    setEditingEventId(null);
+  };
+
   // Main view change
   const handleMainViewChange = (view: MainView) => {
     setMainView(view);
@@ -82,6 +102,9 @@ const AdminDashboard = () => {
     } else if (view === 'blogs') {
       setBlogView('list');
       setEditingBlogId(null);
+    } else if (view === 'events') {
+      setEventView('list');
+      setEditingEventId(null);
     }
   };
 
@@ -91,25 +114,31 @@ const AdminDashboard = () => {
         <div className="main-navigation">
           <button
             className={`main-nav-tab ${mainView === 'cases' ? 'active' : ''}`}
-            onClick={() => handleMainViewChange('cases')}
+            onClick={() => { handleMainViewChange('cases'); console.log('cases') }}
           >
             📚 Case Studies
           </button>
           <button
             className={`main-nav-tab ${mainView === 'accelerators' ? 'active' : ''}`}
-            onClick={() => handleMainViewChange('accelerators')}
+            onClick={() => { handleMainViewChange('accelerators'); console.log('accelerators') }}
           >
             🚀 Accelerators
           </button>
           <button
             className={`main-nav-tab ${mainView === 'blogs' ? 'active' : ''}`}
-            onClick={() => handleMainViewChange('blogs')}
+            onClick={() => { handleMainViewChange('blogs'); console.log('blogs') }}
           >
             📝 Blogs
           </button>
           <button
+            className={`main-nav-tab ${mainView === 'events' ? 'active' : ''}`}
+            onClick={() => { handleMainViewChange('events'); console.log('events') }}
+          >
+            📅 Events
+          </button>
+          <button
             className={`main-nav-tab ${mainView === 'analytics' ? 'active' : ''}`}
-            onClick={() => handleMainViewChange('analytics')}
+            onClick={() => { handleMainViewChange('analytics'); console.log('analytics') }}
           >
             📊 Analytics
           </button>
@@ -156,6 +185,21 @@ const AdminDashboard = () => {
                 editingId={editingBlogId} 
                 onCancel={handleBlogBackToList}
                 onSuccess={handleBlogBackToList}
+              />
+            )}
+          </>
+        )}
+
+        {mainView === 'events' && (
+          <>
+            {eventView === 'list' && (
+              <EventList onAddNew={handleEventAddNew} onEdit={handleEventEdit} />
+            )}
+            {(eventView === 'add' || eventView === 'edit') && (
+              <EventForm 
+                editingId={editingEventId} 
+                onCancel={handleEventBackToList}
+                onSuccess={handleEventBackToList}
               />
             )}
           </>

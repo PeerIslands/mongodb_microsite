@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
@@ -7,50 +7,23 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import '@/styles/features/home/CaseStudies.css';
 import caseStudiesBg from '@/assets/case-studies-bg.png';
-import { caseStudiesService } from '@/api/services/case-studies.service';
-import type { CaseStudy } from '@/types/models/case-study';
 import { CaseStudyCard } from '@/features/case-studies/components';
-import type { CaseStudyCardData } from '@/features/case-studies/components';
-
-/**
- * Transform API response to CaseStudyCardData format
- */
-const transformToCaseStudyCardData = (caseStudy: CaseStudy): CaseStudyCardData => ({
-  id: caseStudy.id,
-  slug: caseStudy.slug,
-  industry: caseStudy.industry,
-  title: caseStudy.title,
-  description: caseStudy.description,
-  metrics: caseStudy.metrics || [],
-});
+import { useCaseStudies } from '@/hooks/useCaseStudies';
 
 const CaseStudies = () => {
   const navigate = useNavigate();
-  const [featuredCaseStudies, setFeaturedCaseStudies] = useState<CaseStudyCardData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+
+  // Use the shared hook to fetch featured case studies
+  const { caseStudies: featuredCaseStudies, isLoading } = useCaseStudies({
+    featured: true,
+    status: 'published',
+  });
 
   // Handle case study card click - navigate to success-stories with ID
   const handleCaseStudyClick = (caseStudyId: string) => {
     navigate(`/success-stories?id=${caseStudyId}`);
   };
-
-  // Fetch featured case studies on mount
-  useEffect(() => {
-    const fetchFeaturedCaseStudies = async () => {
-      try {
-        setIsLoading(true);
-        const data = await caseStudiesService.getAll({ featured: true, status: 'published' });
-        setFeaturedCaseStudies(data.map(transformToCaseStudyCardData));
-      } catch (err) {
-        console.error('Failed to fetch featured case studies:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeaturedCaseStudies();
-  }, []);
 
   const showCarouselControls = featuredCaseStudies.length > 2;
 

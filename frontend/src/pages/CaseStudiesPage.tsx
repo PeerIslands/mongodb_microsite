@@ -4,24 +4,10 @@ import {
   CaseStudyArchitecture,
   CaseStudyDetailSection,
 } from '@/features/case-studies/components';
-import type { CaseStudyCardData } from '@/features/case-studies/components/CaseStudyCard';
 import type { CaseStudyDetail } from '@/types/models/case-study';
 import { caseStudiesService } from '@/api/services/case-studies.service';
+import { useCaseStudies } from '@/hooks/useCaseStudies';
 import '@/styles/pages/CaseStudiesPage.css';
-
-/**
- * Transform API response to CaseStudyCardData format
- */
-const transformToCaseStudyCardData = (caseStudy: CaseStudyDetail): CaseStudyCardData => {
-  return {
-    id: caseStudy.id,
-    slug: caseStudy.slug,
-    industry: caseStudy.industry,
-    title: caseStudy.title,
-    description: caseStudy.description,
-    metrics: caseStudy.metrics || [],
-  };
-};
 
 /**
  * Case Studies Page - Showcases featured case study carousel and detail view
@@ -32,34 +18,12 @@ const transformToCaseStudyCardData = (caseStudy: CaseStudyDetail): CaseStudyCard
 const CaseStudiesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // State for case studies list
-  const [caseStudies, setCaseStudies] = useState<CaseStudyCardData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  // Use the shared hook to fetch all published case studies
+  const { caseStudies, isLoading } = useCaseStudies({ status: 'published' });
 
   // State to track the selected case study
   const [selectedCaseStudy, setSelectedCaseStudy] = useState<CaseStudyDetail | null>(null);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
-
-  /**
-   * Fetch published case studies on component mount
-   */
-  useEffect(() => {
-    const fetchCaseStudies = async () => {
-      try {
-        setIsLoading(true);
-        const response = await caseStudiesService.getAll({ status: 'published' });
-        const transformedData = response.map(transformToCaseStudyCardData);
-        setCaseStudies(transformedData);
-      } catch (err) {
-        console.error('Failed to fetch case studies:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCaseStudies();
-  }, []);
 
   // State for detail loading
   const [isDetailLoading, setIsDetailLoading] = useState(false);

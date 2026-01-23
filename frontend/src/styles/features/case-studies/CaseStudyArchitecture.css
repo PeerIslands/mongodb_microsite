@@ -57,8 +57,16 @@
 }
 
 .success-stories__title-highlight {
-  color: #2155de;
-  font-weight: 900;
+  background: linear-gradient(
+    to right,
+    #2563eb,
+    #1d4ed8,
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  
 }
 
 /* Subtitle */
@@ -97,7 +105,15 @@
 }
 
 .success-stories__stat-value--highlighted {
-  color: #2155de;
+  background: linear-gradient(
+    to right,
+    #2563eb,
+    #1d4ed8,
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .success-stories__stat-label {
@@ -139,8 +155,15 @@
 }
 
 .featured-stories__title-highlight {
-  color: #2155de;
-  font-weight: 900;
+  background: linear-gradient(
+    to right,
+    #2563eb,
+    #1d4ed8,
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Subtitle */
