@@ -73,7 +73,7 @@ const CaseStudyCard = ({ data }: CaseStudyCardProps) => {
           >
             <path 
               d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-              stroke="#5B6CFF" 
+              stroke="#00ED64" 
               strokeWidth="1.5" 
               strokeLinecap="round" 
               strokeLinejoin="round"

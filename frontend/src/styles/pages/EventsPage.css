@@ -2,6 +2,7 @@
 .events-page {
   min-height: 100vh;
   background: #020916;
+  scroll-behavior: smooth;
 }
 
 /* Hero Section */

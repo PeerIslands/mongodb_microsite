@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { EventGrid, EventDetailPanel, type EventCardData } from '@/features/events';
 import '@/styles/pages/EventsPage.css';
@@ -8,6 +9,7 @@ import '@/styles/pages/EventsPage.css';
  * Displays events in a grid layout with header
  */
 const EventsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { events: allEvents, isLoading, error } = useEvents({
     autoFetch: true,
   });
@@ -21,6 +23,22 @@ const EventsPage = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventCardData | null>(null);
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+
+  // Handle URL query parameter for opening specific event
+  useEffect(() => {
+    const eventId = searchParams.get('id');
+    if (eventId && events.length > 0 && !isLoading) {
+      const eventToOpen = events.find(event => event.id === eventId);
+      if (eventToOpen) {
+        // Small delay to allow page to render smoothly before opening panel
+        const timer = setTimeout(() => {
+          setSelectedEvent(eventToOpen);
+          setIsDetailPanelOpen(true);
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [searchParams, events, isLoading]);
 
   // Get unique categories from events
   const categories = Array.from(new Set(events.map(event => event.category)));
@@ -41,9 +59,9 @@ const EventsPage = () => {
   const displayedEvents = showAll ? filteredEvents : filteredEvents.slice(0, INITIAL_DISPLAY_COUNT);
   const hasMoreEvents = filteredEvents.length > INITIAL_DISPLAY_COUNT;
 
-  // Scroll to top on mount
+  // Scroll to top on mount with smooth behavior
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   // Reset showAll when filters change
@@ -60,6 +78,11 @@ const EventsPage = () => {
   // Handle detail panel close
   const handleCloseDetailPanel = () => {
     setIsDetailPanelOpen(false);
+    // Clear the URL parameter when closing
+    if (searchParams.has('id')) {
+      searchParams.delete('id');
+      setSearchParams(searchParams, { replace: true });
+    }
     // Delay clearing the selected event to allow close animation
     setTimeout(() => {
       setSelectedEvent(null);
