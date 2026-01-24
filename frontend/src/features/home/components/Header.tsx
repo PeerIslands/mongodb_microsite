@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
@@ -38,6 +38,11 @@ const Header = () => {
   const handleLoginClick = (e: React.MouseEvent) => {
     e.preventDefault();
     openLoginModal();
+  };
+
+  const handleNavigation = (e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    navigate(path);
   };
 
   const handleLogout = () => {
@@ -126,10 +131,21 @@ const Header = () => {
           >
             Insights
           </a>
-          <a href="#about" className="nav-link">About</a>
+          <a
+            href={ROUTES.EVENTS}
+            className="nav-link"
+          >
+            Events
+          </a>
+          <a 
+            href={ROUTES.ABOUT} 
+            className="nav-link"
+          >
+            About
+          </a>
           {isLoggedIn && isAdmin && (
             <a 
-              href="/admin" 
+              href={ROUTES.ADMIN} 
               className="nav-link admin-link"
               onClick={handleAdminNavigation}
             >
@@ -179,18 +195,14 @@ const Header = () => {
                     <div className="user-menu-divider" />
                     {isAdmin && (
                       <>
-                        <button
-                          className="user-menu-item"
-                          onClick={() => {
-                            setShowUserMenu(false);
-                            navigate('/admin');
-                          }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <path d="M9 0L0 5V8.09C0 12.54 3.09 16.68 9 18C14.91 16.68 18 12.54 18 8.09V5L9 0ZM9 9H16C15.47 12.11 13.41 14.7 9 15.9V9H2V6.39L9 2.62V9Z" fill="currentColor"/>
-                          </svg>
-                          Admin Dashboard
-                        </button>
+                        <a href={ROUTES.ADMIN} className="user-menu-item-wrapper">
+                          <div className="user-menu-item">
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                              <path d="M9 0L0 5V8.09C0 12.54 3.09 16.68 9 18C14.91 16.68 18 12.54 18 8.09V5L9 0ZM9 9H16C15.47 12.11 13.41 14.7 9 15.9V9H2V6.39L9 2.62V9Z" fill="currentColor"/>
+                            </svg>
+                            Admin Dashboard
+                          </div>
+                        </a>
                         <div className="user-menu-divider" />
                       </>
                     )}

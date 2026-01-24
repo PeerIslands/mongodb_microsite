@@ -8,13 +8,13 @@ import { lazy, Suspense } from 'react';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const AcceleratorsPage = lazy(() => import('@/pages/AcceleratorsPage'));
-// const AcceleratorDetailPage = lazy(() => import('@/pages/AcceleratorDetailPage'));
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
-// const CaseStudyDetailPage = lazy(() => import('@/pages/CaseStudyDetailPage'));
 const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const EventsPage = lazy(() => import('@/pages/EventsPage'));
+const AboutPage = lazy(() => import('@/pages/AboutPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Loading component
@@ -65,22 +65,6 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
-          // {
-          //   path: ROUTES.ACCELERATOR_DETAIL,
-          //   element: (
-          //     <Suspense fallback={<PageLoader />}>
-          //       <AcceleratorDetailPage />
-          //     </Suspense>
-          //   ),
-          // },
-          // {
-            // path: ROUTES.CASE_STUDIES,
-          //   element: (
-          //     <Suspense fallback={<PageLoader />}>
-          //       <CaseStudiesPage />
-          //     </Suspense>
-          //   ),
-          // },
           {
             path: ROUTES.SUCCESS_STORIES,
             element: (
@@ -89,14 +73,6 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
-          // {
-          //   path: ROUTES.CASE_STUDY_DETAIL,
-          //   element: (
-          //     <Suspense fallback={<PageLoader />}>
-          //       <CaseStudyDetailPage />
-          //     </Suspense>
-          //   ),
-          // },
           {
             path: ROUTES.INSIGHTS,
             element: (
@@ -121,38 +97,30 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
+          {
+            path: ROUTES.EVENTS,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EventsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.ABOUT,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AboutPage />
+              </Suspense>
+            ),
+          },
         ],
       },
       {
-        path: '/admin',
+        path: ROUTES.ADMIN,
         element: <AdminLayout />,
         children: [
           {
             index: true,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminDashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'accelerators',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminDashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'case-studies',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminDashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'analytics',
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminDashboardPage />

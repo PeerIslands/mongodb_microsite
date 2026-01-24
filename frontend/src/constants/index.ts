@@ -7,17 +7,12 @@ export const APP_DESCRIPTION = 'PeerAI & MongoDB Partnership Platform';
 export const ROUTES = {
   HOME: '/',
   ACCELERATORS: '/accelerators',
-  ACCELERATOR_DETAIL: '/accelerators/:slug',
   CASE_STUDIES: '/case-studies',
-  CASE_STUDY_DETAIL: '/case-studies/:slug',
   SUCCESS_STORIES: '/success-stories',
   INSIGHTS: '/insights',
-  BLOGS: '/insights',
   ADMIN: '/admin',
-  ADMIN_ACCELERATORS: '/admin/accelerators',
-  ADMIN_CASE_STUDIES: '/admin/case-studies',
-  ADMIN_BLOGS: '/admin/blogs',
-  ADMIN_ANALYTICS: '/admin/analytics',
+  EVENTS: '/events',
+  ABOUT: '/about',
 } as const;
 
 // API Endpoints

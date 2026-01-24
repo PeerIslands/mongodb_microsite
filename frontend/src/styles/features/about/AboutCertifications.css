@@ -1,0 +1,115 @@
+/* About Certifications Section Styles */
+.about-certifications {
+  padding: 4rem 2rem;
+}
+
+.about-certifications__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-certifications__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 3rem;
+}
+
+.about-certifications__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.about-certifications__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.about-certifications__item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(91, 108, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.about-certifications__logo-wrapper {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.about-certifications__logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: brightness(1.1);
+}
+
+.about-certifications__count {
+  font-family: 'Inter', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  color: #5b6cff;
+  margin-bottom: 0.5rem;
+}
+
+.about-certifications__label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .about-certifications__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-certifications {
+    padding: 3rem 1.5rem;
+  }
+
+  .about-certifications__title {
+    margin-bottom: 2rem;
+  }
+
+  .about-certifications__grid {
+    gap: 1rem;
+  }
+
+  .about-certifications__item {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-certifications__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .about-certifications__count {
+    font-size: 1.75rem;
+  }
+
+  .about-certifications__label {
+    font-size: 0.8125rem;
+  }
+}
