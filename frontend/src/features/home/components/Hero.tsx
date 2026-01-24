@@ -1,3 +1,4 @@
+import { analytics } from '@/utils/analytics';
 import '@/styles/features/home/Hero.css';
 import image1 from '@/assets/image 1.png';
 import arrowIcon from '@/assets/9676e79a76f01cf2ed247a83e933b0c8e983525f.svg';
@@ -24,7 +25,10 @@ const Hero = () => {
         <div className="hero-button-wrapper">
           <button 
             className="btn-primary"
-            onClick={() => window.location.href = '/accelerators'}
+            onClick={() => {
+              analytics.trackCTAClick('Explore Accelerators', 'Hero Section');
+              window.location.href = '/accelerators';
+            }}
           >
             <span className="btn-blur"></span>
             <span className="btn-text">Explore Accelerators</span>
@@ -37,6 +41,7 @@ const Hero = () => {
           className="btn-link"
           onClick={(e) => {
             e.preventDefault();
+            analytics.trackCTAClick('View Success Stories', 'Hero Section');
             document.getElementById('case-studies')?.scrollIntoView({ behavior: 'smooth' });
           }}
         >

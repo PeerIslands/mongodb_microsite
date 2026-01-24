@@ -1,4 +1,5 @@
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { analytics } from '@/utils/analytics';
 import '@/styles/features/accelerators/DownloadSection.css';
 
 interface DownloadSectionProps {
@@ -13,15 +14,26 @@ const DownloadSection = ({ title, pdfUrl }: DownloadSectionProps) => {
     return !!localStorage.getItem('authToken');
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     if (pdfUrl) {
+      try {
+        // Track as CTA click and download - wait for both to complete
+        await Promise.all([
+          analytics.trackCTAClick('Download PDF Button', `Accelerator: ${title}`),
+          analytics.trackDownload(title, 'pdf', pdfUrl)
+        ]);
+      } catch (error) {
+        console.error('Tracking failed:', error);
+      }
+      
+      // Open PDF after tracking completes
       globalThis.open(pdfUrl, '_blank');
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (isLoggedIn()) {
-      downloadPdf();
+      await downloadPdf();
     } else {
       // Open login modal with callback to download after successful login
       openLoginModal(downloadPdf);

@@ -11,6 +11,7 @@ import { caseStudiesService } from '@/api/services/case-studies.service';
 import type { CaseStudy } from '@/types/models/case-study';
 import { CaseStudyCard } from '@/features/case-studies/components';
 import type { CaseStudyCardData } from '@/features/case-studies/components';
+import { analytics } from '@/utils/analytics';
 
 /**
  * Transform API response to CaseStudyCardData format
@@ -32,6 +33,12 @@ const CaseStudies = () => {
 
   // Handle case study card click - navigate to success-stories with ID
   const handleCaseStudyClick = (caseStudyId: string) => {
+    const caseStudy = featuredCaseStudies.find(cs => cs.id === caseStudyId);
+    // Track CTA click
+    analytics.trackCTAClick(
+      `Case Study: ${caseStudy?.title || caseStudyId}`,
+      'Home Page Carousel'
+    );
     navigate(`/success-stories?id=${caseStudyId}`);
   };
 

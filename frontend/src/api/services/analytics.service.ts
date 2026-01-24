@@ -3,20 +3,26 @@ import type { SiteAnalytics, PageAnalytics, MonthlyReport } from '@/types/models
 
 export const analyticsService = {
   // Get site-wide analytics
-  getSiteWide: async (params?: { startDate?: string; endDate?: string }) => {
-    const response = await apiClient.get<SiteAnalytics>('/api/v1/admin/analytics/site-wide', { params });
+  getSiteWide: async (days: number = 30) => {
+    const response = await apiClient.get<any>(`/api/v1/analytics/site-wide?days=${days}`);
     return response.data;
   },
 
   // Get page-level analytics
-  getPageLevel: async (params?: { page?: string; startDate?: string; endDate?: string }) => {
-    const response = await apiClient.get<PageAnalytics[]>('/api/v1/admin/analytics/page-level', { params });
+  getPageLevel: async (days: number = 30) => {
+    const response = await apiClient.get<any>(`/api/v1/analytics/page-level?days=${days}`);
     return response.data;
   },
 
   // Get monthly report
   getMonthlyReport: async (year: number, month: number) => {
-    const response = await apiClient.get<MonthlyReport>(`/api/v1/admin/analytics/monthly/${year}/${month}`);
+    const response = await apiClient.get<any>(`/api/v1/analytics/monthly/${year}/${month}`);
+    return response.data;
+  },
+
+  // Get user activity
+  getUserActivity: async (days: number = 7, eventType: string = 'all') => {
+    const response = await apiClient.get<any>(`/api/v1/analytics/user-activity?days=${days}&event_type=${eventType}`);
     return response.data;
   },
 };

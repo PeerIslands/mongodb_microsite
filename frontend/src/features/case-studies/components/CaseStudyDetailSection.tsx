@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import type { CaseStudyDetail } from '@/types/models/case-study';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { analytics } from '@/utils/analytics';
 import '@/styles/features/case-studies/CaseStudyDetailSection.css';
 
 interface CaseStudyDetailSectionProps {
@@ -31,6 +32,8 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
 
   const downloadPdf = () => {
     if (caseStudy?.pdf_url) {
+      // Track the download
+      analytics.trackDownload(caseStudy.title || 'Case Study', 'pdf', caseStudy.pdf_url);
       globalThis.open(caseStudy.pdf_url, '_blank');
     }
   };
