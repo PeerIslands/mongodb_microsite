@@ -12,8 +12,12 @@ import {
   updateEmailTemplate,
   uploadHTMLTemplate,
   sendTestEmail,
+  sendNewsletter,
+  RecipientFilter,
+  SendNewsletterRequest,
 } from '@/api/services/emailTemplates';
 import { PreviewModal } from './PreviewModal';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import '@/styles/features/admin/EmailTemplateForm.css';
 
 interface EmailTemplateFormProps {
@@ -28,7 +32,10 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [sendingNewsletter, setSendingNewsletter] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<'newsletter' | 'transactional' | 'promotional' | 'notification'>('newsletter');
@@ -38,6 +45,11 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
   const [htmlFile, setHtmlFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [useBlobStorage, setUseBlobStorage] = useState(true);
+  
+  // Newsletter sending state
+  const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>('all_users');
+  const [customEmails, setCustomEmails] = useState('');
+  const [pendingNewsletterRequest, setPendingNewsletterRequest] = useState<SendNewsletterRequest | null>(null);
 
   useEffect(() => {
     if (mode === 'edit' && editingId) {
@@ -252,7 +264,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
   const handleSendTest = async () => {
     if (!testEmail.trim()) {
-      showToast('Please enter a test email address', 'error');
+      showToast('Please enter at least one email address', 'error');
       return;
     }
 
@@ -261,10 +273,38 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       return;
     }
 
+    // Parse multiple emails (comma, semicolon, or space separated)
+    const emailList = testEmail
+      .split(/[,;\s]+/)
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+
+    if (emailList.length === 0) {
+      showToast('Please enter valid email address(es)', 'error');
+      return;
+    }
+
     try {
       setSendingTestEmail(true);
-      const response = await sendTestEmail(editingId, { to_email: testEmail });
-      showToast(response.message, 'success');
+      
+      // If multiple emails, send to each one
+      if (emailList.length > 1) {
+        let successCount = 0;
+        for (const email of emailList) {
+          try {
+            await sendTestEmail(editingId, { to_email: email });
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to send to ${email}:`, error);
+          }
+        }
+        showToast(`Test email sent to ${successCount} of ${emailList.length} recipient(s)`, 'success');
+      } else {
+        // Single email
+        const response = await sendTestEmail(editingId, { to_email: emailList[0] });
+        showToast(response.message, 'success');
+      }
+      
       setTestEmail('');
     } catch (error) {
       const err = error as { response?: { data?: { detail?: string } } };
@@ -272,6 +312,87 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     } finally {
       setSendingTestEmail(false);
     }
+  };
+
+  const handleSendNewsletter = async () => {
+    if (!editingId) {
+      showToast('No template selected', 'error');
+      return;
+    }
+
+    // Validate custom emails if needed
+    if (recipientFilter === 'custom_list' && !customEmails.trim()) {
+      showToast('Please enter at least one email address for custom list', 'error');
+      return;
+    }
+
+    // Parse custom emails if using custom list
+    let emailArray: string[] = [];
+    if (recipientFilter === 'custom_list') {
+      emailArray = customEmails
+        .split(/[\n,;]/)
+        .map(e => e.trim())
+        .filter(e => e.length > 0);
+
+      if (emailArray.length === 0) {
+        showToast('Please enter valid email addresses', 'error');
+        return;
+      }
+    }
+
+    // Prepare request
+    const request: SendNewsletterRequest = {
+      recipient_filter: recipientFilter,
+      test_mode: false,
+    };
+
+    if (recipientFilter === 'custom_list') {
+      request.custom_emails = emailArray;
+    }
+
+    // Build confirmation message
+    const recipientText = recipientFilter === 'custom_list'
+      ? `${emailArray.length} custom email(s)`
+      : recipientFilter.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    const message = `Send newsletter to ${recipientText}?`;
+
+    // Show confirmation modal
+    setConfirmMessage(message);
+    setPendingNewsletterRequest(request);
+    setShowConfirmModal(true);
+  };
+
+  const confirmSendNewsletter = async () => {
+    if (!editingId || !pendingNewsletterRequest) {
+      return;
+    }
+
+    setShowConfirmModal(false);
+
+    try {
+      setSendingNewsletter(true);
+      const response = await sendNewsletter(editingId, pendingNewsletterRequest);
+      
+      if (response.success) {
+        showToast(response.message, 'success');
+        // Clear custom emails after successful send
+        setCustomEmails('');
+      } else {
+        showToast('Newsletter sending failed', 'error');
+      }
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to send newsletter', 'error');
+    } finally {
+      setSendingNewsletter(false);
+      setPendingNewsletterRequest(null);
+    }
+  };
+
+  const cancelSendNewsletter = () => {
+    setShowConfirmModal(false);
+    setPendingNewsletterRequest(null);
   };
 
   const getTitle = () => {
@@ -508,32 +629,130 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
         {/* Test Email */}
         {mode === 'edit' && (
-          <div className="form-section">
-            <h3>📧 Send Newsletter to a email</h3>
-            <div className="form-row">
-              <div className="form-group flex-grow">
-                <label htmlFor="test-email">Enter email address</label>
-                <input
-                  type="email"
-                  id="test-email"
-                  value={testEmail}
-                  onChange={(e) => setTestEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                />
+          <>
+            <div className="form-section">
+              <h3>📧 Quick Test - Send to Email(s)</h3>
+              <p className="section-description">
+                Quickly send a test to check formatting and content. Supports multiple emails separated by commas or spaces.
+              </p>
+              <div className="form-row">
+                <div className="form-group flex-grow">
+                  <label htmlFor="test-email">Test Email Address(es)</label>
+                  <input
+                    type="text"
+                    id="test-email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="your.email@example.com, colleague@example.com"
+                  />
+                  <small className="form-hint">
+                    Enter one or more email addresses. Separate multiple emails with commas, semicolons, or spaces.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label>&nbsp;</label>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleSendTest}
+                    disabled={sendingTestEmail}
+                  >
+                    {sendingTestEmail ? '📤 Sending...' : '📧 Send Test'}
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* Bulk Newsletter Sending */}
+            <div className="form-section newsletter-section">
+              <h3>📮 Send Bulk Newsletter</h3>
+              <p className="section-description">
+                Send this newsletter to multiple recipients. Select recipient filter or provide custom email list.
+              </p>
+
+              {/* Recipient Filter */}
               <div className="form-group">
-                <label>&nbsp;</label>
+                <label htmlFor="recipient-filter">Recipient Filter *</label>
+                <select
+                  id="recipient-filter"
+                  value={recipientFilter}
+                  onChange={(e) => setRecipientFilter(e.target.value as RecipientFilter)}
+                  disabled={sendingNewsletter}
+                >
+                  <option value="all_users">📊 All Users - Everyone registered in the system</option>
+                  <option value="active_users">✅ Active Users - Users with verified accounts who can log in</option>
+                  <option value="internal_users">🏢 Internal Users - Company employees and team members</option>
+                  <option value="external_users">🌍 External Users - Partners, clients, and external contacts</option>
+                  <option value="custom_list">📝 Custom Email List - Specific email addresses you provide</option>
+                </select>
+                <small className="form-hint">
+                  {recipientFilter === 'all_users' && (
+                    <>
+                      <strong>📊 All Users:</strong> Sends to every user registered in the system, regardless of account status or user type. This includes both active and inactive accounts, internal and external users.
+                    </>
+                  )}
+                  {recipientFilter === 'active_users' && (
+                    <>
+                      <strong>✅ Active Users:</strong> Sends only to users who have verified their accounts and can successfully log in. Excludes pending registrations and disabled accounts. Recommended for general announcements.
+                    </>
+                  )}
+                  {recipientFilter === 'internal_users' && (
+                    <>
+                      <strong>🏢 Internal Users:</strong> Sends only to users marked as internal (company employees and team members). Use this for internal communications, company updates, or team announcements.
+                    </>
+                  )}
+                  {recipientFilter === 'external_users' && (
+                    <>
+                      <strong>🌍 External Users:</strong> Sends only to users marked as external (partners, clients, customers, and other external contacts). Use this for customer newsletters, partner updates, or public announcements.
+                    </>
+                  )}
+                  {recipientFilter === 'custom_list' && (
+                    <>
+                      <strong>📝 Custom Email List:</strong> Sends to a specific list of email addresses you provide below. Perfect for targeted campaigns, specific groups, or one-off communications. Recipients don't need to be registered users.
+                    </>
+                  )}
+                </small>
+              </div>
+
+              {/* Custom Emails */}
+              {recipientFilter === 'custom_list' && (
+                <div className="form-group">
+                  <label htmlFor="custom-emails">Custom Email List *</label>
+                  <textarea
+                    id="custom-emails"
+                    value={customEmails}
+                    onChange={(e) => setCustomEmails(e.target.value)}
+                    placeholder="Enter email addresses (one per line, or comma-separated)&#10;example@email.com&#10;another@email.com&#10;partner@company.com"
+                    rows={6}
+                    disabled={sendingNewsletter}
+                  />
+                  <small className="form-hint">
+                    Enter one email per line, or separate with commas or semicolons. These recipients don't need to be registered users.
+                  </small>
+                </div>
+              )}
+
+              {/* Send Button */}
+              <div className="form-actions">
                 <button
                   type="button"
-                  className="btn btn-secondary"
-                  onClick={handleSendTest}
-                  disabled={sendingTestEmail}
+                  className="btn btn-primary btn-large"
+                  onClick={handleSendNewsletter}
+                  disabled={sendingNewsletter}
+                  style={{ width: '100%' }}
                 >
-                  {sendingTestEmail ? '📤 Sending...' : '📧 Send Email'}
+                  {sendingNewsletter ? (
+                    <>
+                      <span className="spinner"></span>
+                      Sending Newsletter...
+                    </>
+                  ) : (
+                    '📨 Send Newsletter'
+                  )}
                 </button>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Actions */}
@@ -565,6 +784,18 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
         onClose={() => setShowPreviewModal(false)}
         title="Newsletter Preview"
         htmlContent={htmlContent}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onConfirm={confirmSendNewsletter}
+        onCancel={cancelSendNewsletter}
+        title="Send Newsletter"
+        message={confirmMessage}
+        confirmText="OK"
+        cancelText="Cancel"
+        confirmButtonStyle="primary"
       />
     </div>
   );

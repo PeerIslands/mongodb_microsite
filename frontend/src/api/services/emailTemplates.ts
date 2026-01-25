@@ -87,6 +87,30 @@ export interface SendTestEmailResponse {
   status: string;
 }
 
+export type RecipientFilter = 
+  | 'all_users' 
+  | 'active_users' 
+  | 'internal_users' 
+  | 'external_users' 
+  | 'custom_list';
+
+export interface SendNewsletterRequest {
+  recipient_filter: RecipientFilter;
+  custom_emails?: string[];
+  test_mode?: boolean;
+  variable_data?: Record<string, unknown>;
+}
+
+export interface SendNewsletterResponse {
+  success: boolean;
+  total_recipients: number;
+  emails_sent: number;
+  emails_failed: number;
+  failed_emails?: string[];
+  message: string;
+  send_job_id?: string;
+}
+
 /**
  * Get all email templates
  */
@@ -230,6 +254,23 @@ export const updateTemplateStatus = async (
   return response.data;
 };
 
+/**
+ * Send newsletter to multiple recipients
+ */
+export const sendNewsletter = async (
+  templateId: string,
+  request: SendNewsletterRequest
+): Promise<SendNewsletterResponse> => {
+  const response = await apiClient.post<SendNewsletterResponse>(
+    `/api/v1/email-templates/${templateId}/send-newsletter`,
+    request,
+    {
+      timeout: 300000, // 5 minutes for bulk sending
+    }
+  );
+  return response.data;
+};
+
 export default {
   getEmailTemplates,
   getEmailTemplate,
@@ -240,4 +281,5 @@ export default {
   sendTestEmail,
   duplicateTemplate,
   updateTemplateStatus,
+  sendNewsletter,
 };

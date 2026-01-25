@@ -63,6 +63,11 @@
   border-radius: 16px;
 }
 
+.form-section.newsletter-section {
+  background: linear-gradient(135deg, rgba(91, 108, 255, 0.05), rgba(0, 255, 136, 0.05));
+  border: 1px solid rgba(91, 108, 255, 0.2);
+}
+
 .form-section h3 {
   font-family: 'Manrope', sans-serif;
   font-size: 1.25rem;
@@ -72,6 +77,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.section-description {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: -0.5rem 0 1.5rem 0;
+  line-height: 1.6;
 }
 
 /* Form Groups */
@@ -91,6 +104,55 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9375rem;
   letter-spacing: 0.3px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}
+
+.form-hint.warning {
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(91, 108, 255, 0.3);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #5b6cff;
+}
+
+.checkbox-label span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .form-group input[type="text"],
@@ -415,6 +477,21 @@
 .btn-sm {
   padding: 10px 20px;
   font-size: 0.875rem;
+}
+
+.btn-large {
+  padding: 16px 36px;
+  font-size: 1.0625rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
 /* Loading State */

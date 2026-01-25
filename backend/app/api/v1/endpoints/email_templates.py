@@ -22,13 +22,17 @@ from app.api.v1.models.email_template import (
     EmailTemplateListResponse,
     SendTestEmailRequest,
     SendTestEmailResponse,
+    SendNewsletterRequest,
+    SendNewsletterResponse,
+    RecipientFilter,
     TemplateCategory,
     TemplateStatus,
     TemplateImage,
 )
 from app.api.v1.models.user import UserModel
-from app.api.v1.dependencies.services import get_email_template_repository, get_current_user
+from app.api.v1.dependencies.services import get_email_template_repository, get_current_user, get_user_repository
 from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
+from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.services.email_service import email_service
 from app.api.v1.utils.image_optimizer import optimize_image, check_document_size, estimate_document_size
 from app.api.v1.services.email_template_image_service import get_email_template_image_service
@@ -798,3 +802,204 @@ async def update_template_status(
     logger.info(f"Template status updated: {template_id} -> {new_status} by user {current_user.user_email}")
     
     return EmailTemplateResponse(**updated_template)
+
+
+# =====================================================
+# Bulk Newsletter Sending Endpoint
+# =====================================================
+
+@router.post(
+    "/{template_id}/send-newsletter",
+    response_model=SendNewsletterResponse,
+    summary="Send Newsletter to Multiple Recipients",
+    description="Send newsletter to multiple recipients based on filter criteria (Admin only)"
+)
+async def send_newsletter(
+    template_id: str,
+    newsletter_request: SendNewsletterRequest,
+    current_user: UserModel = Depends(require_admin),
+    template_repo: EmailTemplateRepository = Depends(get_email_template_repository),
+    user_repo: UserRepository = Depends(get_user_repository)
+) -> SendNewsletterResponse:
+    """
+    Send newsletter to multiple recipients.
+    
+    **Admin only**
+    
+    - Send to all users, active users, internal/external users, or custom list
+    - Test mode allows sending to specific emails for testing
+    - Increments send_count for tracking
+    - Returns detailed sending statistics
+    
+    **Recipient Filters:**
+    - `all_users`: Send to all registered users
+    - `active_users`: Send to users with active accounts
+    - `internal_users`: Send to internal users only
+    - `external_users`: Send to external users only
+    - `custom_list`: Send to specific email addresses (requires custom_emails)
+    
+    **Test Mode:**
+    - Set `test_mode: true` to send only to `custom_emails` for testing
+    - Does not increment send_count in test mode
+    """
+    try:
+        # Get template
+        template = await template_repo.get_template_by_id(template_id)
+        if not template:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template not found: {template_id}"
+            )
+        
+        # Check if template is active (unless in test mode)
+        if not newsletter_request.test_mode and template['status'] != TemplateStatus.ACTIVE.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Template must be 'active' to send. Current status: {template['status']}"
+            )
+        
+        # Get recipient list based on filter
+        recipient_emails = []
+        
+        if newsletter_request.test_mode:
+            # Test mode: only send to custom emails
+            if not newsletter_request.custom_emails:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="custom_emails required when test_mode is true"
+                )
+            recipient_emails = newsletter_request.custom_emails
+            logger.info(f"Test mode: Sending to {len(recipient_emails)} custom emails")
+            
+        elif newsletter_request.recipient_filter == RecipientFilter.CUSTOM_LIST:
+            # Custom list mode
+            if not newsletter_request.custom_emails:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="custom_emails required when recipient_filter is CUSTOM_LIST"
+                )
+            recipient_emails = newsletter_request.custom_emails
+            logger.info(f"Custom list mode: Sending to {len(recipient_emails)} emails")
+            
+        else:
+            # Fetch users from database based on filter
+            all_users = await user_repo.get_all_users(skip=0, limit=10000)  # Fetch up to 10k users
+            
+            if newsletter_request.recipient_filter == RecipientFilter.ALL_USERS:
+                recipient_emails = [user['user_email'] for user in all_users]
+                
+            elif newsletter_request.recipient_filter == RecipientFilter.ACTIVE_USERS:
+                recipient_emails = [
+                    user['user_email'] for user in all_users 
+                    if user.get('account_active', False) and user.get('can_login', False)
+                ]
+                
+            elif newsletter_request.recipient_filter == RecipientFilter.INTERNAL_USERS:
+                recipient_emails = [
+                    user['user_email'] for user in all_users 
+                    if user.get('is_internal', False)
+                ]
+                
+            elif newsletter_request.recipient_filter == RecipientFilter.EXTERNAL_USERS:
+                recipient_emails = [
+                    user['user_email'] for user in all_users 
+                    if not user.get('is_internal', False)
+                ]
+            
+            logger.info(
+                f"Filter '{newsletter_request.recipient_filter}': "
+                f"Found {len(recipient_emails)} recipients out of {len(all_users)} total users"
+            )
+        
+        if not recipient_emails:
+            return SendNewsletterResponse(
+                success=True,
+                total_recipients=0,
+                emails_sent=0,
+                emails_failed=0,
+                message="No recipients found matching the filter criteria"
+            )
+        
+        # Prepare email content
+        html_content = template['html_content']
+        plain_text = template.get('plain_text_content', '')
+        subject = template['subject']
+        
+        # Add [TEST] prefix if in test mode
+        if newsletter_request.test_mode:
+            subject = f"[TEST] {subject}"
+        
+        # TODO: Replace template variables with variable_data if provided
+        # For now, send as-is
+        
+        # Send emails in batches
+        batch_size = 50  # Send 50 emails at a time
+        emails_sent = 0
+        emails_failed = 0
+        failed_emails = []
+        
+        for i in range(0, len(recipient_emails), batch_size):
+            batch = recipient_emails[i:i + batch_size]
+            
+            for email in batch:
+                try:
+                    # Send email to individual recipient
+                    await email_service.send_email(
+                        to_addresses=[email],
+                        subject=subject,
+                        html_content=html_content,
+                        plain_text_content=plain_text
+                    )
+                    emails_sent += 1
+                    logger.info(f"Newsletter sent to: {email}")
+                    
+                except Exception as e:
+                    emails_failed += 1
+                    failed_emails.append(email)
+                    logger.error(f"Failed to send newsletter to {email}: {e}")
+            
+            # Small delay between batches to avoid rate limiting
+            if i + batch_size < len(recipient_emails):
+                import asyncio
+                await asyncio.sleep(0.5)
+        
+        # Increment send count (only if not in test mode)
+        if not newsletter_request.test_mode:
+            await template_repo.increment_send_count(template_id)
+            logger.info(f"Incremented send_count for template {template_id}")
+        
+        # Prepare response
+        success_rate = (emails_sent / len(recipient_emails) * 100) if recipient_emails else 0
+        message = (
+            f"Newsletter sent successfully! "
+            f"{emails_sent}/{len(recipient_emails)} emails delivered ({success_rate:.1f}% success rate)"
+        )
+        
+        if newsletter_request.test_mode:
+            message = f"[TEST MODE] {message}"
+        
+        if emails_failed > 0:
+            message += f". {emails_failed} emails failed."
+        
+        logger.info(
+            f"Newsletter campaign completed for template {template_id}: "
+            f"{emails_sent} sent, {emails_failed} failed"
+        )
+        
+        return SendNewsletterResponse(
+            success=True,
+            total_recipients=len(recipient_emails),
+            emails_sent=emails_sent,
+            emails_failed=emails_failed,
+            failed_emails=failed_emails if failed_emails else None,
+            message=message
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending newsletter: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send newsletter: {str(e)}"
+        )

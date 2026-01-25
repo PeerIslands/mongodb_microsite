@@ -136,3 +136,31 @@ class DuplicateTemplateResponse(BaseModel):
     original_id: str
     new_template: EmailTemplateResponse
     message: str
+
+
+class RecipientFilter(str, Enum):
+    """Recipient filter options for bulk sending"""
+    ALL_USERS = "all_users"
+    ACTIVE_USERS = "active_users"
+    INTERNAL_USERS = "internal_users"
+    EXTERNAL_USERS = "external_users"
+    CUSTOM_LIST = "custom_list"
+
+
+class SendNewsletterRequest(BaseModel):
+    """Request to send newsletter to multiple recipients"""
+    recipient_filter: RecipientFilter = Field(..., description="Filter for recipient selection")
+    custom_emails: Optional[List[str]] = Field(None, description="Custom email list (required if filter is CUSTOM_LIST)")
+    test_mode: bool = Field(default=False, description="If true, send only to custom_emails for testing")
+    variable_data: Optional[Dict[str, Any]] = Field(None, description="Data for template variables")
+
+
+class SendNewsletterResponse(BaseModel):
+    """Response after sending newsletter"""
+    success: bool
+    total_recipients: int
+    emails_sent: int
+    emails_failed: int
+    failed_emails: Optional[List[str]] = None
+    message: str
+    send_job_id: Optional[str] = None
