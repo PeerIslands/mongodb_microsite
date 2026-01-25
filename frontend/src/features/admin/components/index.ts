@@ -8,6 +8,8 @@ export { default as CaseStudyForm } from './CaseStudyForm';
 export { default as CaseStudyList } from './CaseStudyList';
 export { default as EventForm } from './EventForm';
 export { default as EventList } from './EventList';
+export { default as EmailTemplateList } from './EmailTemplateList';
+export { default as EmailTemplateForm } from './EmailTemplateForm';
 export { default as FileManager } from './FileManager';
 export { default as FileUpload } from './FileUpload';
 export { default as MonthlyReport } from './MonthlyReport';

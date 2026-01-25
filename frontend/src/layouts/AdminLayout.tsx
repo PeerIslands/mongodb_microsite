@@ -6,6 +6,8 @@ import '@/styles/features/admin/CaseStudyList.css';
 import '@/styles/features/admin/AcceleratorList.css';
 import '@/styles/features/admin/BlogList.css';
 import '@/styles/features/admin/AnalyticsDashboard.css';
+import '@/styles/features/admin/EmailTemplateList.css';
+import '@/styles/features/admin/EmailTemplateForm.css';
 import logo from '@/assets/logo.svg';
 
 /**
