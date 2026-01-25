@@ -11,5 +11,9 @@ else
     echo "Tesseract is already installed"
 fi
 
+# Initialize MongoDB collections and indexes
+echo "🔧 Initializing MongoDB collections..."
+python -m app.core.mongodb_init || echo "⚠️ MongoDB initialization failed, continuing with startup..."
+
 # Start the Gunicorn server
 gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
