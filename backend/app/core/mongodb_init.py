@@ -64,6 +64,14 @@ async def create_indexes(db) -> None:
     await users.create_index("is_internal")
     print("  ✅ users.is_internal")
     
+    # Index for active accounts
+    await users.create_index("account_active")
+    print("  ✅ users.account_active")
+    
+    # Index for MFA enabled users
+    await users.create_index("totp_enabled")
+    print("  ✅ users.totp_enabled")
+    
     # ==========================================================================
     # LOGIN CREDENTIALS COLLECTION
     # ==========================================================================
@@ -72,6 +80,115 @@ async def create_indexes(db) -> None:
     # Unique index on email
     await login_creds.create_index("user_email", unique=True)
     print("  ✅ login_creds.user_email (unique)")
+    
+    # ==========================================================================
+    # BLOGS COLLECTION
+    # ==========================================================================
+    blogs = db["blogs"]
+    
+    # Unique index on slug
+    await blogs.create_index("slug", unique=True)
+    print("  ✅ blogs.slug (unique)")
+    
+    # Index for status
+    await blogs.create_index("status")
+    print("  ✅ blogs.status")
+    
+    # Index for featured
+    await blogs.create_index("featured")
+    print("  ✅ blogs.featured")
+    
+    # Index for sorting by date
+    await blogs.create_index([("created_at", -1)])
+    print("  ✅ blogs.created_at (descending)")
+    
+    # Compound index for common queries
+    await blogs.create_index([("status", 1), ("featured", 1), ("created_at", -1)])
+    print("  ✅ blogs.status+featured+created_at (compound)")
+    
+    # ==========================================================================
+    # ACCELERATORS COLLECTION
+    # ==========================================================================
+    accelerators = db["accelerators"]
+    
+    # Unique index on slug
+    await accelerators.create_index("slug", unique=True)
+    print("  ✅ accelerators.slug (unique)")
+    
+    # Index for status
+    await accelerators.create_index("status")
+    print("  ✅ accelerators.status")
+    
+    # Index for sorting by date
+    await accelerators.create_index([("created_at", -1)])
+    print("  ✅ accelerators.created_at (descending)")
+    
+    # ==========================================================================
+    # EVENTS COLLECTION
+    # ==========================================================================
+    events = db["events"]
+    
+    # Unique index on slug
+    await events.create_index("slug", unique=True)
+    print("  ✅ events.slug (unique)")
+    
+    # Index for status
+    await events.create_index("status")
+    print("  ✅ events.status")
+    
+    # Index for event date
+    await events.create_index("event_date")
+    print("  ✅ events.event_date")
+    
+    # Index for sorting by date
+    await events.create_index([("created_at", -1)])
+    print("  ✅ events.created_at (descending)")
+    
+    # Compound index for common queries
+    await events.create_index([("status", 1), ("event_date", -1)])
+    print("  ✅ events.status+event_date (compound)")
+    
+    # ==========================================================================
+    # EMAIL TEMPLATES COLLECTION
+    # ==========================================================================
+    email_templates = db["email_templates"]
+    
+    # Unique index on slug
+    await email_templates.create_index("slug", unique=True)
+    print("  ✅ email_templates.slug (unique)")
+    
+    # Index for status
+    await email_templates.create_index("status")
+    print("  ✅ email_templates.status")
+    
+    # Index for category
+    await email_templates.create_index("category")
+    print("  ✅ email_templates.category")
+    
+    # Index for sorting by date
+    await email_templates.create_index([("created_at", -1)])
+    print("  ✅ email_templates.created_at (descending)")
+    
+    # Index for last sent at
+    await email_templates.create_index("last_sent_at")
+    print("  ✅ email_templates.last_sent_at")
+    
+    # Compound index for common queries
+    await email_templates.create_index([("status", 1), ("category", 1), ("created_at", -1)])
+    print("  ✅ email_templates.status+category+created_at (compound)")
+    
+    # ==========================================================================
+    # TOTP SECRETS COLLECTION
+    # ==========================================================================
+    totp_secrets = db["totp_secrets"]
+    
+    # Unique index on user_id
+    await totp_secrets.create_index("user_id", unique=True)
+    print("  ✅ totp_secrets.user_id (unique)")
+    
+    # Index for expiry
+    await totp_secrets.create_index("expires_at")
+    print("  ✅ totp_secrets.expires_at")
     
     print("✅ All indexes created successfully!")
 
@@ -85,26 +202,24 @@ async def create_collections(db) -> None:
     # Get existing collections
     existing = await db.list_collection_names()
     
-    # Case Studies Collection
-    if "case_studies" not in existing:
-        await db.create_collection("case_studies")
-        print("  ✅ Created: case_studies")
-    else:
-        print("  ⏭️  Exists: case_studies")
+    # Collections to create
+    collections_to_create = [
+        "case_studies",
+        "users",
+        "login_creds",
+        "blogs",
+        "accelerators",
+        "events",
+        "email_templates",
+        "totp_secrets",
+    ]
     
-    # Users Collection
-    if "users" not in existing:
-        await db.create_collection("users")
-        print("  ✅ Created: users")
-    else:
-        print("  ⏭️  Exists: users")
-    
-    # Login Credentials Collection
-    if "login_creds" not in existing:
-        await db.create_collection("login_creds")
-        print("  ✅ Created: login_creds")
-    else:
-        print("  ⏭️  Exists: login_creds")
+    for collection_name in collections_to_create:
+        if collection_name not in existing:
+            await db.create_collection(collection_name)
+            print(f"  ✅ Created: {collection_name}")
+        else:
+            print(f"  ⏭️  Exists: {collection_name}")
     
     print("✅ All collections ready!")
 
