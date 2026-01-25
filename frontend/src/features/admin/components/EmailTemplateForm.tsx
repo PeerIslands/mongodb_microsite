@@ -12,8 +12,8 @@ import {
   updateEmailTemplate,
   uploadHTMLTemplate,
   sendTestEmail,
-  EmailTemplate,
 } from '@/api/services/emailTemplates';
+import { PreviewModal } from './PreviewModal';
 import '@/styles/features/admin/EmailTemplateForm.css';
 
 interface EmailTemplateFormProps {
@@ -28,6 +28,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<'newsletter' | 'transactional' | 'promotional' | 'notification'>('newsletter');
@@ -42,6 +43,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     if (mode === 'edit' && editingId) {
       fetchTemplate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, editingId]);
 
   const fetchTemplate = async () => {
@@ -55,8 +57,8 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       setCategory(template.category);
       setSubject(template.subject);
       setHtmlContent(template.html_content);
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to load template', 'error');
+    } catch (error) {
+      showToast((error as Error)?.message || 'Failed to load template', 'error');
     } finally {
       setLoading(false);
     }
@@ -226,12 +228,13 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       setUploadProgress('');
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to save template';
+      const err = error as { response?: { data?: { detail?: string } }; message?: string; code?: string };
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to save template';
       
       // Check if it's a timeout error
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
         showToast(
           '⏱️ Upload timed out. However, your template may still be processing. Please check the template list in a moment.',
           'warning'
@@ -263,8 +266,9 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       const response = await sendTestEmail(editingId, { to_email: testEmail });
       showToast(response.message, 'success');
       setTestEmail('');
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to send test email', 'error');
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to send test email', 'error');
     } finally {
       setSendingTestEmail(false);
     }
@@ -272,9 +276,27 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
   const getTitle = () => {
     switch (mode) {
-      case 'upload': return '📤 Upload HTML Template';
-      case 'edit': return '✏️ Edit Email Template';
-      case 'create': return '➕ Create New Template';
+      case 'upload': 
+        return (
+          <>
+            <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>📤</span>
+            <h2 style={{ margin: 0 }}>Upload HTML Template</h2>
+          </>
+        );
+      case 'edit': 
+        return (
+          <>
+            <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>📭</span>
+            <h2 style={{ margin: 0 }}>Preview Newsletter</h2>
+          </>
+        );
+      case 'create': 
+        return (
+          <>
+            <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>➕</span>
+            <h2 style={{ margin: 0 }}>Create New Template</h2>
+          </>
+        );
     }
   };
 
@@ -293,8 +315,21 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     <div className="email-template-form">
       {/* Header */}
       <div className="form-header">
-        <h2>{getTitle()}</h2>
-        <button className="btn-close" onClick={onCancel}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {getTitle()}
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {mode === 'edit' && htmlContent && (
+            <button 
+              type="button"
+              className="btn btn-secondary btn-sm" 
+              onClick={() => setShowPreviewModal(true)}
+            >
+              👁️ Preview
+            </button>
+          )}
+          <button className="btn-close" onClick={onCancel}>✕</button>
+        </div>
       </div>
 
       {/* Form */}
@@ -332,7 +367,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
               <select
                 id="category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value as 'newsletter' | 'transactional' | 'promotional' | 'notification')}
                 required
               >
                 <option value="newsletter">Newsletter</option>
@@ -357,125 +392,127 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
         </div>
 
         {/* HTML Content */}
-        <div className="form-section">
-          <h3>📄 HTML Content</h3>
-          
-          {mode === 'upload' && (
-            <>
-              <div className="form-group">
-                <label htmlFor="html-file">Upload HTML File *</label>
-                <input
-                  type="file"
-                  id="html-file"
-                  accept=".html"
-                  onChange={handleFileChange}
-                  className="file-input"
-                />
-                {htmlFile && (
-                  <div className="file-info">
-                    <span>✅ {htmlFile.name}</span>
-                    <span className="file-size">
-                      ({(htmlFile.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="image-files">Upload Image Files (Optional)</label>
-                <input
-                  type="file"
-                  id="image-files"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageFilesChange}
-                  className="file-input"
-                />
-                {imageFiles.length > 0 && (
-                  <div className="file-info">
-                    <span>✅ {imageFiles.length} image(s) selected:</span>
-                    <ul className="file-list">
-                      {imageFiles.map((file, index) => (
-                        <li key={index}>
-                          {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <p className="help-text">
-                  💡 Upload all images referenced in your HTML (e.g., from assets/ folder).
-                </p>
-                <p className="help-text">
-                  📌 <strong>Tip:</strong> You can select images before or after selecting the HTML file. The preview will update automatically!
-                </p>
-              </div>
-
-              {/* Storage Option */}
-              <div className="form-group">
-                <label className="storage-option-label">
+        {mode !== 'edit' && (
+          <div className="form-section">
+            <h3>📄 HTML Content</h3>
+            
+            {mode === 'upload' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="html-file">Upload HTML File *</label>
                   <input
-                    type="checkbox"
-                    checked={useBlobStorage}
-                    onChange={(e) => setUseBlobStorage(e.target.checked)}
-                    className="storage-checkbox"
+                    type="file"
+                    id="html-file"
+                    accept=".html"
+                    onChange={handleFileChange}
+                    className="file-input"
                   />
-                  <span className="storage-option-text">
-                    Use Azure Blob Storage (recommended for large newsletters)
-                  </span>
-                </label>
-                <p className="help-text">
-                  {useBlobStorage ? (
-                    <span className="storage-info-enabled">
-                      ✅ <strong>Enabled:</strong> Images will be stored in Azure Blob Storage. No size limit! Perfect for newsletters with many or large images.
-                    </span>
-                  ) : (
-                    <span className="storage-info-disabled">
-                      ⚠️ <strong>Disabled:</strong> Images will be embedded as base64 in MongoDB. Maximum template size is 15MB. Only use this for small templates with few/small images.
-                    </span>
+                  {htmlFile && (
+                    <div className="file-info">
+                      <span>✅ {htmlFile.name}</span>
+                      <span className="file-size">
+                        ({(htmlFile.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
                   )}
-                </p>
-              </div>
-            </>
-          )}
+                </div>
 
-          {mode !== 'upload' && (
-            <div className="form-group">
-              <label htmlFor="html-content">HTML Content *</label>
-              <textarea
-                id="html-content"
-                value={htmlContent}
-                onChange={(e) => setHtmlContent(e.target.value)}
-                placeholder="<html>...</html>"
-                rows={15}
-                className="code-textarea"
-                required
-              />
-            </div>
-          )}
+                <div className="form-group">
+                  <label htmlFor="image-files">Upload Image Files (Optional)</label>
+                  <input
+                    type="file"
+                    id="image-files"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageFilesChange}
+                    className="file-input"
+                  />
+                  {imageFiles.length > 0 && (
+                    <div className="file-info">
+                      <span>✅ {imageFiles.length} image(s) selected:</span>
+                      <ul className="file-list">
+                        {imageFiles.map((file, index) => (
+                          <li key={index}>
+                            {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <p className="help-text">
+                    💡 Upload all images referenced in your HTML (e.g., from assets/ folder).
+                  </p>
+                  <p className="help-text">
+                    📌 <strong>Tip:</strong> You can select images before or after selecting the HTML file. The preview will update automatically!
+                  </p>
+                </div>
 
-          {/* HTML Preview */}
-          {htmlContent && (
-            <div className="form-group">
-              <label>Preview</label>
-              <div className="html-preview">
-                <iframe
-                  srcDoc={htmlContent}
-                  title="Template Preview"
-                  sandbox="allow-same-origin"
+                {/* Storage Option */}
+                <div className="form-group">
+                  <label className="storage-option-label">
+                    <input
+                      type="checkbox"
+                      checked={useBlobStorage}
+                      onChange={(e) => setUseBlobStorage(e.target.checked)}
+                      className="storage-checkbox"
+                    />
+                    <span className="storage-option-text">
+                      Use Azure Blob Storage (recommended for large newsletters)
+                    </span>
+                  </label>
+                  <p className="help-text">
+                    {useBlobStorage ? (
+                      <span className="storage-info-enabled">
+                        ✅ <strong>Enabled:</strong> Images will be stored in Azure Blob Storage. No size limit! Perfect for newsletters with many or large images.
+                      </span>
+                    ) : (
+                      <span className="storage-info-disabled">
+                        ⚠️ <strong>Disabled:</strong> Images will be embedded as base64 in MongoDB. Maximum template size is 15MB. Only use this for small templates with few/small images.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {mode !== 'upload' && (
+              <div className="form-group">
+                <label htmlFor="html-content">HTML Content *</label>
+                <textarea
+                  id="html-content"
+                  value={htmlContent}
+                  onChange={(e) => setHtmlContent(e.target.value)}
+                  placeholder="<html>...</html>"
+                  rows={15}
+                  className="code-textarea"
+                  required
                 />
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* HTML Preview */}
+            {htmlContent && (
+              <div className="form-group">
+                <label>Preview</label>
+                <div className="html-preview">
+                  <iframe
+                    srcDoc={htmlContent}
+                    title="Template Preview"
+                    sandbox="allow-same-origin"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Test Email */}
         {mode === 'edit' && (
           <div className="form-section">
-            <h3>📧 Send Test Email</h3>
+            <h3>📧 Send Newsletter to a email</h3>
             <div className="form-row">
               <div className="form-group flex-grow">
-                <label htmlFor="test-email">Test Email Address</label>
+                <label htmlFor="test-email">Enter email address</label>
                 <input
                   type="email"
                   id="test-email"
@@ -492,7 +529,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                   onClick={handleSendTest}
                   disabled={sendingTestEmail}
                 >
-                  {sendingTestEmail ? '📤 Sending...' : '📧 Send Test'}
+                  {sendingTestEmail ? '📤 Sending...' : '📧 Send Email'}
                 </button>
               </div>
             </div>
@@ -521,6 +558,14 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
           </div>
         )}
       </form>
+
+      {/* Preview Modal */}
+      <PreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        title="Newsletter Preview"
+        htmlContent={htmlContent}
+      />
     </div>
   );
 };

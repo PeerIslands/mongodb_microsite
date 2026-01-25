@@ -4,15 +4,15 @@
  * Displays list of email templates for admin management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import {
   getEmailTemplates,
   deleteEmailTemplate,
-  duplicateTemplate,
   updateTemplateStatus,
   EmailTemplate,
 } from '@/api/services/emailTemplates';
+import { PreviewModal } from './PreviewModal';
 import '@/styles/features/admin/EmailTemplateList.css';
 
 interface EmailTemplateListProps {
@@ -28,13 +28,18 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const fetchInProgressRef = useRef(false);
 
-  useEffect(() => {
-    fetchTemplates();
-  }, [categoryFilter, statusFilter]);
+  const fetchTemplates = useCallback(async () => {
+    // Prevent duplicate calls
+    if (fetchInProgressRef.current) {
+      return;
+    }
 
-  const fetchTemplates = async () => {
     try {
+      fetchInProgressRef.current = true;
       setLoading(true);
       const response = await getEmailTemplates(
         0,
@@ -43,12 +48,18 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
         statusFilter || undefined
       );
       setTemplates(response.templates);
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to load templates', 'error');
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to load templates', 'error');
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
-  };
+  }, [categoryFilter, statusFilter, showToast]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
@@ -57,18 +68,9 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
       await deleteEmailTemplate(id);
       showToast('Template deleted successfully', 'success');
       fetchTemplates();
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to delete template', 'error');
-    }
-  };
-
-  const handleDuplicate = async (id: string) => {
-    try {
-      await duplicateTemplate(id);
-      showToast('Template duplicated successfully', 'success');
-      fetchTemplates();
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to duplicate template', 'error');
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to delete template', 'error');
     }
   };
 
@@ -77,9 +79,15 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
       await updateTemplateStatus(id, newStatus);
       showToast(`Template status updated to ${newStatus}`, 'success');
       fetchTemplates();
-    } catch (error: any) {
-      showToast(error.response?.data?.detail || 'Failed to update status', 'error');
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to update status', 'error');
     }
+  };
+
+  const handlePreview = (template: EmailTemplate) => {
+    setPreviewTemplate(template);
+    setShowPreviewModal(true);
   };
 
   const filteredTemplates = templates.filter(template =>
@@ -122,8 +130,11 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
       {/* Header */}
       <div className="list-header">
         <div className="header-left">
-          <h2>📧 Email Templates</h2>
-          <p className="subtitle">Manage newsletter and email templates</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '42px' }}>📭</span>
+            <h2 style={{ margin: 0 }}>Newsletters</h2>
+          </div>
+          <p className="subtitle">Manage Newsletters and Send Email</p>
         </div>
         <div className="header-actions">
           <button className="btn btn-secondary" onClick={onUploadHTML}>
@@ -206,7 +217,7 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
                   <select
                     className="status-select"
                     value={template.status}
-                    onChange={(e) => handleStatusChange(template._id, e.target.value as any)}
+                    onChange={(e) => handleStatusChange(template._id, e.target.value as 'draft' | 'active' | 'archived')}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="draft">Draft</option>
@@ -253,13 +264,13 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
                   className="btn btn-sm btn-primary"
                   onClick={() => onEdit(template._id)}
                 >
-                  ✏️ Edit
+                  👁️ View/Send
                 </button>
                 <button
                   className="btn btn-sm btn-secondary"
-                  onClick={() => handleDuplicate(template._id)}
+                  onClick={() => handlePreview(template)}
                 >
-                  📋 Duplicate
+                  👁️ Preview
                 </button>
                 <button
                   className="btn btn-sm btn-danger"
@@ -289,6 +300,14 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
       <div className="list-summary">
         <p>Showing {filteredTemplates.length} of {templates.length} templates</p>
       </div>
+
+      {/* Preview Modal */}
+      <PreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        title={previewTemplate ? `Newsletter Preview - ${previewTemplate.name}` : 'Newsletter Preview'}
+        htmlContent={previewTemplate?.html_content || ''}
+      />
     </div>
   );
 };

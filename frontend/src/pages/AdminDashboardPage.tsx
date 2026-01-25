@@ -174,7 +174,7 @@ const AdminDashboard = () => {
             className={`main-nav-tab ${mainView === 'emailtemplates' ? 'active' : ''}`}
             onClick={() => handleMainViewChange('emailtemplates')}
           >
-            📧 Email Templates
+            📭 Newsletters
           </button>
         </div>
 
