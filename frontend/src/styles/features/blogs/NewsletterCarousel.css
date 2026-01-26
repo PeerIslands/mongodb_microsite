@@ -1,0 +1,223 @@
+/* Newsletter Carousel Section Styles - Matches BlogsPage Dark Theme */
+
+.newsletter-carousel-section {
+  padding: 5rem 0;
+  background: #020916;
+  position: relative;
+}
+
+.newsletter-carousel__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+}
+
+.newsletter-carousel__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 3rem;
+  color: #ffffff;
+}
+
+.newsletter-carousel__title-gradient {
+  background: linear-gradient(
+    to right,
+    #00ED64,
+    #00c9a7,
+    #00a76f
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Loading State */
+.newsletter-carousel__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  gap: 1rem;
+}
+
+.newsletter-carousel__spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 237, 100, 0.1);
+  border-top-color: #00ED64;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.newsletter-carousel__loading p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Swiper Customization */
+.newsletter-carousel__swiper {
+  padding: 2rem 0 3rem;
+  position: relative;
+}
+
+.newsletter-carousel__swiper .swiper-wrapper {
+  padding: 1rem 0;
+}
+
+/* Navigation Arrows - Hidden by default, show on hover */
+.newsletter-carousel__swiper .swiper-button-next,
+.newsletter-carousel__swiper .swiper-button-prev {
+  width: auto;
+  height: auto;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 100;
+  margin-top: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.newsletter-carousel__swiper:hover .swiper-button-next,
+.newsletter-carousel__swiper:hover .swiper-button-prev {
+  opacity: 1;
+}
+
+.newsletter-carousel__swiper .swiper-button-next {
+  right: 20px;
+}
+
+.newsletter-carousel__swiper .swiper-button-prev {
+  left: 20px;
+}
+
+.newsletter-carousel__swiper .swiper-button-next:hover,
+.newsletter-carousel__swiper .swiper-button-prev:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.newsletter-carousel__swiper .swiper-button-next:active,
+.newsletter-carousel__swiper .swiper-button-prev:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+.newsletter-carousel__swiper .swiper-button-next::after,
+.newsletter-carousel__swiper .swiper-button-prev::after {
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
+/* Pagination Dots */
+.newsletter-carousel__swiper .swiper-pagination {
+  bottom: 0 !important;
+  padding-bottom: 0.5rem;
+}
+
+.newsletter-carousel__swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+.newsletter-carousel__swiper .swiper-pagination-bullet-active {
+  background: #00ED64;
+  width: 32px;
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(0, 237, 100, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .newsletter-carousel__title {
+    font-size: 2rem;
+  }
+  
+  .newsletter-carousel__swiper .swiper-button-next {
+    right: 10px;
+  }
+  
+  .newsletter-carousel__swiper .swiper-button-prev {
+    left: 10px;
+  }
+  
+  .newsletter-carousel__swiper .swiper-button-next::after,
+  .newsletter-carousel__swiper .swiper-button-prev::after {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .newsletter-carousel-section {
+    padding: 3rem 0;
+  }
+  
+  .newsletter-carousel__container {
+    padding: 0 2rem;
+  }
+  
+  .newsletter-carousel__title {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+  }
+  
+  .newsletter-carousel__swiper {
+    padding: 1.5rem 0 2.5rem;
+  }
+  
+  /* Hide arrows on mobile - swipe navigation only */
+  .newsletter-carousel__swiper .swiper-button-next,
+  .newsletter-carousel__swiper .swiper-button-prev {
+    display: none;
+  }
+}
+
+/* ========================================
+   Newsletter Modal - Insights Page Custom Styling
+   ======================================== */
+
+/* Narrower modal width with blue glow effect (matches blog cards) */
+.newsletter-insights-modal .preview-modal-content {
+  max-width: 800px !important;
+  box-shadow: 
+    0 0 40px rgba(49, 107, 255, 0.3),
+    0 0 80px rgba(91, 108, 255, 0.15),
+    0 20px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(91, 108, 255, 0.2);
+}
+
+/* Smaller header - half the size */
+.newsletter-insights-modal .preview-modal-header {
+  padding: 0.75rem 1.5rem !important;
+  min-height: 50px !important;
+}
+
+.newsletter-insights-modal .preview-modal-header h2 {
+  font-size: 1rem !important;
+  font-weight: 600;
+}
+
+.newsletter-insights-modal .preview-modal-header span {
+  font-size: 1rem !important;
+}
+
+.newsletter-insights-modal .preview-modal-close {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 1.25rem !important;
+}

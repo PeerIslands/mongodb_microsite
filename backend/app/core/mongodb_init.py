@@ -272,20 +272,6 @@ async def create_collections(db) -> None:
         else:
             print(f"  ⏭️  Exists: {collection_name}")
     
-    # Analytics Events Collection
-    if "analytics_events" not in existing:
-        await db.create_collection("analytics_events")
-        print("  ✅ Created: analytics_events")
-    else:
-        print("  ⏭️  Exists: analytics_events")
-    
-    # Analytics Sessions Collection
-    if "analytics_sessions" not in existing:
-        await db.create_collection("analytics_sessions")
-        print("  ✅ Created: analytics_sessions")
-    else:
-        print("  ⏭️  Exists: analytics_sessions")
-    
     print("✅ All collections ready!")
 
 

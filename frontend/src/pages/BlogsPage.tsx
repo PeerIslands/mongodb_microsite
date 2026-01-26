@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useBlogs } from '@/features/blogs/hooks';
-import { BlogGrid } from '@/features/blogs/components';
+import { BlogGrid, NewsletterCarousel } from '@/features/blogs/components';
 import '@/styles/pages/BlogsPage.css';
 
 /**
@@ -180,6 +180,9 @@ const BlogsPage = () => {
           )}
         </div>
       </section>
+
+      {/* Newsletter Section */}
+      <NewsletterCarousel />
     </div>
   );
 };

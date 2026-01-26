@@ -40,11 +40,6 @@ const Header = () => {
     openLoginModal();
   };
 
-  const handleNavigation = (e: React.MouseEvent, path: string) => {
-    e.preventDefault();
-    navigate(path);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userEmail');
@@ -134,12 +129,14 @@ const Header = () => {
           <a
             href={ROUTES.EVENTS}
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.EVENTS, 'Events Nav')}
           >
             Events
           </a>
           <a 
             href={ROUTES.ABOUT} 
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.ABOUT, 'About Nav')}
           >
             About
           </a>
