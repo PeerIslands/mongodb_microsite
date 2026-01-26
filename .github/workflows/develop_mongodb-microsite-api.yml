@@ -75,3 +75,7 @@ jobs:
           app-name: 'mongodb-microsite-api'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_92A713CDE07D4EADA6A04BB4555CFEAF }}
+      
+      - name: Wait for deployment to stabilize
+        run: |
+          echo "⏳ Waiting for deployment to stabilize..."

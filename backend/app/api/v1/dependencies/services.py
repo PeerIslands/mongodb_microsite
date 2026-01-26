@@ -20,6 +20,7 @@ from app.api.v1.repositories.totp_repository import TOTPRepository
 from app.api.v1.repositories.blog_repository import BlogRepository
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.repositories.event_repository import EventRepository
+from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
 from app.api.v1.repositories.analytics_repository import AnalyticsRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
@@ -104,6 +105,17 @@ def get_event_repository() -> EventRepository:
     """
     db = Database.get_db()
     return EventRepository(db)
+
+
+def get_email_template_repository() -> EmailTemplateRepository:
+    """
+    Get EmailTemplateRepository instance with MongoDB connection.
+    
+    Returns:
+        EmailTemplateRepository instance
+    """
+    db = Database.get_db()
+    return EmailTemplateRepository(db)
 
 
 # =============================================================================
