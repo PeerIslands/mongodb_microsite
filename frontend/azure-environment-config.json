@@ -11,7 +11,7 @@
   },
   {
     "name": "VITE_API_BASE_URL",
-    "value": "https://mongodb-microsite-api-g2gcgvcmbxe6c2gf.canadacentral-01.azurewebsites.net",
+    "value": "https://mongodb-microsite-api-uat-h8h5gvh2g8f4hzbt.canadacentral-01.azurewebsites.net",
     "description": "Backend API base URL - Azure Backend",
     "required": true
   },
