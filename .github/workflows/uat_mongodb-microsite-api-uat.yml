@@ -72,7 +72,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'mongodb-microsite-api-uat-h8h5gvh2g8f4hzbt'
+          app-name: 'mongodb-microsite-api-uat'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_UAT }}
       
