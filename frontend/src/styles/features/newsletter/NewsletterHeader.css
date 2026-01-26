@@ -1,0 +1,43 @@
+/* Newsletter Header Styles */
+
+.newsletter-header {
+  background: linear-gradient(135deg, rgba(91, 108, 255, 0.1), rgba(0, 255, 136, 0.1));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4rem 1rem;
+}
+
+.newsletter-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.newsletter-header h1 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.newsletter-header p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .newsletter-header {
+    padding: 2rem 1rem;
+  }
+
+  .newsletter-header h1 {
+    font-size: 2rem;
+  }
+
+  .newsletter-header p {
+    font-size: 1rem;
+  }
+}
