@@ -36,7 +36,8 @@ allowed_origins = [
     "http://localhost:5173",  # Vite dev server
     "http://localhost:3000",  # Alternative dev port
     "https://ashy-glacier-09cfe4b0f.5.azurestaticapps.net",
-    "https://ashy-glacier-09cfe4b0f.1.azurestaticapps.net"  # Azure Static Web App
+    "https://ashy-glacier-09cfe4b0f.1.azurestaticapps.net",  # Production frontend (alt)
+    "https://blue-sea-0ca74880f.4.azurestaticapps.net"  # UAT frontend
 ]
 
 # Add custom CORS origins from settings if configured
