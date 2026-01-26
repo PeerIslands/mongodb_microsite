@@ -80,14 +80,3 @@ jobs:
         run: |
           echo "⏳ Waiting for deployment to stabilize..."
           sleep 30
-          echo "✅ Deployment stabilized"
-      
-      - name: Check MongoDB Initialization
-        run: |
-          echo "🔍 Checking MongoDB collections and indexes..."
-          echo "This step runs automatically via startup.sh during container startup"
-          echo "MongoDB initialization includes:"
-          echo "  - Creating 8 collections (if missing)"
-          echo "  - Creating 25+ indexes for performance"
-          echo "  - email_templates collection for newsletter feature"
-          echo "✅ MongoDB initialization handled by startup script"
