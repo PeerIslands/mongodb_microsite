@@ -9,20 +9,7 @@ import '@/styles/features/home/CaseStudies.css';
 import caseStudiesBg from '@/assets/case-studies-bg.png';
 import { CaseStudyCard } from '@/features/case-studies/components';
 import { useCaseStudies } from '@/hooks/useCaseStudies';
-import type { CaseStudyCardData } from '@/features/case-studies/components';
 import { analytics } from '@/utils/analytics';
-
-/**
- * Transform API response to CaseStudyCardData format
- */
-const transformToCaseStudyCardData = (caseStudy: CaseStudy): CaseStudyCardData => ({
-  id: caseStudy.id,
-  slug: caseStudy.slug,
-  industry: caseStudy.industry,
-  title: caseStudy.title,
-  description: caseStudy.description,
-  metrics: caseStudy.metrics || [],
-});
 
 const CaseStudies = () => {
   const navigate = useNavigate();

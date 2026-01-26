@@ -1,5 +1,4 @@
 import apiClient from '../client';
-import type { SiteAnalytics, PageAnalytics, MonthlyReport } from '@/types/models/analytics';
 
 export const analyticsService = {
   // Get site-wide analytics
