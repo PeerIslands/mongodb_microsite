@@ -10,7 +10,6 @@ const HomePage = lazy(() => import('@/pages/HomePage'));
 const AcceleratorsPage = lazy(() => import('@/pages/AcceleratorsPage'));
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
 const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
-const NewsletterPage = lazy(() => import('@/pages/NewsletterPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
@@ -79,14 +78,6 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <BlogsPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: ROUTES.NEWSLETTER,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <NewsletterPage />
               </Suspense>
             ),
           },

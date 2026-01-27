@@ -11,13 +11,14 @@ interface PreviewModalProps {
   onClose: () => void;
   title?: string;
   htmlContent: string;
+  className?: string; // Optional custom className for styling
 }
 
-export const PreviewModal = ({ isOpen, onClose, title = 'Newsletter Preview', htmlContent }: PreviewModalProps) => {
+export const PreviewModal = ({ isOpen, onClose, title = 'Newsletter Preview', htmlContent, className = '' }: PreviewModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="preview-modal-overlay" onClick={onClose}>
+    <div className={`preview-modal-overlay ${className}`} onClick={onClose}>
       <div className="preview-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="preview-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

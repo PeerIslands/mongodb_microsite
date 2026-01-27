@@ -42,6 +42,61 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# =====================================================
+# Public Newsletter Endpoint (No Auth Required)
+# =====================================================
+
+@router.get(
+    "/newsletters",
+    response_model=List[dict],
+    summary="Get Active Newsletters",
+    description="Get all active newsletters for public display (No auth required)"
+)
+async def get_public_newsletters(
+    repo: EmailTemplateRepository = Depends(get_email_template_repository)
+) -> List[dict]:
+    """
+    Get all active newsletters for public display on the Insights page.
+    
+    **No authentication required**
+    
+    - Filters by category="newsletter" and status="active"
+    - Returns only essential fields for display
+    - Sorted by creation date (newest first)
+    """
+    try:
+        # Fetch active newsletters
+        templates, _ = await repo.get_all_templates(
+            skip=0,
+            limit=100,
+            category="newsletter",
+            status="active"
+        )
+        
+        # Return simplified data for frontend
+        newsletters = []
+        for template in templates:
+            newsletters.append({
+                "_id": str(template.get("_id", "")),
+                "name": template.get("name", ""),
+                "description": template.get("description", ""),
+                "subject": template.get("subject", ""),
+                "html_content": template.get("html_content", ""),
+                "created_at": template.get("created_at"),
+                "updated_at": template.get("updated_at"),
+            })
+        
+        logger.info(f"📬 Fetched {len(newsletters)} active newsletters for public display")
+        return newsletters
+        
+    except Exception as e:
+        logger.error(f"Error fetching public newsletters: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve newsletters"
+        )
+
+
 def require_admin(current_user: UserModel = Depends(get_current_user)) -> UserModel:
     """Dependency to require admin role"""
     if not current_user.is_admin:

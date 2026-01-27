@@ -3,8 +3,9 @@ import '@/styles/features/admin/AnalyticsDashboard.css';
 import SiteWideAnalytics from './SiteWideAnalytics';
 import PageLevelAnalytics from './PageLevelAnalytics';
 import MonthlyReport from './MonthlyReport';
+import UserActivity from './UserActivity';
 
-type AnalyticsView = 'overview' | 'pages' | 'monthly';
+type AnalyticsView = 'overview' | 'pages' | 'monthly' | 'activity';
 
 const AnalyticsDashboard = () => {
   const [activeView, setActiveView] = useState<AnalyticsView>('overview');
@@ -36,6 +37,12 @@ const AnalyticsDashboard = () => {
           >
             Monthly Report
           </button>
+          <button
+            className={`nav-tab ${activeView === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveView('activity')}
+          >
+            User Activity
+          </button>
         </div>
       </div>
 
@@ -44,6 +51,7 @@ const AnalyticsDashboard = () => {
         {activeView === 'overview' && <SiteWideAnalytics />}
         {activeView === 'pages' && <PageLevelAnalytics />}
         {activeView === 'monthly' && <MonthlyReport />}
+        {activeView === 'activity' && <UserActivity />}
       </div>
     </div>
   );

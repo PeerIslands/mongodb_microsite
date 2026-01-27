@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { AuthModalProvider, useAuthModal } from '@/contexts/AuthModalContext';
 import ToastContainer from '@/components/ToastContainer';
@@ -6,7 +6,23 @@ import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import '@/styles/layouts/RootLayout.css';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { analytics } from '@/utils/analytics';
+
+/**
+ * Analytics Tracker - tracks route changes for analytics
+ */
+const AnalyticsTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Track page view on route change (including query params)
+    const fullPath = location.pathname + location.search;
+    analytics.trackPageView(fullPath);
+  }, [location]);
+
+  return null;
+};
 
 /**
  * Global Auth Modals - rendered once at the root level
@@ -54,6 +70,7 @@ const RootLayout = ({ children }: { children?: ReactNode }) => {
     <ToastProvider>
       <AuthModalProvider>
         <div className="root-layout">
+          <AnalyticsTracker />
           {children || <Outlet />}
           <ToastContainer />
           <GlobalAuthModals />

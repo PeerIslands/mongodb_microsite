@@ -129,7 +129,7 @@ export const getEmailTemplates = async (
   if (status) params.append('status_filter', status);
   
   const response = await apiClient.get<EmailTemplateListResponse>(
-    `/api/v1/email-templates?${params.toString()}`
+    `/api/v1/email-templates/?${params.toString()}`
   );
   return response.data;
 };
@@ -148,7 +148,7 @@ export const getEmailTemplate = async (id: string): Promise<EmailTemplate> => {
 export const createEmailTemplate = async (
   data: CreateTemplateRequest
 ): Promise<EmailTemplate> => {
-  const response = await apiClient.post<EmailTemplate>('/api/v1/email-templates', data);
+  const response = await apiClient.post<EmailTemplate>('/api/v1/email-templates/', data);
   return response.data;
 };
 

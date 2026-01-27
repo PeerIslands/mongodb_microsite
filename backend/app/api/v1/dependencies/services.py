@@ -21,12 +21,14 @@ from app.api.v1.repositories.blog_repository import BlogRepository
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.repositories.event_repository import EventRepository
 from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
+from app.api.v1.repositories.analytics_repository import AnalyticsRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.password_reset_service import PasswordResetService
 from app.api.v1.services.blog_service import BlogService
 from app.api.v1.services.accelerator_service import AcceleratorService
+from app.api.v1.services.analytics_service import AnalyticsService
 from app.api.v1.models.user import UserModel
 from app.api.v1.services.event_service import EventService
 from app.core.database import Database
@@ -187,6 +189,18 @@ def get_accelerator_service() -> AcceleratorService:
     """
     repository = get_accelerator_repository()
     return AcceleratorService(repository)
+
+
+def get_analytics_service() -> AnalyticsService:
+    """
+    Get AnalyticsService instance.
+    
+    Returns:
+        AnalyticsService instance with injected repository
+    """
+    db = Database.get_db()
+    repository = AnalyticsRepository(db)
+    return AnalyticsService(repository)
 
 
 # =============================================================================

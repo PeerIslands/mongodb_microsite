@@ -4,6 +4,7 @@ import 'react-phone-number-input/style.css';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
 import LeafLoader from '@/components/LeafLoader';
+import { analytics } from '@/utils/analytics';
 import '@/styles/pages/ContactPage.css';
 
 // Helper to convert country name to ISO country code
@@ -106,6 +107,9 @@ const ContactPage = () => {
         country: country,
         inquiry: inquiry,
       });
+
+      // Track form submission
+      analytics.trackFormSubmit('Contact Inquiry', 'Contact Page');
 
       showToast('Your inquiry has been submitted successfully!', 'success');
       
