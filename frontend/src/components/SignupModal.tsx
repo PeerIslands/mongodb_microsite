@@ -68,6 +68,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [jobFunction, setJobFunction] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
   const [country, setCountry] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   // MFA setup state
   const [step, setStep] = useState<RegistrationStep>('registration');
@@ -91,6 +92,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setJobFunction('');
     setBusinessPhone('');
     setCountry('');
+    setPasswordErrors([]);
     setStep('registration');
     setUserId('');
     setTotpSetupData(null);
@@ -117,20 +119,55 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   if (!isOpen) return null;
 
   // ==========================================================================
+  // PASSWORD VALIDATION
+  // ==========================================================================
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    
+    if (pwd.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push('One uppercase letter');
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push('One lowercase letter');
+    }
+    if (!/\d/.test(pwd)) {
+      errors.push('One number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(pwd)) {
+      errors.push('One special character');
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    
+    // Validate password in real-time
+    const errors = validatePassword(newPassword);
+    setPasswordErrors(errors);
+  };
+
+  // ==========================================================================
   // STEP 1: Registration Form Submission
   // ==========================================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match!', 'error');
+    // Validate password strength
+    const passwordValidationErrors = validatePassword(password);
+    if (passwordValidationErrors.length > 0) {
+      showToast('Password does not meet requirements. Please check below.', 'error');
       return;
     }
 
-    // Validate password strength
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters long.', 'error');
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      showToast('Passwords do not match!', 'error');
       return;
     }
 
@@ -466,13 +503,37 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
                   type="password"
                   id="password"
                   className="form-input"
-                  placeholder="Create a password (min 6 characters)"
+                  placeholder="Create a strong password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   disabled={loading}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
+                {password && (
+                  <div className="password-requirements" style={{ marginTop: '8px', fontSize: '12px' }}>
+                    <div style={{ marginBottom: '4px', fontWeight: '600', color: '#333' }}>
+                      Password must contain:
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ color: password.length >= 8 ? '#00684A' : '#d32f2f' }}>
+                        {password.length >= 8 ? '✓' : '✗'} At least 8 characters
+                      </div>
+                      <div style={{ color: /[A-Z]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[A-Z]/.test(password) ? '✓' : '✗'} One uppercase letter
+                      </div>
+                      <div style={{ color: /[a-z]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[a-z]/.test(password) ? '✓' : '✗'} One lowercase letter
+                      </div>
+                      <div style={{ color: /\d/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/\d/.test(password) ? '✓' : '✗'} One number
+                      </div>
+                      <div style={{ color: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password) ? '✓' : '✗'} One special character (!@#$%^&* etc.)
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">

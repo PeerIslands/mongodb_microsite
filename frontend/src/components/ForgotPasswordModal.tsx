@@ -27,6 +27,7 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const { showToast } = useToast();
 
@@ -40,11 +41,46 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
       setNewPassword('');
       setConfirmPassword('');
       setVerificationError('');
+      setPasswordErrors([]);
       setLoading(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // ==========================================================================
+  // PASSWORD VALIDATION
+  // ==========================================================================
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    
+    if (pwd.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push('One uppercase letter');
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push('One lowercase letter');
+    }
+    if (!/\d/.test(pwd)) {
+      errors.push('One number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(pwd)) {
+      errors.push('One special character');
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPwd = e.target.value;
+    setNewPassword(newPwd);
+    
+    // Validate password in real-time
+    const errors = validatePassword(newPwd);
+    setPasswordErrors(errors);
+  };
 
   // ==========================================================================
   // STEP 1: Email Input & Request Reset
@@ -119,13 +155,15 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (newPassword !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
+    // Validate password strength
+    const passwordValidationErrors = validatePassword(newPassword);
+    if (passwordValidationErrors.length > 0) {
+      showToast('Password does not meet requirements. Please check below.', 'error');
       return;
     }
 
-    if (newPassword.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+    if (newPassword !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
       return;
     }
 
@@ -293,14 +331,38 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
                 type="password"
                 id="newPassword"
                 className="form-input"
-                placeholder="Enter new password (min 6 characters)"
+                placeholder="Create a strong password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={handlePasswordChange}
                 disabled={loading}
                 required
-                minLength={6}
+                minLength={8}
                 autoFocus
               />
+              {newPassword && (
+                <div className="password-requirements" style={{ marginTop: '8px', fontSize: '12px' }}>
+                  <div style={{ marginBottom: '4px', fontWeight: '600', color: '#333' }}>
+                    Password must contain:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ color: newPassword.length >= 8 ? '#00684A' : '#d32f2f' }}>
+                      {newPassword.length >= 8 ? '✓' : '✗'} At least 8 characters
+                    </div>
+                    <div style={{ color: /[A-Z]/.test(newPassword) ? '#00684A' : '#d32f2f' }}>
+                      {/[A-Z]/.test(newPassword) ? '✓' : '✗'} One uppercase letter
+                    </div>
+                    <div style={{ color: /[a-z]/.test(newPassword) ? '#00684A' : '#d32f2f' }}>
+                      {/[a-z]/.test(newPassword) ? '✓' : '✗'} One lowercase letter
+                    </div>
+                    <div style={{ color: /\d/.test(newPassword) ? '#00684A' : '#d32f2f' }}>
+                      {/\d/.test(newPassword) ? '✓' : '✗'} One number
+                    </div>
+                    <div style={{ color: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(newPassword) ? '#00684A' : '#d32f2f' }}>
+                      {/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(newPassword) ? '✓' : '✗'} One special character (!@#$%^&* etc.)
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
+import { analytics } from '@/utils/analytics';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import '@/styles/components/LoginModal.css';
 
@@ -74,6 +75,9 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
           localStorage.setItem('rememberMe', 'true');
         }
 
+        // Update analytics session with user_id
+        await analytics.updateSessionUser();
+
         // Reset form
         setEmail('');
         setPassword('');
@@ -124,6 +128,9 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         }
+        
+        // Update analytics session with user_id
+        await analytics.updateSessionUser();
         
         // Show success
         showToast('Login successful! Welcome back.', 'success');
