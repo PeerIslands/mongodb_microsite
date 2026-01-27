@@ -27,7 +27,6 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [verificationError, setVerificationError] = useState('');
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -43,7 +42,6 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
       setNewPassword('');
       setConfirmPassword('');
       setVerificationError('');
-      setPasswordErrors([]);
       setShowNewPassword(false);
       setShowConfirmPassword(false);
       setLoading(false);
@@ -80,10 +78,6 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }: ForgotPasswor
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPwd = e.target.value;
     setNewPassword(newPwd);
-    
-    // Validate password in real-time
-    const errors = validatePassword(newPwd);
-    setPasswordErrors(errors);
   };
 
   // ==========================================================================

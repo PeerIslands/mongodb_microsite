@@ -68,7 +68,6 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [jobFunction, setJobFunction] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
   const [country, setCountry] = useState('');
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -94,7 +93,6 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setJobFunction('');
     setBusinessPhone('');
     setCountry('');
-    setPasswordErrors([]);
     setShowPassword(false);
     setShowConfirmPassword(false);
     setStep('registration');
@@ -150,10 +148,6 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
-    
-    // Validate password in real-time
-    const errors = validatePassword(newPassword);
-    setPasswordErrors(errors);
   };
 
   // ==========================================================================
