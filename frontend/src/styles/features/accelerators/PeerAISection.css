@@ -1,0 +1,295 @@
+/* PeerAI Section */
+.peerai-section {
+  position: relative;
+  padding: 8rem 2rem 5rem;
+  background: linear-gradient(180deg, rgba(91, 108, 255, 0.1) 0%, rgba(2, 9, 22, 0) 100%);
+  overflow: visible;
+  z-index: 2;
+  min-height: auto;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+}
+
+.peerai-section::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(91, 108, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.peerai-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(91, 108, 255, 0.03) 30%,
+    rgba(91, 108, 255, 0.05) 50%,
+    rgba(91, 108, 255, 0.03) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.peerai-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Header Styles */
+.peerai-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.peerai-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0 0 16px 0;
+  color: #ffffff;
+}
+
+.peerai-title-gradient {
+  background: linear-gradient(
+    to right,
+    #2563eb,
+    #1d4ed8,
+    #4f46e5
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.peerai-tagline {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 12px 0;
+}
+
+.peerai-description {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 700px;
+}
+
+/* Content Grid */
+.peerai-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Card Styles */
+.peerai-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 28px 32px;
+  transition: all 0.3s ease;
+}
+
+.peerai-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.peerai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.peerai-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(91, 108, 255, 0.1);
+  border: 1px solid rgba(91, 108, 255, 0.3);
+  border-radius: 10px;
+  color: #5b6cff;
+}
+
+.peerai-card-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.peerai-card-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+/* List Styles */
+.peerai-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.peerai-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.peerai-list-bullet {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  background: #5b6cff;
+  border-radius: 50%;
+  margin-top: 7px;
+}
+
+.peerai-list-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+/* CTA Button */
+.peerai-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 48px;
+}
+
+.peerai-explore-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.peerai-explore-button:hover {
+  transform: translateY(2px);
+}
+
+
+.peerai-explore-button svg {
+  transition: transform 0.3s ease;
+}
+
+.peerai-explore-button:hover svg {
+  transform: translateY(3px);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .peerai-section {
+    max-height: none;
+    padding: 5rem 2rem 2rem;
+  }
+
+  .peerai-content-grid {
+    gap: 20px;
+  }
+
+  .peerai-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .peerai-section {
+    padding: 4.5rem 1.5rem 1.5rem;
+  }
+
+  .peerai-header {
+    margin-bottom: 32px;
+  }
+
+  .peerai-content-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .peerai-card {
+    padding: 20px;
+  }
+
+  .peerai-card-title {
+    font-size: 18px;
+  }
+
+  .peerai-list-text {
+    font-size: 14px;
+  }
+
+  .peerai-cta {
+    margin-top: 32px;
+  }
+
+  .peerai-explore-button {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .peerai-section {
+    padding: 4rem 1rem 1.5rem;
+  }
+
+  .peerai-card-header {
+    gap: 10px;
+  }
+
+  .peerai-card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .peerai-card-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}

@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     CONTACTUS_RECEIVER_CC_EMAIL: str = ""  # Comma-separated email addresses
     
     # Backend Base URL (for generating calendar download links in emails)
-    BACKEND_BASE_URL: str = "http://localhost:8000"
+    BACKEND_BASE_URL: str = "http://localhost:8000,https://ashy-glacier-09cfe4b0f.1.azurestaticapps.net/,https://mongodb.peerislands.io/"
     
     def get_contactus_cc_emails(self) -> List[str]:
         """Parse comma-separated CC email addresses into a list"""
