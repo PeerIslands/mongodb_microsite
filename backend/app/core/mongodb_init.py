@@ -190,6 +190,55 @@ async def create_indexes(db) -> None:
     await totp_secrets.create_index("expires_at")
     print("  ✅ totp_secrets.expires_at")
     
+    # ==========================================================================
+    # ANALYTICS EVENTS COLLECTION
+    # ==========================================================================
+    analytics_events = db["analytics_events"]
+    
+    # Index for time-based queries (most common - descending for recent first)
+    await analytics_events.create_index([("timestamp", -1)])
+    print("  ✅ analytics_events.timestamp (descending)")
+    
+    # Index for event type filtering
+    await analytics_events.create_index("event_type")
+    print("  ✅ analytics_events.event_type")
+    
+    # Index for session tracking
+    await analytics_events.create_index("session_id")
+    print("  ✅ analytics_events.session_id")
+    
+    # Index for page-based queries
+    await analytics_events.create_index("page_path")
+    print("  ✅ analytics_events.page_path")
+    
+    # Compound index for common queries (event type + time)
+    await analytics_events.create_index([
+        ("event_type", 1),
+        ("timestamp", -1)
+    ])
+    print("  ✅ analytics_events.event_type+timestamp (compound)")
+    
+    # ==========================================================================
+    # ANALYTICS SESSIONS COLLECTION
+    # ==========================================================================
+    analytics_sessions = db["analytics_sessions"]
+    
+    # Unique index on session_id
+    await analytics_sessions.create_index("session_id", unique=True)
+    print("  ✅ analytics_sessions.session_id (unique)")
+    
+    # Index for user tracking
+    await analytics_sessions.create_index("user_id")
+    print("  ✅ analytics_sessions.user_id")
+    
+    # Index for time-based queries
+    await analytics_sessions.create_index([("start_time", -1)])
+    print("  ✅ analytics_sessions.start_time (descending)")
+    
+    # Index for source analysis
+    await analytics_sessions.create_index("source")
+    print("  ✅ analytics_sessions.source")
+    
     print("✅ All indexes created successfully!")
 
 
@@ -212,6 +261,8 @@ async def create_collections(db) -> None:
         "events",
         "email_templates",
         "totp_secrets",
+        "analytics_events",
+        "analytics_sessions",
     ]
     
     for collection_name in collections_to_create:

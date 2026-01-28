@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { analytics } from '@/utils/analytics';
 import '@/styles/features/home/Header.css';
 import logo from '@/assets/logo.svg';
 
@@ -39,11 +40,6 @@ const Header = () => {
     openLoginModal();
   };
 
-  const handleNavigation = (e: React.MouseEvent, path: string) => {
-    e.preventDefault();
-    navigate(path);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userEmail');
@@ -65,7 +61,25 @@ const Header = () => {
     }, 500);
   };
 
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string, ctaName: string) => {
+    e.preventDefault();
+    // Track CTA click
+    analytics.trackCTAClick(ctaName, 'Header Navigation');
+    navigate(path);
+    // Scroll to top after navigation
+    setTimeout(() => {
+      globalThis.scrollTo(0, 0);
+    }, 100);
+  };
 
+  const handleAdminNavigation = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    // Navigate without CTA tracking for admin dashboard
+    navigate('/admin');
+    setTimeout(() => {
+      globalThis.scrollTo(0, 0);
+    }, 100);
+  };
 
   const getInitials = (email: string) => {
     if (!email) return 'U';
@@ -80,36 +94,49 @@ const Header = () => {
         </Link>
         
         <nav className="nav">
-          <a href="#offerings" className="nav-link">
+          <a 
+            href="#offerings" 
+            className="nav-link"
+            onClick={(e) => {
+              e.preventDefault();
+              analytics.trackCTAClick('Offerings Nav', 'Header Navigation');
+              document.getElementById('offerings')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
             Offerings<span className="dropdown-arrow" />
           </a>
           <a 
             href={ROUTES.ACCELERATORS} 
             className="nav-link with-dropdown"
+            onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS, 'Accelerators Nav')}
           >
             Accelerators
           </a>
           <a 
             href={ROUTES.SUCCESS_STORIES} 
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES, 'Success Stories Nav')}
           >
             Success Stories
           </a>
           <a 
             href={ROUTES.INSIGHTS} 
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS, 'Insights Nav')}
           >
             Insights
           </a>
           <a
             href={ROUTES.EVENTS}
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.EVENTS, 'Events Nav')}
           >
             Events
           </a>
           <a 
             href={ROUTES.ABOUT} 
             className="nav-link"
+            onClick={(e) => handleNavigation(e, ROUTES.ABOUT, 'About Nav')}
           >
             About
           </a>
@@ -117,6 +144,7 @@ const Header = () => {
             <a 
               href={ROUTES.ADMIN} 
               className="nav-link admin-link"
+              onClick={handleAdminNavigation}
             >
               Admin Dashboard
             </a>
@@ -198,7 +226,10 @@ const Header = () => {
           )}
           <button 
             className="demo-button"
-            onClick={(e) => handleNavigation(e as any, '/contact')}
+            onClick={(e) => {
+              analytics.trackCTAClick('Contact Us Button', 'Header');
+              handleNavigation(e as any, '/contact', 'Contact Us');
+            }}
           >
             Contact Us
           </button>

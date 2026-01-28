@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { analytics } from '@/utils/analytics';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '@/styles/features/accelerators/PDFViewerSection.css';
@@ -49,14 +50,25 @@ const PDFViewerSection = ({ pdfUrl, title }: PDFViewerSectionProps) => {
     return !!localStorage.getItem('authToken');
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
+    try {
+      // Track as CTA click and download - wait for both to complete
+      await Promise.all([
+        analytics.trackCTAClick('PDF Viewer Download Button', `Accelerator: ${title}`),
+        analytics.trackDownload(title, 'pdf', pdfUrl)
+      ]);
+    } catch (error) {
+      console.error('Tracking failed:', error);
+    }
+    
+    // Open PDF after tracking completes
     globalThis.open(pdfUrl, '_blank');
   };
 
   // Download PDF - requires login
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (isLoggedIn()) {
-      downloadPdf();
+      await downloadPdf();
     } else {
       // Open login modal with callback to download after successful login
       openLoginModal(downloadPdf);
