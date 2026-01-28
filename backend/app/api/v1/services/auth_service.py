@@ -283,9 +283,10 @@ class AuthService:
             )
 
         # Step 9: Generate JWT token (for users WITHOUT TOTP)
-        # JWT payload must include: user_email, is_internal, is_admin
+        # JWT payload must include: id, user_email, is_internal, is_admin
         token_payload = {
             "sub": user_email,  # Subject (standard JWT claim)
+            "id": user["_id"],
             "user_email": user_email,
             "is_internal": is_internal,
             "is_admin": is_admin,
@@ -376,6 +377,7 @@ class AuthService:
         # Generate JWT token
         token_payload = {
             "sub": user_email,
+            "id": user_id,
             "user_email": user_email,
             "is_internal": user.get("is_internal", False),
             "is_admin": user.get("is_admin", False),
@@ -388,6 +390,7 @@ class AuthService:
             success=True,
             access_token=access_token,
             token_type="bearer",
+            user_id=user_id,
             user_email=user_email,
             is_internal=user.get("is_internal", False),
             is_admin=user.get("is_admin", False),
