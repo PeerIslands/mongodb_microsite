@@ -1,0 +1,52 @@
+.admin-dashboard {
+  width: 100%;
+  min-height: calc(100vh - 88px);
+  padding: 0;
+}
+
+/* Main Navigation */
+.main-navigation {
+  display: flex;
+  gap: 0.5rem;
+  padding: 2rem 2rem 0 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.main-nav-tab {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px 12px 0 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.main-nav-tab:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.main-nav-tab.active {
+  background: linear-gradient(135deg, rgba(91, 108, 255, 0.2) 0%, rgba(91, 108, 255, 0.1) 100%);
+  color: #ffffff;
+  border-bottom: 2px solid #5b6cff;
+}
+
+@media (max-width: 768px) {
+  .main-navigation {
+    padding: 1rem 1rem 0 1rem;
+  }
+  
+  .main-nav-tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+

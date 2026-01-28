@@ -1,0 +1,63 @@
+/* BlogGrid - Grid layout for blog cards */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Empty state */
+.blog-grid__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  width: 100%;
+}
+
+.blog-grid__empty p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Large screens (1440px+) */
+@media (min-width: 1440px) {
+  .blog-grid {
+    gap: 2rem;
+  }
+}
+
+/* Desktop (1024px - 1439px) */
+@media (max-width: 1439px) {
+  .blog-grid {
+    gap: 1.25rem;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .blog-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile (480px - 767px) */
+@media (max-width: 767px) {
+  .blog-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Small mobile (< 480px) */
+@media (max-width: 479px) {
+  .blog-grid {
+    gap: 1rem;
+  }
+}
+

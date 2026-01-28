@@ -1,0 +1,350 @@
+/* Events section - carousel layout */
+.events {
+  position: relative;
+  width: 100%;
+  max-width: 1447px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #020916;
+  padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 4rem);
+  padding-bottom: clamp(4rem, 10vw, 8rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+/* Title */
+.events-title {
+  position: relative;
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 300;
+  font-style: normal;
+  line-height: 1.35;
+  margin: 0;
+  background: linear-gradient(168.239deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 1;
+}
+
+.events-title span {
+  display: block;
+  margin: 0;
+}
+
+/* Loading state */
+.events-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+}
+
+.events-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #00ED64;
+  border-radius: 50%;
+  animation: events-spin 1s linear infinite;
+}
+
+@keyframes events-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty state */
+.events-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+/* Card button wrapper - resets button styles */
+.event-card-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.event-card-button:focus-visible {
+  outline: 2px solid #00ED64;
+  outline-offset: 4px;
+  border-radius: 30px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .events {
+    padding: 3rem 1.5rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .events {
+    padding: 2rem 1rem;
+    padding-bottom: 3rem;
+  }
+
+  .events-title {
+    font-size: 28px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .events-title {
+    font-size: 24px;
+  }
+}
+
+/* =============================================================================
+   SWIPER CAROUSEL STYLES
+   ============================================================================= */
+
+/* Swiper container */
+.events-swiper {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  padding: 20px 0;
+  overflow: hidden;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.events-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+/* Ensure swiper slides stay within bounds */
+.events-swiper .swiper-slide {
+  overflow: hidden;
+}
+
+/* Swiper slide */
+.event-slide {
+  height: auto;
+  opacity: 0.7;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.event-slide.swiper-slide-active,
+.event-slide.swiper-slide-next,
+.event-slide.swiper-slide-prev {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* For single slide or two slides */
+.events-swiper:not(.swiper-loop) .event-slide {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Card inside slide - needs full height */
+.event-slide .event-card {
+  height: 100%;
+  min-height: 420px;
+  max-width: none;
+  flex: none;
+}
+
+/* Card button inside slide */
+.event-slide .event-card-button {
+  height: 100%;
+}
+
+.event-slide .event-card-button .event-card {
+  height: 100%;
+}
+
+/* Carousel wrapper - contains arrows and cards */
+.events-carousel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 2vw, 2rem);
+  width: 100%;
+  max-width: 1400px;
+  z-index: 1;
+  isolation: isolate;
+}
+
+/* Carousel navigation arrows */
+.events-carousel-arrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.events-carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.events-carousel-arrow:active {
+  transform: scale(0.95);
+}
+
+.events-carousel-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .events-carousel-wrapper {
+    gap: 1rem;
+  }
+  
+  .events-carousel-arrow {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .events-carousel-arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .events-carousel-wrapper {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .events-carousel-arrow {
+    display: none;
+  }
+  
+  /* Show arrows below cards on mobile as a row */
+  .events-carousel-wrapper::after {
+    content: '';
+    display: none;
+  }
+}
+
+/* Mobile carousel controls - show arrows in a row below cards */
+@media (max-width: 768px) {
+  .events-carousel-wrapper {
+    position: relative;
+  }
+  
+  .events-carousel-arrow {
+    display: flex;
+    position: static;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .events-carousel-arrow-left,
+  .events-carousel-arrow-right {
+    position: absolute;
+    bottom: -60px;
+  }
+  
+  .events-carousel-arrow-left {
+    left: calc(50% - 54px);
+  }
+  
+  .events-carousel-arrow-right {
+    right: calc(50% - 54px);
+  }
+  
+  /* Add padding to section to accommodate arrows */
+  .events:has(.events-carousel-wrapper) {
+    padding-bottom: calc(3rem + 60px);
+  }
+  
+  /* Mobile Swiper adjustments */
+  .event-slide {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .event-slide .event-card {
+    min-height: 350px;
+  }
+}
+
+/* =============================================================================
+   SWIPER ANIMATION ENHANCEMENTS
+   ============================================================================= */
+
+/* Smooth entrance animation for cards */
+@keyframes events-slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-slide {
+  animation: events-slideInUp 0.6s ease-out forwards;
+}
+
+.event-slide:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.event-slide:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.event-slide:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.event-slide:nth-child(4) {
+  animation-delay: 0.4s;
+}
