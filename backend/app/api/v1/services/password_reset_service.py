@@ -227,9 +227,18 @@ class PasswordResetService:
         
         user_id = token_data["user_id"]
         
-        # Validate password
-        if len(new_password) < 6:
-            raise ValueError("Password must be at least 6 characters long")
+        # Validate password (comprehensive check)
+        import re
+        if len(new_password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r'[A-Z]', new_password):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r'[a-z]', new_password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r'\d', new_password):
+            raise ValueError("Password must contain at least one number")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;\'`~]', new_password):
+            raise ValueError("Password must contain at least one special character")
         
         # Hash new password
         salt = bcrypt.gensalt(rounds=12)

@@ -69,6 +69,24 @@ export class AnalyticsTracker {
     return null;
   }
 
+  /**
+   * Update session with user_id after login
+   * Call this method after successful login to associate the session with the user
+   */
+  async updateSessionUser() {
+    try {
+      const userId = this.getUserId();
+      if (userId) {
+        await apiClient.post('/api/v1/analytics/session/update-user', {
+          session_id: this.sessionId,
+          user_id: userId,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update session user:', error);
+    }
+  }
+
   async trackPageView(pagePath: string) {
     // Skip tracking for admin and contact pages
     if (pagePath.startsWith('/admin') || pagePath.startsWith('/contact')) {

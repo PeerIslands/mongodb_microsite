@@ -38,6 +38,13 @@ class AnalyticsRepository:
         Returns:
             Event ID
         """
+        # Get user_id from session if not provided in event_data
+        session_id = event_data.get("session_id")
+        if session_id and not event_data.get("user_id"):
+            session = await self._sessions.find_one({"session_id": session_id})
+            if session and session.get("user_id"):
+                event_data["user_id"] = session["user_id"]
+        
         event_id = str(uuid.uuid4())
         event = {
             "_id": event_id,
@@ -72,20 +79,55 @@ class AnalyticsRepository:
         """
         session = {
             "_id": str(uuid.uuid4()),
-            **session_data,
             "start_time": datetime.now(timezone.utc),
             "page_views": 0,
             "events": [],
         }
         
         # Use upsert to avoid duplicate session errors
+        # $setOnInsert: Only set if creating new document
+        # $set: Always update user_id, source, referrer if provided (handles post-login updates)
+        update_doc = {"$setOnInsert": session}
+        
+        # Always update these fields if they exist (important for post-login session reuse)
+        set_fields = {}
+        if session_data.get("user_id"):
+            set_fields["user_id"] = session_data["user_id"]
+        if session_data.get("source"):
+            set_fields["source"] = session_data["source"]
+        if session_data.get("referrer"):
+            set_fields["referrer"] = session_data["referrer"]
+        if session_data.get("utm_params"):
+            set_fields["utm_params"] = session_data["utm_params"]
+        
+        if set_fields:
+            update_doc["$set"] = set_fields
+        
         await self._sessions.update_one(
             {"session_id": session_data["session_id"]},
-            {"$setOnInsert": session},
+            update_doc,
             upsert=True
         )
         
         return session["session_id"]
+    
+    async def update_session_user(self, session_id: str, user_id: str) -> bool:
+        """
+        Update an existing session with user_id after login.
+        
+        Args:
+            session_id: Session ID to update
+            user_id: User ID (email) to associate with the session
+            
+        Returns:
+            True if update was successful
+        """
+        result = await self._sessions.update_one(
+            {"session_id": session_id},
+            {"$set": {"user_id": user_id}}
+        )
+        
+        return result.modified_count > 0
     
     # =========================================================================
     # AGGREGATION QUERIES
@@ -393,25 +435,12 @@ class AnalyticsRepository:
                     "preserveNullAndEmptyArrays": True
                 }
             },
-            # Convert user_id string to ObjectId for lookup (safely)
-            {
-                "$addFields": {
-                    "session_user_id_obj": {
-                        "$convert": {
-                            "input": "$session_data.user_id",
-                            "to": "objectId",
-                            "onError": None,
-                            "onNull": None
-                        }
-                    }
-                }
-            },
-            # Lookup user details if user_id exists in session
+            # Lookup user details using email from session (user_id is an email string)
             {
                 "$lookup": {
                     "from": "users",
-                    "localField": "session_user_id_obj",
-                    "foreignField": "_id",
+                    "localField": "session_data.user_id",
+                    "foreignField": "user_email",
                     "as": "user_data"
                 }
             },
@@ -432,11 +461,19 @@ class AnalyticsRepository:
                     "page_title": 1,
                     "user_id": {
                         "$ifNull": [
-                            {"$toString": "$user_data._id"},
-                            "$session_data.user_id"
+                            "$user_id",  # First priority: user_id from event itself
+                            "$session_data.user_id",  # Second: from session
+                            None
                         ]
                     },
-                    "user_email": {"$ifNull": ["$user_data.email", None]},
+                    "user_email": {
+                        "$ifNull": [
+                            "$user_id",  # Events store email as user_id
+                            "$user_data.user_email",  # From users collection lookup
+                            "$session_data.user_id",  # From session
+                            None
+                        ]
+                    },
                     "resource_name": {"$ifNull": ["$metadata.resource_name", None]},
                     "cta_name": {"$ifNull": ["$metadata.cta_name", None]},
                     "source": {"$ifNull": ["$session_data.source", None]}

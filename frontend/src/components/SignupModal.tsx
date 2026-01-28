@@ -68,6 +68,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   const [jobFunction, setJobFunction] = useState('');
   const [businessPhone, setBusinessPhone] = useState('');
   const [country, setCountry] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // MFA setup state
   const [step, setStep] = useState<RegistrationStep>('registration');
@@ -91,6 +93,8 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
     setJobFunction('');
     setBusinessPhone('');
     setCountry('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setStep('registration');
     setUserId('');
     setTotpSetupData(null);
@@ -117,20 +121,51 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
   if (!isOpen) return null;
 
   // ==========================================================================
+  // PASSWORD VALIDATION
+  // ==========================================================================
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    
+    if (pwd.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      errors.push('One uppercase letter');
+    }
+    if (!/[a-z]/.test(pwd)) {
+      errors.push('One lowercase letter');
+    }
+    if (!/\d/.test(pwd)) {
+      errors.push('One number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(pwd)) {
+      errors.push('One special character');
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+  };
+
+  // ==========================================================================
   // STEP 1: Registration Form Submission
   // ==========================================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match!', 'error');
+    // Validate password strength
+    const passwordValidationErrors = validatePassword(password);
+    if (passwordValidationErrors.length > 0) {
+      showToast('Password does not meet requirements. Please check below.', 'error');
       return;
     }
 
-    // Validate password strength
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters long.', 'error');
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      showToast('Passwords do not match!', 'error');
       return;
     }
 
@@ -462,33 +497,131 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => 
                 <label htmlFor="password" className="form-label">
                   Password <span className="required-asterisk">*</span>
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  className="form-input"
-                  placeholder="Create a password (min 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                  minLength={6}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    className="form-input"
+                    style={{ paddingRight: '40px' }}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={handlePasswordChange}
+                    disabled={loading}
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#666',
+                      fontSize: '18px',
+                      opacity: loading ? 0.5 : 1
+                    }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {password && (
+                  <div className="password-requirements" style={{ marginTop: '8px', fontSize: '12px' }}>
+                    <div style={{ marginBottom: '4px', fontWeight: '600', color: '#333' }}>
+                      Password must contain:
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ color: password.length >= 8 ? '#00684A' : '#d32f2f' }}>
+                        {password.length >= 8 ? '✓' : '✗'} At least 8 characters
+                      </div>
+                      <div style={{ color: /[A-Z]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[A-Z]/.test(password) ? '✓' : '✗'} One uppercase letter
+                      </div>
+                      <div style={{ color: /[a-z]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[a-z]/.test(password) ? '✓' : '✗'} One lowercase letter
+                      </div>
+                      <div style={{ color: /\d/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/\d/.test(password) ? '✓' : '✗'} One number
+                      </div>
+                      <div style={{ color: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password) ? '#00684A' : '#d32f2f' }}>
+                        {/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'`~]/.test(password) ? '✓' : '✗'} One special character (!@#$%^&* etc.)
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
                 <label htmlFor="confirmPassword" className="form-label">
                   Confirm Password <span className="required-asterisk">*</span>
                 </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  className="form-input"
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    className="form-input"
+                    style={{ paddingRight: '40px' }}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={loading}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#666',
+                      fontSize: '18px',
+                      opacity: loading ? 0.5 : 1
+                    }}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button 

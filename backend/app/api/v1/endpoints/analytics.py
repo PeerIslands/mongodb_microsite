@@ -83,6 +83,41 @@ async def create_session(
         }
 
 
+@router.post(
+    "/session/update-user",
+    summary="Update Session User",
+    description="Update an existing session with user_id after login"
+)
+async def update_session_user(
+    request: dict,
+    service: AnalyticsService = Depends(get_analytics_service),
+) -> Dict[str, Any]:
+    """
+    Update session with user_id after user logs in.
+    
+    This ensures that events tracked before login are associated with the user.
+    """
+    try:
+        session_id = request.get("session_id")
+        user_id = request.get("user_id")
+        
+        if not session_id or not user_id:
+            return {"success": False, "message": "session_id and user_id are required"}
+        
+        result = await service.update_session_user(session_id, user_id)
+        
+        return {
+            "success": True,
+            "message": "Session user updated successfully",
+            "updated": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Failed to update session user: {str(e)}"
+        }
+
+
 # =============================================================================
 # ANALYTICS DASHBOARD ENDPOINTS (Admin only - add auth later)
 # =============================================================================

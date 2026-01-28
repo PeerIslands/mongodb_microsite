@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { analytics } from '@/utils/analytics';
 import '@/styles/features/home/Hero.css';
@@ -116,6 +117,10 @@ const Hero = () => {
         <div className="hero-button-wrapper-centered">
           <button 
             className="btn-primary"
+            onClick={() => {
+              analytics.trackCTAClick('Explore Accelerators', 'Hero Section');
+              window.location.href = '/accelerators';
+            }}
             onClick={() => {
               analytics.trackCTAClick('Explore Accelerators', 'Hero Section');
               window.location.href = '/accelerators';

@@ -63,6 +63,10 @@ class AnalyticsService:
         session_id = await self._repository.create_session(session_data)
         return session_id
     
+    async def update_session_user(self, session_id: str, user_id: str) -> bool:
+        """Update an existing session with user_id after login"""
+        return await self._repository.update_session_user(session_id, user_id)
+    
     def _detect_source(self, referrer: Optional[str], utm_params: Dict[str, str]) -> str:
         """Detect traffic source from referrer and UTM parameters"""
         # Check UTM source first
