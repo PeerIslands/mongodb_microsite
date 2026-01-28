@@ -16,6 +16,7 @@ interface UseEventsOptions {
 
 interface UseEventsReturn {
   events: EventCardData[];
+  registeredEventIds: Set<string>;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -62,6 +63,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   } = options;
 
   const [events, setEvents] = useState<EventCardData[]>([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,12 +72,29 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setIsLoading(true);
       setError(null);
 
-      // Fetch from API
-      const apiData = await eventsService.getAll({ 
-        category, 
-        status: featured ? 'published' : undefined,
-        featured 
-      });
+      // Check if user is logged in
+      const isLoggedIn = !!localStorage.getItem('authToken');
+
+      // Fetch events and optionally user registrations in parallel
+      const [apiData, registrations] = await Promise.all([
+        eventsService.getAll({ 
+          category, 
+          status: featured ? 'published' : undefined,
+          featured 
+        }),
+        // Only fetch registrations if logged in
+        isLoggedIn 
+          ? eventsService.getUserRegistrations().catch(() => []) 
+          : Promise.resolve([]),
+      ]);
+
+      // Extract registered event IDs
+      const registeredIds = new Set(
+        registrations
+          .filter(reg => reg.status === 'REGISTERED')
+          .map(reg => reg.event_id)
+      );
+      setRegisteredEventIds(registeredIds);
 
       // Transform to card data format
       const transformedData = apiData.map(transformToEventCardData);
@@ -101,6 +120,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   return {
     events,
+    registeredEventIds,
     isLoading,
     error,
     refetch: fetchEvents,

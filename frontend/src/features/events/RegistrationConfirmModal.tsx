@@ -9,6 +9,7 @@ interface RegistrationConfirmModalProps {
   eventDate?: string;
   eventTime?: string;
   eventTimezone?: string;
+  isLoading?: boolean;
 }
 
 /**
@@ -23,6 +24,7 @@ const RegistrationConfirmModal = ({
   eventDate,
   eventTime,
   eventTimezone,
+  isLoading = false,
 }: RegistrationConfirmModalProps) => {
   // Handle escape key press
   const handleEscapeKey = useCallback((e: KeyboardEvent) => {
@@ -133,14 +135,16 @@ const RegistrationConfirmModal = ({
             <button 
               className="registration-modal__btn registration-modal__btn--cancel"
               onClick={onClose}
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button 
               className="registration-modal__btn registration-modal__btn--confirm"
               onClick={onConfirm}
+              disabled={isLoading}
             >
-              Confirm
+              {isLoading ? 'Please wait...' : 'Confirm'}
             </button>
           </div>
         </div>
