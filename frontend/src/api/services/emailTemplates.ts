@@ -30,7 +30,7 @@ export interface EmailTemplate {
   category: 'newsletter' | 'transactional' | 'promotional' | 'notification';
   status: 'draft' | 'active' | 'archived';
   subject: string;
-  html_content: string;
+  html_content?: string;  // Optional for list views
   plain_text_content?: string;
   sendgrid_template_id?: string;
   sendgrid_version_id?: string;

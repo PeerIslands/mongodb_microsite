@@ -8,23 +8,25 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import {
   getEmailTemplates,
+  getEmailTemplate,
   deleteEmailTemplate,
   updateTemplateStatus,
   EmailTemplate,
 } from '@/api/services/emailTemplates';
 import { PreviewModal } from './PreviewModal';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/features/admin/EmailTemplateList.css';
 
 interface EmailTemplateListProps {
-  onAddNew: () => void;
   onEdit: (id: string) => void;
   onUploadHTML: () => void;
 }
 
-export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTemplateListProps) => {
+export const EmailTemplateList = ({ onEdit, onUploadHTML }: EmailTemplateListProps) => {
   const { showToast } = useToast();
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Loading newsletters...');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +43,7 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
     try {
       fetchInProgressRef.current = true;
       setLoading(true);
+      setLoadingMessage('Loading newsletters...');
       const response = await getEmailTemplates(
         0,
         100,
@@ -65,29 +68,46 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
     try {
+      setLoading(true);
+      setLoadingMessage('Deleting newsletter...');
       await deleteEmailTemplate(id);
       showToast('Template deleted successfully', 'success');
-      fetchTemplates();
+      await fetchTemplates();
     } catch (error) {
       const err = error as { response?: { data?: { detail?: string } } };
       showToast(err.response?.data?.detail || 'Failed to delete template', 'error');
+      setLoading(false);
     }
   };
 
   const handleStatusChange = async (id: string, newStatus: 'draft' | 'active' | 'archived') => {
     try {
+      setLoading(true);
+      setLoadingMessage(`Updating status to ${newStatus}...`);
       await updateTemplateStatus(id, newStatus);
       showToast(`Template status updated to ${newStatus}`, 'success');
-      fetchTemplates();
+      await fetchTemplates();
     } catch (error) {
       const err = error as { response?: { data?: { detail?: string } } };
       showToast(err.response?.data?.detail || 'Failed to update status', 'error');
+      setLoading(false);
     }
   };
 
-  const handlePreview = (template: EmailTemplate) => {
-    setPreviewTemplate(template);
-    setShowPreviewModal(true);
+  const handlePreview = async (template: EmailTemplate) => {
+    try {
+      setLoading(true);
+      setLoadingMessage('Loading preview...');
+      // Fetch full template with html_content
+      const fullTemplate = await getEmailTemplate(template._id);
+      setPreviewTemplate(fullTemplate);
+      setShowPreviewModal(true);
+    } catch (error) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      showToast(err.response?.data?.detail || 'Failed to load template for preview', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredTemplates = templates.filter(template =>
@@ -115,14 +135,7 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
   };
 
   if (loading) {
-    return (
-      <div className="email-template-list">
-        <div className="loading-state">
-          <div className="loader"></div>
-          <p>Loading templates...</p>
-        </div>
-      </div>
-    );
+    return <LeafLoader message={loadingMessage} />;
   }
 
   return (
@@ -137,11 +150,16 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
           <p className="subtitle">Manage Newsletters and Send Email</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary" onClick={onUploadHTML}>
-            📤 Upload HTML
-          </button>
-          <button className="btn btn-primary" onClick={onAddNew}>
-            ➕ Create New Template
+          <button 
+            className="btn btn-primary" 
+            onClick={onUploadHTML}
+            style={{ 
+              padding: '0.875rem 1.75rem', 
+              fontSize: '1.125rem',
+              fontWeight: '600'
+            }}
+          >
+            📤 Create Newsletter
           </button>
         </div>
       </div>
@@ -191,11 +209,16 @@ export const EmailTemplateList = ({ onAddNew, onEdit, onUploadHTML }: EmailTempl
           <h3>No templates found</h3>
           <p>Get started by creating a new template or uploading an HTML file</p>
           <div className="empty-actions">
-            <button className="btn btn-primary" onClick={onAddNew}>
-              Create Template
-            </button>
-            <button className="btn btn-secondary" onClick={onUploadHTML}>
-              Upload HTML
+            <button 
+              className="btn btn-primary" 
+              onClick={onUploadHTML}
+              style={{ 
+                padding: '0.875rem 1.75rem', 
+                fontSize: '1.125rem',
+                fontWeight: '600'
+              }}
+            >
+              📤 Create Newsletter
             </button>
           </div>
         </div>
