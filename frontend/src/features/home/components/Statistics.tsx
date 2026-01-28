@@ -2,14 +2,14 @@ import '@/styles/features/home/Statistics.css';
 
 const Statistics = () => {
   const stats = [
-    { value: '50+', label: 'Enterprise Migrations Delivered', size: 'large', highlight: false },
-    { value: '30%', label: 'Average TCO Reduction', size: 'large', highlight: true },
-    { value: '100TB+', label: 'Data Migrated to Atlas', size: 'large', highlight: false },
-    { value: 'Global', label: 'Delivery & Support Teams', size: 'large', highlight: false },
-    { value: '10+', label: 'Proprietary Accelerators', size: 'medium', highlight: false },
-    { value: 'Zero', label: 'Downtime during Cutover', size: 'medium', highlight: false },
-    { value: '2 Weeks', label: 'Typical Discovery Phase', size: 'medium', highlight: false },
-    { value: 'Certified', label: 'MongoDB Premier Partner', size: 'medium', highlight: false },
+    { value: '100+', label: 'Enterprise Migrations Delivered', size: 'large' },
+    { value: '30%', label: 'Average TCO Reduction', size: 'large' },
+    { value: '100TB+', label: 'Data Migrated to Atlas', size: 'large' },
+    { value: 'Global', label: 'Delivery & Support Teams', size: 'large' },
+    { value: '10+', label: 'Proprietary Accelerators', size: 'medium' },
+    { value: 'Near Zero', label: 'Downtime during Cutover', size: 'medium' },
+    { value: '2 Weeks', label: 'Typical Discovery Phase', size: 'medium' },
+    { value: 'Certified', label: 'MongoDB Premier Partner', size: 'medium' },
   ];
 
   return (
@@ -23,7 +23,7 @@ const Statistics = () => {
         </div>
         <div className="stats-grid">
           {stats.map((stat, index) => (
-            <div key={index} className={`stat-card ${stat.highlight ? 'stat-card-highlight' : ''}`}>
+            <div key={index} className="stat-card">
               <div className={`stat-value stat-value-${stat.size}`}>{stat.value}</div>
               <div className="stat-label">{stat.label}</div>
             </div>

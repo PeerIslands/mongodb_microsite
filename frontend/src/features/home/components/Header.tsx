@@ -95,15 +95,11 @@ const Header = () => {
         
         <nav className="nav">
           <a 
-            href="#offerings" 
+            href={ROUTES.OFFERINGS} 
             className="nav-link"
-            onClick={(e) => {
-              e.preventDefault();
-              analytics.trackCTAClick('Offerings Nav', 'Header Navigation');
-              document.getElementById('offerings')?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS, 'Offerings Nav')}
           >
-            Offerings<span className="dropdown-arrow" />
+            Offerings
           </a>
           <a 
             href={ROUTES.ACCELERATORS} 

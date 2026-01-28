@@ -1,36 +1,54 @@
 import '@/styles/features/home/Capabilities.css';
-import arrowIcon from '@/assets/9676e79a76f01cf2ed247a83e933b0c8e983525f.svg';
+import { useNavigate } from 'react-router-dom';
 import image4 from '@/assets/image 4.png';
 import image5 from '@/assets/image 5.png';
 import image6 from '@/assets/image 6.png';
+import offeringImage1 from '@/assets/offering_image_1.png';
+import offeringImage2 from '@/assets/offerings_image_2.png';
+import offeringImage3 from '@/assets/offerings_image_3.png';
 
 const Capabilities = () => {
+  const navigate = useNavigate();
+
   const capabilities = [
     {
-      title: 'Intelligent Migration',
-      description: 'De-risk your move from legacy platforms like HBase and Cassandra to MongoDB Atlas. Our automated discovery and schema validation tools ensure data fidelity while accelerating your transition to the cloud.',
-      link: 'Explore Migration Services',
+      title: 'Application Modernization',
       image: image4,
-      linkUrl: '#offerings',
+      section: 'application-modernization',
     },
     {
-      title: 'App Modernization',
-      description: 'Re-architect monolithic legacy systems into scalable microservices. We utilize MCP strategies to optimize your application architecture specifically for the flexibility of the MongoDB document model.',
-      link: 'See Modernization Capabilities',
+      title: 'Data & Database Modernization',
       image: image5,
-      linkUrl: '#modernization',
+      section: 'data-database-modernization',
     },
     {
-      title: 'Proven Accelerators',
-      description: 'Reduce project timelines by up to 40%. Our proprietary toolkits—including the HBase and Cosmos DB Accelerators—automate the heavy lifting of code conversion and data mapping.',
-      link: 'View Accelerators',
+      title: 'AI-Native Products',
       image: image6,
-      linkUrl: '/accelerators',
+      section: 'ai-native-products',
+    },
+    {
+      title: 'AI Quality Engineering & Testing',
+      image: offeringImage1,
+      section: 'ai-quality-engineering-testing',
+    },
+    {
+      title: 'Data Engineering & Platforms',
+      image: offeringImage2,
+      section: 'data-engineering-platforms',
+    },
+    {
+      title: 'AI Consulting & Governance',
+      image: offeringImage3,
+      section: 'ai-consulting-governance',
     },
   ];
 
+  const handleCardClick = (section: string) => {
+    navigate(`/offerings#${section}`);
+  };
+
   return (
-    <section className="capabilities">
+    <section id="capabilities" className="capabilities">
       <div className="capabilities-content">
         <div className="capabilities-header">
           <h2 className="section-title">End-to-End Modernization Capabilities</h2>
@@ -40,32 +58,16 @@ const Capabilities = () => {
         </div>
         <div className="capabilities-grid">
           {capabilities.map((capability, index) => (
-            <div key={index} className="capability-card">
+            <div 
+              key={index} 
+              className="capability-card"
+              onClick={() => handleCardClick(capability.section)}
+            >
+              <div className="capability-card__glow"></div>
               <div className="capability-image-container">
                 <img src={capability.image} alt={capability.title} className="capability-image" />
               </div>
-              <div className="capability-icon-container">
-                <img 
-                  src="/assets/c5856a59e1303e46c0d0b7ea6c2a0c4b392318b5.svg" 
-                  alt="" 
-                  className="capability-icon" 
-                />
-              </div>
               <h3 className="capability-title">{capability.title}</h3>
-              <p className="capability-description">{capability.description}</p>
-              <a 
-                href={capability.linkUrl || '#'} 
-                className="capability-link"
-                onClick={(e) => {
-                  if (capability.linkUrl) {
-                    e.preventDefault();
-                    window.location.href = capability.linkUrl;
-                  }
-                }}
-              >
-                <span className="capability-link-text">{capability.link}</span>
-                <img src={arrowIcon} alt="" className="capability-link-arrow" />
-              </a>
             </div>
           ))}
         </div>

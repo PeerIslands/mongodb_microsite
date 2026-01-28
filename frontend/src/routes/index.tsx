@@ -8,6 +8,7 @@ import { lazy, Suspense } from 'react';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const AcceleratorsPage = lazy(() => import('@/pages/AcceleratorsPage'));
+const OfferingsPage = lazy(() => import('@/pages/OfferingsPage'));
 const CaseStudiesPage = lazy(() => import('@/pages/CaseStudiesPage'));
 const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
@@ -62,6 +63,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AcceleratorsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/offerings',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OfferingsPage />
               </Suspense>
             ),
           },
