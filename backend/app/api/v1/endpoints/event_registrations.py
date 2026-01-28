@@ -116,7 +116,7 @@ async def create_registration(
             )
         
         # Build calendar download link
-        calendar_download_link = f"{settings.BACKEND_BASE_URL}/api/v1/events/{request.event_id}/calendar"
+        calendar_download_link = f"mongodb.peerislands.io/api/v1/events/{request.event_id}/calendar"
         
         # Prepare event data for email
         event_data = {
@@ -230,7 +230,7 @@ async def send_registration_confirmation(
         
         # Build calendar download link
         event_id = request.event_id
-        calendar_download_link = f"{settings.BACKEND_BASE_URL}/api/v1/events/{event_id}/calendar"
+        calendar_download_link = f"mongodb.peerislands.io/api/v1/events/{event_id}/calendar"
         
         # Prepare event data for email
         event_data = {

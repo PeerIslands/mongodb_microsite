@@ -2,15 +2,36 @@
 .accelerator-tabs {
   padding: 120px 0 40px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   position: relative;
   z-index: 2;
+  gap: 16px;
+}
+
+.tabs-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 100%;
 }
 
 .tabs-container {
   display: flex;
   align-items: center;
-  gap: 20px;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+}
+
+.tabs-container::-webkit-scrollbar {
+  display: none;
 }
 
 .tabs-group {
@@ -54,6 +75,8 @@
   transition: color 0.3s ease;
   white-space: nowrap;
   letter-spacing: -0.14px;
+  scroll-snap-align: center;
+  flex-shrink: 0;
 }
 
 .tab-item:hover {
@@ -65,38 +88,118 @@
   font-weight: 500;
 }
 
+/* Scroll Arrow Buttons */
+.scroll-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.scroll-arrow:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.scroll-arrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.scroll-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Dots Indicator */
+.scroll-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scroll-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scroll-dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.scroll-dot.active {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .tabs-container {
-    flex-direction: column;
-  }
-  
-  .tabs-group {
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px;
-    border-radius: 24px;
+  .tabs-wrapper {
+    max-width: calc(100vw - 40px);
+    padding: 0 20px;
   }
 
-  .tab-indicator {
-    display: none;
+  .scroll-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .scroll-arrow svg {
+    width: 18px;
+    height: 18px;
   }
 
   .tab-item {
     padding: 12px 24px;
-    border-radius: 999px;
-  }
-
-  .tab-item.active {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 100%);
-    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.08);
   }
 }
 
 @media (max-width: 768px) {
   .accelerator-tabs {
     padding: 100px 0 30px;
+  }
+
+  .tabs-wrapper {
+    gap: 12px;
+    padding: 0 16px;
+  }
+
+  .scroll-arrow {
+    width: 32px;
+    height: 32px;
+  }
+
+  .scroll-arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tab-item {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+
+  .tabs-group {
+    gap: 4px;
+  }
+
+  .scroll-dot {
+    width: 6px;
+    height: 6px;
   }
 }
