@@ -69,11 +69,13 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
+  overflow: hidden;
 }
 
 .stat-card {
   background: transparent;
   border: none;
+  border-radius: 0 !important;
   text-align: center;
   position: relative;
   display: flex;
@@ -82,6 +84,15 @@
   justify-content: center;
   padding: clamp(1rem, 3vw, 2rem);
   min-height: 140px;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  contain: layout style paint;
+  box-shadow: none;
+  transform: none;
+  margin: 0;
+  z-index: 1;
+  clip-path: inset(0);
 }
 
 /* First row cards */
@@ -100,17 +111,14 @@
   min-height: 156px;
 }
 
-.stat-card-highlight {
-  background: linear-gradient(145.713deg, rgb(91, 108, 255) 0%, rgb(156, 224, 138) 100%);
-  border-radius: 0;
-  position: relative;
-}
-
-.stat-card-highlight::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145.713deg, rgb(91, 108, 255) 0%, rgb(156, 224, 138) 100%);
+/* Hover effect - apply gradient directly to background */
+.stat-card:hover {
+  background: linear-gradient(145.713deg, rgb(91, 108, 255) 0%, rgb(156, 224, 138) 100%) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  clip-path: inset(0);
+  outline: none;
 }
 
 .stat-value {
@@ -138,13 +146,9 @@
   justify-content: center;
 }
 
-.stat-card-highlight .stat-value {
-  font-size: clamp(28px, 4vw, 40px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
+/* Keep size the same on hover, just keep the color */
+.stat-card:hover .stat-value {
+  color: #ffffff;
 }
 
 .stat-label {
@@ -162,16 +166,14 @@
   z-index: 1;
 }
 
-.stat-card-highlight .stat-label {
+.stat-card:hover .stat-label {
   color: #ffffff;
-  font-size: clamp(16px, 1.8vw, 20px);
-  position: relative;
-  z-index: 1;
 }
 
 .stat-divider {
   position: absolute;
   pointer-events: none;
+  z-index: 100;
 }
 
 .stat-divider-vertical {
@@ -199,7 +201,7 @@
   width: 100%;
   height: 2px;
   left: 0;
-  top: 50%;
+  top: calc(50% - 1.5mm);
   background: linear-gradient(179.891deg, rgb(156, 224, 138) 0%, rgb(38, 75, 120) 55.24%, rgb(3, 10, 23) 100%);
 }
 
