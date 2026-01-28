@@ -22,6 +22,7 @@ export interface EventCardData {
 interface EventCardProps {
   data: EventCardData;
   onCardClick?: (data: EventCardData) => void;
+  isRegistered?: boolean;
 }
 
 /**
@@ -56,7 +57,7 @@ const truncateToWords = (text: string, wordLimit: number): string => {
  * Displays category, title, description, date, and links to event URL
  * Styled similarly to CaseStudyCard with no image
  */
-const EventCard = ({ data, onCardClick }: EventCardProps) => {
+const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [areTagsExpanded, setAreTagsExpanded] = useState(false);
 
@@ -205,28 +206,33 @@ const EventCard = ({ data, onCardClick }: EventCardProps) => {
 
       {/* Footer - View Event link */}
       <div className="event-card__footer">
-        {/* Read more link */}
-        <span className="event-card__link">
-          <span className="event-card__link-text">Save your Seat</span>
-          <span className="event-card__link-icon">
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 16 16" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path 
-                d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-                stroke="#00ED64" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
+        {isRegistered ? (
+          <span className="event-card__registered">
+            <span>Registered</span>
           </span>
-        </span>
+        ) : (
+          <span className="event-card__link">
+            <span className="event-card__link-text">Save your Seat</span>
+            <span className="event-card__link-icon">
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 16 16" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path 
+                  d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
+                  stroke="#00ED64" 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </span>
+        )}
       </div>
     </article>
   );

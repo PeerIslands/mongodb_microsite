@@ -426,5 +426,318 @@ This is an automated message from the MongoDB Microsite contact form.
             return False
 
 
+    @staticmethod
+    def _generate_ics_calendar_invite(event_data: Dict[str, Any], receiver_email: str) -> str:
+        """
+        Generate an ICS calendar invite for the event.
+        
+        Args:
+            event_data: Dictionary containing event details
+            receiver_email: Email of the attendee
+        
+        Returns:
+            ICS file content as string
+        """
+        import uuid
+        from datetime import datetime, timedelta
+        
+        # Parse date and time
+        event_date = event_data.get('date', '')
+        event_time = event_data.get('time', '00:00')
+        timezone = event_data.get('timezone', 'UTC')
+        duration_minutes = event_data.get('duration_minutes', 60)
+        
+        # Create datetime string for ICS (format: YYYYMMDDTHHMMSS)
+        try:
+            dt = datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
+            start_dt = dt.strftime("%Y%m%dT%H%M%S")
+            end_dt = (dt + timedelta(minutes=duration_minutes)).strftime("%Y%m%dT%H%M%S")
+        except ValueError:
+            # Fallback if parsing fails
+            start_dt = datetime.now().strftime("%Y%m%dT%H%M%S")
+            end_dt = (datetime.now() + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+        
+        # Generate unique ID for the event
+        uid = str(uuid.uuid4())
+        
+        # Determine location
+        event_type = event_data.get('event_type', 'online')
+        location = event_data.get('location', '')
+        
+        if not location:
+            location = "Online Event" if event_type == 'online' else "TBD"
+        
+        # Escape special characters for ICS
+        def escape_ics(text: str) -> str:
+            if not text:
+                return ""
+            return text.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace("\n", "\\n")
+        
+        title = escape_ics(event_data.get('title', 'Event'))
+        description = escape_ics(event_data.get('description', ''))
+        location_escaped = escape_ics(location)
+        
+        # Add meeting link to description if online
+        if event_type == 'online' and location:
+            description = f"Join the meeting: {location}\\n\\n{description}"
+        
+        # Current timestamp for DTSTAMP
+        now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        
+        # Build ICS content with CRLF line endings (RFC 5545 requirement)
+        ics_lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Peerislands//Event Registration//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:REQUEST",
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now}",
+            f"DTSTART;TZID={timezone}:{start_dt}",
+            f"DTEND;TZID={timezone}:{end_dt}",
+            f"SUMMARY:{title}",
+            f"DESCRIPTION:{description}",
+            f"LOCATION:{location_escaped}",
+            "ORGANIZER;CN=Peerislands:mailto:events@peerislands.com",
+            f"ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE;CN={receiver_email}:mailto:{receiver_email}",
+            "STATUS:CONFIRMED",
+            "SEQUENCE:0",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ]
+        
+        # Join with CRLF as required by RFC 5545
+        ics_content = "\r\n".join(ics_lines)
+        
+        return ics_content
+
+    @staticmethod
+    async def send_event_registration_confirmation_email(
+        receiver_email: str,
+        event_data: Dict[str, Any]
+    ) -> bool:
+        """
+        Send an event registration confirmation email with calendar invite
+        
+        Args:
+            receiver_email: Email address to send confirmation to
+            event_data: Dictionary containing event details
+                - title: Event title
+                - category: Event category
+                - date: Event date
+                - time: Event time
+                - timezone: Event timezone
+                - duration_minutes: Event duration in minutes
+                - description: Event description
+                - attendee_value: What attendees will learn
+                - is_online: Whether event is online
+                - meeting_link: Meeting URL for online events
+                - location: Physical location for in-person events
+        
+        Returns:
+            True if email initiated successfully, False otherwise
+        """
+        try:
+            from pathlib import Path
+            
+            logger.info(f"Sending event registration confirmation email to: {receiver_email}")
+            
+            # Get template path
+            template_path = Path(__file__).parent.parent.parent.parent / "templates" / "event_registration_confirmation.html"
+            
+            # Read and populate template
+            with open(template_path, "r", encoding="utf-8") as f:
+                html_template = f.read()
+            
+            # Format date for display
+            event_date = event_data.get('date', '')
+            event_date_formatted = event_date
+            if event_date:
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(event_date, "%Y-%m-%d")
+                    event_date_formatted = date_obj.strftime("%B %d, %Y")
+                except ValueError:
+                    pass  # Keep original format if parsing fails
+            
+            # Replace placeholders
+            html_content = html_template.replace("{{event_title}}", event_data.get('title', ''))
+            html_content = html_content.replace("{{event_category}}", event_data.get('category', ''))
+            html_content = html_content.replace("{{event_date}}", event_date_formatted)
+            html_content = html_content.replace("{{event_time}}", event_data.get('time', ''))
+            html_content = html_content.replace("{{event_timezone}}", event_data.get('timezone', ''))
+            
+            # Handle optional sections (description and attendee_value)
+            # Convert markdown to HTML for these fields
+            import markdown
+            import re
+            
+            description = event_data.get('description', '')
+            attendee_value = event_data.get('attendee_value', '')
+            event_type = event_data.get('event_type', 'online')
+            location = event_data.get('location', '')
+            
+            # Convert markdown to HTML
+            md = markdown.Markdown(extensions=['extra', 'nl2br'])
+            
+            # Handle location section
+            if location:
+                html_content = html_content.replace("{{#if event_location}}", "")
+                html_content = html_content.replace("{{event_location}}", location)
+                # For online events, show meeting link button; for in-person, show location text
+                if event_type == 'online':
+                    html_content = html_content.replace("{{#if event_meeting_link}}", "")
+                    html_content = html_content.replace("{{event_meeting_link}}", location)
+                else:
+                    # Remove meeting link section for in-person events
+                    html_content = re.sub(
+                        r'\{\{#if event_meeting_link\}\}.*?\{\{/if\}\}',
+                        '',
+                        html_content,
+                        flags=re.DOTALL
+                    )
+            else:
+                # Remove both sections if location is not provided
+                html_content = re.sub(
+                    r'\{\{#if event_location\}\}.*?\{\{/if\}\}',
+                    '',
+                    html_content,
+                    flags=re.DOTALL
+                )
+                html_content = re.sub(
+                    r'\{\{#if event_meeting_link\}\}.*?\{\{/if\}\}',
+                    '',
+                    html_content,
+                    flags=re.DOTALL
+                )
+            
+            # Clean up any remaining {{/if}} tags
+            html_content = html_content.replace("{{/if}}", "")
+            
+            # Simple conditional rendering for description
+            if description:
+                description_html = md.convert(description)
+                md.reset()  # Reset for next conversion
+                html_content = html_content.replace("{{#if event_description}}", "")
+                html_content = html_content.replace("{{event_description}}", description_html)
+            else:
+                # Remove the entire description section
+                html_content = re.sub(
+                    r'\{\{#if event_description\}\}.*?\{\{/if\}\}',
+                    '',
+                    html_content,
+                    flags=re.DOTALL
+                )
+            
+            # Simple conditional rendering for attendee_value
+            if attendee_value:
+                attendee_value_html = md.convert(attendee_value)
+                html_content = html_content.replace("{{#if event_attendee_value}}", "")
+                html_content = html_content.replace("{{event_attendee_value}}", attendee_value_html)
+            else:
+                # Remove the entire attendee_value section
+                html_content = re.sub(
+                    r'\{\{#if event_attendee_value\}\}.*?\{\{/if\}\}',
+                    '',
+                    html_content,
+                    flags=re.DOTALL
+                )
+            
+            # Prepare subject
+            subject = f"Successfully Registered for {event_data.get('title', 'Event')}"
+            
+            # Prepare plain text version (strip markdown formatting for plain text)
+            def strip_markdown(text: str) -> str:
+                """Strip basic markdown formatting for plain text."""
+                if not text:
+                    return text
+                text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+                text = re.sub(r'\*(.+?)\*', r'\1', text)
+                text = re.sub(r'__(.+?)__', r'\1', text)
+                text = re.sub(r'_(.+?)_', r'\1', text)
+                text = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', text)
+                text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+                return text
+            
+            plain_description = strip_markdown(description)
+            plain_attendee_value = strip_markdown(attendee_value)
+            
+            # Build location string for plain text
+            location_text = ""
+            if location:
+                if event_type == 'online':
+                    location_text = f"Meeting Link: {location}"
+                else:
+                    location_text = f"Location: {location}"
+            
+            plain_text = f"""
+You're Registered!
+
+Great news! You have successfully registered for the following event:
+
+{event_data.get('category', '').upper()}
+{event_data.get('title', '')}
+
+Date: {event_date_formatted}
+Time: {event_data.get('time', '')} {event_data.get('timezone', '')}
+{location_text}
+
+{f"About This Event:{chr(10)}{plain_description}{chr(10)}" if plain_description else ""}
+{f"What You'll Learn:{chr(10)}{plain_attendee_value}{chr(10)}" if plain_attendee_value else ""}
+
+We look forward to seeing you at the event. If you have any questions, please don't hesitate to reach out.
+
+Add this event to your calendar: {event_data.get('calendar_download_link', '')}
+
+---
+This email was sent by Peerislands
+            """
+            
+            # Add calendar download link to HTML template
+            calendar_link = event_data.get('calendar_download_link', '')
+            html_content = html_content.replace("{{calendar_download_link}}", calendar_link)
+            
+            # Create email service instance
+            service = EmailService()
+            
+            # Send email (no attachment, link to download calendar instead)
+            if service.client:
+                message = {
+                    "senderAddress": settings.AZURE_COMMUNICATION_SENDER_ADDRESS,
+                    "recipients": {
+                        "to": [{"address": receiver_email}],
+                    },
+                    "content": {
+                        "subject": subject,
+                        "html": html_content,
+                        "plainText": plain_text,
+                    },
+                }
+                
+                try:
+                    logger.info(f"Sending email with calendar link to {receiver_email}")
+                    logger.debug(f"Calendar download link: {calendar_link}")
+                    
+                    poller = service.client.begin_send(message)
+                    
+                    # Wait for the email to be sent
+                    result = poller.result()
+                    logger.info(f"Email sent successfully. Message ID: {result.get('id', 'unknown')}, Status: {result.get('status', 'unknown')}")
+                except Exception as e:
+                    logger.error(f"Failed to send email with calendar invite: {e}")
+                    return False
+            else:
+                logger.error("Email service client not configured")
+                return False
+            
+            logger.info(f"Event registration confirmation email completed for {receiver_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send event registration confirmation email: {e}")
+            return False
+
+
 # Singleton instance
 email_service = EmailService()

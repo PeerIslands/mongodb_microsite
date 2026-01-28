@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # JWT Settings
     JWT_SECRET_KEY: str = "jwt-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     
     # MongoDB Settings
     # Pydantic settings will load these from .env file automatically
@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     # Contact Form Email Settings
     CONTACTUS_RECEIVER_EMAIL: str = ""
     CONTACTUS_RECEIVER_CC_EMAIL: str = ""  # Comma-separated email addresses
+    
+    # Backend Base URL (for generating calendar download links in emails)
+    # BACKEND_BASE_URL: str = ""
     
     def get_contactus_cc_emails(self) -> List[str]:
         """Parse comma-separated CC email addresses into a list"""

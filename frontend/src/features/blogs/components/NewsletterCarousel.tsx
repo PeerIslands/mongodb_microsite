@@ -103,7 +103,7 @@ const NewsletterCarousel = () => {
           
           <Swiper
             modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={12}
+            spaceBetween={20}
             slidesPerView={1}
             navigation
             pagination={{ clickable: true }}
@@ -116,15 +116,15 @@ const NewsletterCarousel = () => {
             breakpoints={{
               640: {
                 slidesPerView: 2,
-                spaceBetween: 12,
+                spaceBetween: 20,
               },
               1024: {
-                slidesPerView: 3,
-                spaceBetween: 16,
+                slidesPerView: 4,
+                spaceBetween: 24,
               },
               1280: {
-                slidesPerView: 3,
-                spaceBetween: 18,
+                slidesPerView: 4,
+                spaceBetween: 28,
               },
             }}
             className="newsletter-carousel__swiper"

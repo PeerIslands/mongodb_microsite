@@ -6,13 +6,14 @@ interface EventGridProps {
   events: EventCardData[];
   maxItems?: number;
   onEventClick?: (event: EventCardData) => void;
+  registeredEventIds?: Set<string>;
 }
 
 /**
  * EventGrid - Grid container for event cards
  * Displays events in a responsive grid layout
  */
-const EventGrid = ({ events, maxItems, onEventClick }: EventGridProps) => {
+const EventGrid = ({ events, maxItems, onEventClick, registeredEventIds = new Set() }: EventGridProps) => {
   // Optionally limit the number of displayed events
   const displayedEvents = useMemo(() => {
     if (maxItems && maxItems > 0) {
@@ -36,6 +37,7 @@ const EventGrid = ({ events, maxItems, onEventClick }: EventGridProps) => {
           key={event.id} 
           data={event} 
           onCardClick={onEventClick}
+          isRegistered={registeredEventIds.has(event.id)}
         />
       ))}
     </div>

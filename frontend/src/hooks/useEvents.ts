@@ -17,6 +17,7 @@ interface UseEventsOptions {
 
 interface UseEventsReturn {
   events: EventCardData[];
+  registeredEventIds: Set<string>;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -63,6 +64,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   } = options;
 
   const [events, setEvents] = useState<EventCardData[]>([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,6 +129,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   return {
     events,
+    registeredEventIds,
     isLoading,
     error,
     refetch: fetchEvents,
