@@ -67,7 +67,7 @@ const router = createBrowserRouter([
             ),
           },
           {
-            path: '/offerings',
+            path: ROUTES.OFFERINGS,
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OfferingsPage />
