@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { analytics } from '@/utils/analytics';
 import './BlogCard.css';
 
 export interface BlogCardData {
@@ -57,6 +58,8 @@ const BlogCard = ({ data }: BlogCardProps) => {
   const [areTagsExpanded, setAreTagsExpanded] = useState(false);
 
   const handleClick = () => {
+    // Track CTA click
+    analytics.trackCTAClick(`Read Article: ${data.title}`, 'Insights Page - Blog Card');
     window.open(data.url, '_blank', 'noopener,noreferrer');
   };
 
@@ -209,4 +212,3 @@ const BlogCard = ({ data }: BlogCardProps) => {
 };
 
 export default BlogCard;
-

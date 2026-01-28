@@ -9,6 +9,7 @@ import '@/styles/features/home/CaseStudies.css';
 import caseStudiesBg from '@/assets/case-studies-bg.png';
 import { CaseStudyCard } from '@/features/case-studies/components';
 import { useCaseStudies } from '@/hooks/useCaseStudies';
+import { analytics } from '@/utils/analytics';
 
 const CaseStudies = () => {
   const navigate = useNavigate();
@@ -22,6 +23,12 @@ const CaseStudies = () => {
 
   // Handle case study card click - navigate to success-stories with ID
   const handleCaseStudyClick = (caseStudyId: string) => {
+    const caseStudy = featuredCaseStudies.find(cs => cs.id === caseStudyId);
+    // Track CTA click
+    analytics.trackCTAClick(
+      `Case Study: ${caseStudy?.title || caseStudyId}`,
+      'Home Page Carousel'
+    );
     navigate(`/success-stories?id=${caseStudyId}`);
   };
 

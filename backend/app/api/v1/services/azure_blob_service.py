@@ -42,6 +42,7 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
     "image/png",
     "image/webp",
     "image/gif",
+    "image/svg+xml",
 }
 
 # Video file extensions mapping
@@ -58,16 +59,18 @@ IMAGE_EXTENSIONS = {
     "image/png": ".png",
     "image/webp": ".webp",
     "image/gif": ".gif",
+    "image/svg+xml": ".svg",
 }
 
 # Maximum file sizes
 MAX_PDF_SIZE = 10 * 1024 * 1024      # 10MB for PDFs
 MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos
 MAX_IMAGE_SIZE = 5 * 1024 * 1024     # 5MB for images
+MAX_SVG_SIZE = 2 * 1024 * 1024       # 2MB for SVG files
 
-# Valid categories for folder organization (blogs not included - stored in MongoDB only)
-CategoryType = Literal["casestudies", "accelerators"]
-VALID_CATEGORIES = ["casestudies", "accelerators"]
+# Valid categories for folder organization
+CategoryType = Literal["casestudies", "accelerators", "emailtemplates"]
+VALID_CATEGORIES = ["casestudies", "accelerators", "emailtemplates"]
 
 
 class AzureBlobServiceError(Exception):
@@ -195,13 +198,14 @@ class AzureBlobService:
         # Check content type
         if content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
             raise AzureBlobServiceError(
-                f"Invalid file type: {content_type}. Allowed image types: jpeg, png, webp, gif."
+                f"Invalid file type: {content_type}. Allowed image types: jpeg, png, webp, gif, svg."
             )
         
-        # Check file size
-        if len(file_content) > MAX_IMAGE_SIZE:
+        # Check file size (different limit for SVG)
+        max_size = MAX_SVG_SIZE if content_type == "image/svg+xml" else MAX_IMAGE_SIZE
+        if len(file_content) > max_size:
             raise AzureBlobServiceError(
-                f"Image too large. Maximum size is {MAX_IMAGE_SIZE // (1024 * 1024)}MB."
+                f"Image too large. Maximum size is {max_size // (1024 * 1024)}MB."
             )
         
         # Return the appropriate extension

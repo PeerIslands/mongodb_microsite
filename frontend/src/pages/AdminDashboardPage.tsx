@@ -10,10 +10,12 @@ import {
   EventList,
   EventForm,
   AnalyticsDashboard,
+  EmailTemplateList,
+  EmailTemplateForm,
 } from '@/features/admin/components';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics';
-type SubView = 'list' | 'add' | 'edit';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates';
+type SubView = 'list' | 'add' | 'edit' | 'upload';
 
 const AdminDashboard = () => {
   const [mainView, setMainView] = useState<MainView>('cases');
@@ -21,10 +23,12 @@ const AdminDashboard = () => {
   const [accView, setAccView] = useState<SubView>('list');
   const [blogView, setBlogView] = useState<SubView>('list');
   const [eventView, setEventView] = useState<SubView>('list');
+  const [emailTemplateView, setEmailTemplateView] = useState<SubView>('list');
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editingEmailTemplateId, setEditingEmailTemplateId] = useState<string | null>(null);
 
   // Case Study handlers
   const handleCaseAddNew = () => {
@@ -90,6 +94,27 @@ const AdminDashboard = () => {
     setEditingEventId(null);
   };
 
+  // Email Template handlers
+  const handleEmailTemplateAddNew = () => {
+    setEditingEmailTemplateId(null);
+    setEmailTemplateView('add');
+  };
+
+  const handleEmailTemplateUpload = () => {
+    setEditingEmailTemplateId(null);
+    setEmailTemplateView('upload');
+  };
+
+  const handleEmailTemplateEdit = (id: string) => {
+    setEditingEmailTemplateId(id);
+    setEmailTemplateView('edit');
+  };
+
+  const handleEmailTemplateBackToList = () => {
+    setEmailTemplateView('list');
+    setEditingEmailTemplateId(null);
+  };
+
   // Main view change
   const handleMainViewChange = (view: MainView) => {
     setMainView(view);
@@ -105,6 +130,9 @@ const AdminDashboard = () => {
     } else if (view === 'events') {
       setEventView('list');
       setEditingEventId(null);
+    } else if (view === 'emailtemplates') {
+      setEmailTemplateView('list');
+      setEditingEmailTemplateId(null);
     }
   };
 
@@ -141,6 +169,12 @@ const AdminDashboard = () => {
             onClick={() => { handleMainViewChange('analytics'); console.log('analytics') }}
           >
             📊 Analytics
+          </button>
+          <button
+            className={`main-nav-tab ${mainView === 'emailtemplates' ? 'active' : ''}`}
+            onClick={() => handleMainViewChange('emailtemplates')}
+          >
+            📭 Newsletters
           </button>
         </div>
 
@@ -206,6 +240,26 @@ const AdminDashboard = () => {
         )}
         
         {mainView === 'analytics' && <AnalyticsDashboard />}
+        
+        {mainView === 'emailtemplates' && (
+          <>
+            {emailTemplateView === 'list' && (
+              <EmailTemplateList 
+                onAddNew={handleEmailTemplateAddNew} 
+                onEdit={handleEmailTemplateEdit} 
+                onUploadHTML={handleEmailTemplateUpload}
+              />
+            )}
+            {(emailTemplateView === 'add' || emailTemplateView === 'edit' || emailTemplateView === 'upload') && (
+              <EmailTemplateForm 
+                editingId={editingEmailTemplateId} 
+                mode={emailTemplateView === 'add' ? 'create' : emailTemplateView as 'edit' | 'upload'}
+                onCancel={handleEmailTemplateBackToList}
+                onSuccess={handleEmailTemplateBackToList}
+              />
+            )}
+          </>
+        )}
       </div>
   );
 };

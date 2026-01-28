@@ -10,6 +10,7 @@ export const ROUTES = {
   CASE_STUDIES: '/case-studies',
   SUCCESS_STORIES: '/success-stories',
   INSIGHTS: '/insights',
+  NEWSLETTER: '/newsletter',
   ADMIN: '/admin',
   EVENTS: '/events',
   ABOUT: '/about',
