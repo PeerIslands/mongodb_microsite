@@ -6,7 +6,6 @@ Handles validation, data transformation, and orchestrates repository calls.
 from typing import List, Optional
 
 from app.api.v1.models.event_registration import (
-    CreateEventRegistrationRequest,
     CreateEventRegistrationResponse,
     UpdateRegistrationStatusRequest,
     UpdateEventRegistrationResponse,

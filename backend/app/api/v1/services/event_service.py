@@ -303,7 +303,7 @@ class EventService:
         
         # Add meeting link to description if online
         if event_type in ('online', 'hybrid') and location:
-            description = f"Join the meeting: {escape_ics(location)}\\n\\n{description}"
+            description = f"Join the meeting: {escape_ics(location)}"
         
         # Current timestamp for DTSTAMP
         now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -321,6 +321,7 @@ class EventService:
             f"DTSTART;TZID={timezone}:{start_dt}",
             f"DTEND;TZID={timezone}:{end_dt}",
             f"SUMMARY:{title}",
+            f"DESCRIPTION:{description}",
             f"LOCATION:{location_escaped}",
             "STATUS:CONFIRMED",
             "SEQUENCE:0",

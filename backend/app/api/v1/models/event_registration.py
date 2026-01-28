@@ -5,9 +5,7 @@ Includes request/response models for event registration operations.
 Field naming convention: snake_case (matching frontend requirements)
 """
 
-from datetime import datetime
 from enum import Enum
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
