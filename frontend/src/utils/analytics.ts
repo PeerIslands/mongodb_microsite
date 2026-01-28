@@ -17,7 +17,6 @@ export class AnalyticsTracker {
   private pageStartTime: number = 0;
   private scrollDepthTracked: Set<number> = new Set();
   private sessionInitialized: boolean = false;
-  private inFlightRequests: Map<string, Promise<any>> = new Map();
 
   constructor() {
     this.sessionId = this.getOrCreateSessionId();
