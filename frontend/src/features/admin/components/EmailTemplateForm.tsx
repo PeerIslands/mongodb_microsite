@@ -31,7 +31,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [sendingNewsletter, setSendingNewsletter] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -207,20 +206,16 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
     try {
       setLoading(true);
-      setUploadProgress('');
 
       if (mode === 'upload' && htmlFile) {
         // Upload HTML file with images
         setLoadingMessage('Uploading template and images...');
-        setUploadProgress('Uploading template and images...');
         if (imageFiles.length > 0) {
           const message = `Uploading ${imageFiles.length} image(s)... This may take a few minutes.`;
           setLoadingMessage(message);
-          setUploadProgress(message);
         }
         
         await uploadHTMLTemplate(name, subject, htmlFile, description, category, imageFiles, useBlobStorage);
-        setUploadProgress('');
         showToast(`✅ Template uploaded successfully with ${imageFiles.length} images!`, 'success');
       } else if (mode === 'edit' && editingId) {
         // Update existing template
@@ -237,7 +232,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
       onSuccess();
     } catch (error) {
-      setUploadProgress('');
       const err = error as { response?: { data?: { detail?: string } }; message?: string; code?: string };
       const errorMessage = err.response?.data?.detail || err.message || 'Failed to save template';
       
@@ -254,7 +248,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       console.error('Upload error:', error);
     } finally {
       setLoading(false);
-      setUploadProgress('');
     }
   };
 
@@ -512,11 +505,11 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
             <>
               <div style={{ margin: '0.5rem 0 1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}></div>
               <div className="form-actions" style={{ marginTop: '0', marginBottom: '-1.875rem', paddingTop: '0', borderTop: 'none', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>
+                <button type="button" className="btn btn-secondary" onClick={onCancel}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Updating...' : 'Update Newsletter'}
+                <button type="submit" className="btn btn-primary">
+                  Update Newsletter
                 </button>
               </div>
             </>
@@ -651,9 +644,8 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleSendTest}
-                    disabled={sendingTestEmail}
                   >
-                    {sendingTestEmail ? '📤 Sending...' : '📧 Send Test'}
+                    📧 Send Test
                   </button>
                 </div>
               </div>
@@ -673,7 +665,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                   id="recipient-filter"
                   value={recipientFilter}
                   onChange={(e) => setRecipientFilter(e.target.value as RecipientFilter)}
-                  disabled={sendingNewsletter}
                 >
                   <option value="all_users">📊 All Users - Everyone registered in the system</option>
                   <option value="active_users">✅ Active Users - Users with verified accounts who can log in</option>
@@ -720,7 +711,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                     onChange={(e) => setCustomEmails(e.target.value)}
                     placeholder="Enter email addresses (one per line, or comma-separated)&#10;example@email.com&#10;another@email.com&#10;partner@company.com"
                     rows={6}
-                    disabled={sendingNewsletter}
                   />
                   <small className="form-hint">
                     Enter one email per line, or separate with commas or semicolons. These recipients don't need to be registered users.
@@ -734,17 +724,9 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                   type="button"
                   className="btn btn-primary btn-large"
                   onClick={handleSendNewsletter}
-                  disabled={sendingNewsletter}
                   style={{ width: '100%' }}
                 >
-                  {sendingNewsletter ? (
-                    <>
-                      <span className="spinner"></span>
-                      Sending Newsletter...
-                    </>
-                  ) : (
-                    '📨 Send Newsletter'
-                  )}
+                  📨 Send Newsletter
                 </button>
               </div>
             </div>
@@ -754,24 +736,12 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
         {/* Actions - Only show for upload mode */}
         {mode === 'upload' && (
           <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? (
-                uploadProgress || 'Uploading...'
-              ) : (
-                'Upload Template'
-              )}
+            <button type="submit" className="btn btn-primary">
+              Upload Template
             </button>
-          </div>
-        )}
-        
-        {/* Upload Progress */}
-        {uploadProgress && (
-          <div className="upload-progress">
-            <div className="loader"></div>
-            <p>{uploadProgress}</p>
           </div>
         )}
       </form>
