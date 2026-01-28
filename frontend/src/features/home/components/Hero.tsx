@@ -121,10 +121,6 @@ const Hero = () => {
               analytics.trackCTAClick('Explore Accelerators', 'Hero Section');
               window.location.href = '/accelerators';
             }}
-            onClick={() => {
-              analytics.trackCTAClick('Explore Accelerators', 'Hero Section');
-              window.location.href = '/accelerators';
-            }}
           >
             <span className="btn-blur"></span>
             <span className="btn-text">Explore Accelerators</span>
