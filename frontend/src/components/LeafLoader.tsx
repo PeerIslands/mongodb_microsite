@@ -1,6 +1,10 @@
 import '@/styles/components/LeafLoader.css';
 
-const LeafLoader = () => {
+interface LeafLoaderProps {
+  message?: string;
+}
+
+const LeafLoader = ({ message = 'Loading...' }: LeafLoaderProps) => {
   return (
     <div className="leaf-loader-overlay">
       <div className="leaf-loader-container">
@@ -26,7 +30,7 @@ const LeafLoader = () => {
           <path fillRule="evenodd" clipRule="evenodd" fill="#CECDB7" d="M67.464 110.898c-.196-.847.129-1.518.717-2.097l.337.23-1.054 1.867z"/>
           <path fillRule="evenodd" clipRule="evenodd" fill="#4FAA41" d="M64.316 95.172l-.066-.011-.066.01.155-.559-.023.56z"/>
         </svg>
-        <p className="leaf-loader-text">Submitting your inquiry...</p>
+        <p className="leaf-loader-text">{message}</p>
       </div>
     </div>
   );

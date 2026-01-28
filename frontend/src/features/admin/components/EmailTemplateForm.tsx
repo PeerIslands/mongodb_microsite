@@ -1,14 +1,13 @@
 /**
  * Email Template Form Component
  * 
- * Form for creating/editing email templates or uploading HTML files
+ * Form for editing email templates or uploading HTML files
  */
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import {
   getEmailTemplate,
-  createEmailTemplate,
   updateEmailTemplate,
   uploadHTMLTemplate,
   sendTestEmail,
@@ -18,11 +17,12 @@ import {
 } from '@/api/services/emailTemplates';
 import { PreviewModal } from './PreviewModal';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/features/admin/EmailTemplateForm.css';
 
 interface EmailTemplateFormProps {
   editingId: string | null;
-  mode: 'create' | 'edit' | 'upload';
+  mode: 'edit' | 'upload';
   onCancel: () => void;
   onSuccess: () => void;
 }
@@ -30,6 +30,7 @@ interface EmailTemplateFormProps {
 export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: EmailTemplateFormProps) => {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [sendingNewsletter, setSendingNewsletter] = useState(false);
@@ -63,12 +64,13 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
     try {
       setLoading(true);
+      setLoadingMessage('Loading newsletter...');
       const template = await getEmailTemplate(editingId);
       setName(template.name);
       setDescription(template.description || '');
       setCategory(template.category);
       setSubject(template.subject);
-      setHtmlContent(template.html_content);
+      setHtmlContent(template.html_content || '');
     } catch (error) {
       showToast((error as Error)?.message || 'Failed to load template', 'error');
     } finally {
@@ -209,9 +211,12 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
       if (mode === 'upload' && htmlFile) {
         // Upload HTML file with images
+        setLoadingMessage('Uploading template and images...');
         setUploadProgress('Uploading template and images...');
         if (imageFiles.length > 0) {
-          setUploadProgress(`Uploading ${imageFiles.length} image(s)... This may take a few minutes.`);
+          const message = `Uploading ${imageFiles.length} image(s)... This may take a few minutes.`;
+          setLoadingMessage(message);
+          setUploadProgress(message);
         }
         
         await uploadHTMLTemplate(name, subject, htmlFile, description, category, imageFiles, useBlobStorage);
@@ -219,6 +224,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
         showToast(`✅ Template uploaded successfully with ${imageFiles.length} images!`, 'success');
       } else if (mode === 'edit' && editingId) {
         // Update existing template
+        setLoadingMessage('Updating newsletter...');
         await updateEmailTemplate(editingId, {
           name,
           description,
@@ -227,16 +233,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
           html_content: htmlContent,
         });
         showToast('Template updated successfully', 'success');
-      } else {
-        // Create new template
-        await createEmailTemplate({
-          name,
-          description,
-          category,
-          subject,
-          html_content: htmlContent,
-        });
-        showToast('Template created successfully', 'success');
       }
 
       onSuccess();
@@ -286,6 +282,8 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
     try {
       setSendingTestEmail(true);
+      setLoading(true);
+      setLoadingMessage(`Sending test email to ${emailList.length} recipient(s)...`);
       
       // If multiple emails, send to each one
       if (emailList.length > 1) {
@@ -311,6 +309,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       showToast(err.response?.data?.detail || 'Failed to send test email', 'error');
     } finally {
       setSendingTestEmail(false);
+      setLoading(false);
     }
   };
 
@@ -372,6 +371,8 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
     try {
       setSendingNewsletter(true);
+      setLoading(true);
+      setLoadingMessage('Sending newsletter... This may take a few minutes.');
       const response = await sendNewsletter(editingId, pendingNewsletterRequest);
       
       if (response.success) {
@@ -386,6 +387,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
       showToast(err.response?.data?.detail || 'Failed to send newsletter', 'error');
     } finally {
       setSendingNewsletter(false);
+      setLoading(false);
       setPendingNewsletterRequest(null);
     }
   };
@@ -399,10 +401,15 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     switch (mode) {
       case 'upload': 
         return (
-          <>
-            <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>📤</span>
-            <h2 style={{ margin: 0 }}>Upload HTML Template</h2>
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>📤</span>
+              <h2 style={{ margin: 0 }}>Upload HTML Template</h2>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#00ff88', paddingLeft: '2.75rem' }}>
+              Upload your HTML file and relevant images to create your newsletter
+            </p>
+          </div>
         );
       case 'edit': 
         return (
@@ -411,25 +418,12 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
             <h2 style={{ margin: 0 }}>Preview Newsletter</h2>
           </>
         );
-      case 'create': 
-        return (
-          <>
-            <span style={{ fontSize: '2rem', marginRight: '0.75rem' }}>➕</span>
-            <h2 style={{ margin: 0 }}>Create New Template</h2>
-          </>
-        );
     }
   };
 
-  if (loading && mode === 'edit') {
-    return (
-      <div className="email-template-form">
-        <div className="loading-state">
-          <div className="loader"></div>
-          <p>Loading template...</p>
-        </div>
-      </div>
-    );
+  // Show loader for any loading operation
+  if (loading || sendingTestEmail || sendingNewsletter) {
+    return <LeafLoader message={loadingMessage || 'Processing...'} />;
   }
 
   return (
@@ -499,7 +493,9 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
             </div>
 
             <div className="form-group">
-              <label htmlFor="subject">Email Subject *</label>
+              <label htmlFor="subject">
+                {category.charAt(0).toUpperCase() + category.slice(1)} Subject *
+              </label>
               <input
                 type="text"
                 id="subject"
@@ -510,10 +506,25 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
               />
             </div>
           </div>
+
+          {/* Action Buttons */}
+          {mode === 'edit' && (
+            <>
+              <div style={{ margin: '0.5rem 0 1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}></div>
+              <div className="form-actions" style={{ marginTop: '0', marginBottom: '-1.875rem', paddingTop: '0', borderTop: 'none', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Updating...' : 'Update Newsletter'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* HTML Content */}
-        {mode !== 'edit' && (
+        {mode === 'upload' && (
           <div className="form-section">
             <h3>📄 HTML Content</h3>
             
@@ -594,21 +605,6 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
                   </p>
                 </div>
               </>
-            )}
-
-            {mode !== 'upload' && (
-              <div className="form-group">
-                <label htmlFor="html-content">HTML Content *</label>
-                <textarea
-                  id="html-content"
-                  value={htmlContent}
-                  onChange={(e) => setHtmlContent(e.target.value)}
-                  placeholder="<html>...</html>"
-                  rows={15}
-                  className="code-textarea"
-                  required
-                />
-              </div>
             )}
 
             {/* HTML Preview */}
@@ -755,19 +751,21 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
           </>
         )}
 
-        {/* Actions */}
-        <div className="form-actions">
-          <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? (
-              uploadProgress || 'Saving...'
-            ) : (
-              mode === 'upload' ? 'Upload Template' : 'Save Template'
-            )}
-          </button>
-        </div>
+        {/* Actions - Only show for upload mode */}
+        {mode === 'upload' && (
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? (
+                uploadProgress || 'Uploading...'
+              ) : (
+                'Upload Template'
+              )}
+            </button>
+          </div>
+        )}
         
         {/* Upload Progress */}
         {uploadProgress && (

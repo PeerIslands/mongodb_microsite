@@ -79,7 +79,7 @@ class EmailTemplateResponse(BaseModel):
     category: TemplateCategory
     status: TemplateStatus
     subject: str
-    html_content: str
+    html_content: Optional[str] = None  # Optional for list views
     plain_text_content: Optional[str] = None
     sendgrid_template_id: Optional[str] = None
     sendgrid_version_id: Optional[str] = None

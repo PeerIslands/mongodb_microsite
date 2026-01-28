@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { caseStudiesService } from '@/api/services/case-studies.service';
 import type { CaseStudyDetail } from '@/types/models/case-study';
 import type { CaseStudyCardData } from '@/features/case-studies/components/CaseStudyCard';
+import { withCache } from '@/utils/requestCache';
 
 interface UseCaseStudiesOptions {
   /** Filter by industry */
@@ -66,12 +67,17 @@ export const useCaseStudies = (options: UseCaseStudiesOptions = {}): UseCaseStud
       setIsLoading(true);
       setError(null);
 
-      // Fetch from API
-      const apiData = await caseStudiesService.getAll({ 
-        industry, 
-        status, 
-        featured 
-      });
+      // Create cache key based on filter params
+      const cacheKey = `case-studies-${industry || 'all'}-${status || 'all'}-${featured || 'all'}-${limit || 'all'}`;
+
+      // Fetch from API with caching
+      const apiData = await withCache(cacheKey, () =>
+        caseStudiesService.getAll({ 
+          industry, 
+          status, 
+          featured 
+        })
+      );
 
       // Transform to card data format
       const transformedData = apiData.map(transformToCaseStudyCardData);

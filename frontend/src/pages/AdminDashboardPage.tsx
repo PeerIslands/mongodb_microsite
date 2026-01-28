@@ -95,11 +95,6 @@ const AdminDashboard = () => {
   };
 
   // Email Template handlers
-  const handleEmailTemplateAddNew = () => {
-    setEditingEmailTemplateId(null);
-    setEmailTemplateView('add');
-  };
-
   const handleEmailTemplateUpload = () => {
     setEditingEmailTemplateId(null);
     setEmailTemplateView('upload');
@@ -245,15 +240,14 @@ const AdminDashboard = () => {
           <>
             {emailTemplateView === 'list' && (
               <EmailTemplateList 
-                onAddNew={handleEmailTemplateAddNew} 
-                onEdit={handleEmailTemplateEdit} 
+                onEdit={handleEmailTemplateEdit}
                 onUploadHTML={handleEmailTemplateUpload}
               />
             )}
-            {(emailTemplateView === 'add' || emailTemplateView === 'edit' || emailTemplateView === 'upload') && (
+            {(emailTemplateView === 'edit' || emailTemplateView === 'upload') && (
               <EmailTemplateForm 
-                editingId={editingEmailTemplateId} 
-                mode={emailTemplateView === 'add' ? 'create' : emailTemplateView as 'edit' | 'upload'}
+                editingId={editingEmailTemplateId}
+                mode={emailTemplateView as 'edit' | 'upload'}
                 onCancel={handleEmailTemplateBackToList}
                 onSuccess={handleEmailTemplateBackToList}
               />

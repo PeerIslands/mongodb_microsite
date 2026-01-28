@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@/styles/features/home/Testimonials.css';
 import { caseStudiesService, TestimonialData } from '@/api/services/case-studies.service';
+import { withCache } from '@/utils/requestCache';
 
 // Generate initials-based placeholder avatars using UI Avatars service
 const getAvatarUrl = (name: string, bg: string = '5B6CFF') => 
@@ -18,7 +19,10 @@ const Testimonials = () => {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        const data = await caseStudiesService.getTestimonials();
+        // Use cache to prevent duplicate requests in StrictMode
+        const data = await withCache('testimonials', () =>
+          caseStudiesService.getTestimonials()
+        );
         console.log('📊 Testimonials fetched:', data);
         console.log('📊 Number of testimonials:', data.length);
         setTestimonials(data);
