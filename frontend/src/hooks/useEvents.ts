@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { eventsService } from '@/api/services/events.service';
 import type { Event } from '@/types/models/event';
 import type { EventCardData } from '@/features/events/EventCard';
+import { withCache } from '@/utils/requestCache';
 
 interface UseEventsOptions {
   /** Filter by category */
@@ -75,16 +76,24 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       // Check if user is logged in
       const isLoggedIn = !!localStorage.getItem('authToken');
 
-      // Fetch events and optionally user registrations in parallel
+      // Create cache key based on filter params
+      const eventsCacheKey = `events-${category || 'all'}-${featured ? 'published-true' : 'all'}-${limit || 'all'}`;
+      const registrationsCacheKey = 'user-registrations';
+
+      // Fetch events and optionally user registrations in parallel with caching
       const [apiData, registrations] = await Promise.all([
-        eventsService.getAll({ 
-          category, 
-          status: featured ? 'published' : undefined,
-          featured 
-        }),
+        withCache(eventsCacheKey, () =>
+          eventsService.getAll({ 
+            category, 
+            status: featured ? 'published' : undefined,
+            featured 
+          })
+        ),
         // Only fetch registrations if logged in
         isLoggedIn 
-          ? eventsService.getUserRegistrations().catch(() => []) 
+          ? withCache(registrationsCacheKey, () =>
+              eventsService.getUserRegistrations()
+            ).catch(() => [])
           : Promise.resolve([]),
       ]);
 

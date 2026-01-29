@@ -15,6 +15,14 @@ async def lifespan(app: FastAPI):
     # Startup: Connect to MongoDB
     await Database.connect()
     
+    # Create database indexes for optimized queries
+    try:
+        from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
+        email_repo = EmailTemplateRepository(Database.get_db())
+        await email_repo.ensure_indexes()
+    except Exception as e:
+        print(f"Warning: Failed to create indexes: {e}")
+    
     yield
     
     # Shutdown: Disconnect from MongoDB
