@@ -8,7 +8,7 @@ import logoImage from '@/assets/logo.svg';
 const Footer = () => {
   const navigate = useNavigate();
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+  const handleNavigation = (e: React.MouseEvent<HTMLElement>, path: string) => {
     e.preventDefault();
     // Smooth scroll to top first
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,14 +40,19 @@ const Footer = () => {
               <h4 className="footer-nav-heading">Solutions</h4>
               <ul className="footer-nav-list">
                 <li>
-                  <a href={ROUTES.ACCELERATORS} onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS)}>
-                    Accelerators
-                  </a>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS)}>
+                    Offerings
+                  </button>
                 </li>
                 <li>
-                  <a href={ROUTES.SUCCESS_STORIES} onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES)}>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS)}>
+                    Accelerators
+                  </button>
+                </li>
+                <li>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES)}>
                     Success Stories
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -55,26 +60,26 @@ const Footer = () => {
               <h4 className="footer-nav-heading">Company</h4>
               <ul className="footer-nav-list">
                 <li>
-                  <a href={ROUTES.ABOUT} onClick={(e) => handleNavigation(e, ROUTES.ABOUT)}>
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href={ROUTES.EVENTS} onClick={(e) => handleNavigation(e, ROUTES.EVENTS)}>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.EVENTS)}>
                     Events
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href={ROUTES.INSIGHTS} onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS)}>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS)}>
                     Insights
-                  </a>
+                  </button>
+                </li>
+                <li>
+                  <button onClick={(e) => handleNavigation(e, ROUTES.ABOUT)}>
+                    About Us
+                  </button>
                 </li>
               </ul>
             </div>
             <div className="footer-nav-group">
               <h4 className="footer-nav-heading">Resources</h4>
               <ul className="footer-nav-list">
-                <li><a href="#">Contact Us</a></li>
+                <li><button onClick={(e) => handleNavigation(e, ROUTES.CONTACT)}>Contact Us</button></li>
               </ul>
             </div>
           </div>

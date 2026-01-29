@@ -3,6 +3,7 @@ import type { CaseStudyDetail } from '@/types/models/case-study';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/features/case-studies/CaseStudyDetailSection.css';
 
 interface CaseStudyDetailSectionProps {
@@ -50,14 +51,7 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
 
   // Loading state
   if (isLoading) {
-    return (
-      <section className="case-study-detail case-study-detail--visible">
-        <div className="case-study-detail__loading">
-          <div className="case-study-detail__loading-spinner" />
-          <p>Loading case study details...</p>
-        </div>
-      </section>
-    );
+    return <LeafLoader message="Loading case study details..." />;
   }
 
   if (!caseStudy) {

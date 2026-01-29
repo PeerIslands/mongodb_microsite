@@ -15,6 +15,7 @@ export const ROUTES = {
   ADMIN: '/admin',
   EVENTS: '/events',
   ABOUT: '/about',
+  CONTACT: '/contact',
 } as const;
 
 // API Endpoints

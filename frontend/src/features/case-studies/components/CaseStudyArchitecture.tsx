@@ -3,6 +3,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import CaseStudyCard, { CaseStudyCardData } from './CaseStudyCard';
+import LeafLoader from '@/components/LeafLoader';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import '@/styles/features/case-studies/CaseStudyArchitecture.css';
@@ -170,12 +171,7 @@ const CaseStudyArchitecture = ({
           {/* Carousel Container */}
           <div className="featured-stories__carousel-wrapper">
             {/* Loading State */}
-            {isLoading && (
-              <div className="featured-stories__loading">
-                <div className="featured-stories__loading-spinner" />
-                <p>Loading case studies...</p>
-              </div>
-            )}
+            {isLoading && <LeafLoader message="Loading case studies..." />}
 
             {/* Empty State */}
             {!isLoading && caseStudies.length === 0 && (

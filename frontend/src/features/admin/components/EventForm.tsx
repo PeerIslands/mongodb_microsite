@@ -75,7 +75,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Combined categories (default + existing from API)
@@ -99,7 +98,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
   const fetchEventData = useCallback(async (id: string) => {
     try {
-      setIsLoading(true);
       setErrorMessage(null);
       const data = await eventsService.getById(id);
 
@@ -144,8 +142,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     } catch (err) {
       console.error('Failed to fetch event:', err);
       setErrorMessage('Failed to load event data. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   }, [allCategories]);
 
@@ -289,24 +285,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setIsSubmitting(false);
     }
   };
-
-  // Show loading state when fetching event data for editing
-  if (isLoading) {
-    return (
-      <div className="event-form-container">
-        <div className="form-header">
-          <h2 className="form-title">Edit Event</h2>
-          <button className="cancel-button" onClick={onCancel}>
-            ← Back to List
-          </button>
-        </div>
-        <div className="form-loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading event data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="event-form-container">

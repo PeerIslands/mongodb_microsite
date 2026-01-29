@@ -103,42 +103,36 @@ const Header = () => {
             <a 
               href={ROUTES.OFFERINGS}
               className="nav-link"
-              onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS, 'Offerings Nav')}
             >
               Offerings
             </a>
             <a 
               href={ROUTES.ACCELERATORS} 
               className="nav-link with-dropdown"
-              onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS, 'Accelerators Nav')}
             >
               Accelerators
             </a>
             <a 
               href={ROUTES.SUCCESS_STORIES} 
               className="nav-link"
-              onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES, 'Success Stories Nav')}
             >
               Success Stories
             </a>
             <a 
               href={ROUTES.INSIGHTS} 
               className="nav-link"
-              onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS, 'Insights Nav')}
             >
               Insights
             </a>
             <a
               href={ROUTES.EVENTS}
               className="nav-link"
-              onClick={(e) => handleNavigation(e, ROUTES.EVENTS, 'Events Nav')}
             >
               Events
             </a>
             <a 
               href={ROUTES.ABOUT} 
               className="nav-link"
-              onClick={(e) => handleNavigation(e, ROUTES.ABOUT, 'About Nav')}
             >
               About
             </a>
@@ -146,7 +140,6 @@ const Header = () => {
               <a 
                 href={ROUTES.ADMIN} 
                 className="nav-link admin-link"
-                onClick={handleAdminNavigation}
               >
                 Admin Dashboard
               </a>

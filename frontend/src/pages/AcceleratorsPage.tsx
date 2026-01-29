@@ -10,6 +10,7 @@ import {
 } from '@/features/accelerators/components';
 import { acceleratorsService, getFileUrl } from '@/api/services/accelerators.service';
 import type { AcceleratorDetail } from '@/types/models/accelerator';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/AcceleratorsPage.css';
 
 /**
@@ -57,14 +58,7 @@ const AcceleratorsPage = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="accelerators-page">
-        <div className="accelerators-loading">
-          <div className="accelerators-loading-spinner" />
-          <p>Loading accelerators...</p>
-        </div>
-      </div>
-    );
+    return <LeafLoader message="Loading accelerators..." />;
   }
 
   return (

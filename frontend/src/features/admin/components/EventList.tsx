@@ -13,7 +13,6 @@ interface EventListProps {
 
 const EventList = ({ onAddNew, onEdit }: EventListProps) => {
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registrationCounts, setRegistrationCounts] = useState<RegistrationCount>({});
   const [downloadingEventId, setDownloadingEventId] = useState<string | null>(null);
@@ -46,7 +45,6 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
 
   const fetchEvents = async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await eventsService.getAll();
       setEvents(data);
@@ -55,8 +53,6 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
     } catch (err) {
       console.error('Failed to fetch events:', err);
       setError('Failed to load events. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -126,14 +122,6 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
       return timeStr;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="event-list">
-        <div className="loading-state">Loading events. Please wait.</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

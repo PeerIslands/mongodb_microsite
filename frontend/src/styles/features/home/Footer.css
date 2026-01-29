@@ -155,18 +155,21 @@
   margin: 0;
 }
 
-.footer-nav-list a {
+.footer-nav-list button {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   font-style: normal;
   color: rgba(239, 237, 253, 0.6);
+  background: none;
+  border: none;
+  cursor: pointer;
   line-height: 1.4;
   text-decoration: none;
   transition: color 0.2s;
 }
 
-.footer-nav-list a:hover {
+.footer-nav-list button:hover {
   color: rgba(239, 237, 253, 0.9);
 }
 
