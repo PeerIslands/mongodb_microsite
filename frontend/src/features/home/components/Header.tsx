@@ -76,14 +76,6 @@ const Header = () => {
     }, 100);
   };
 
-  const handleAdminNavigation = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    // Navigate without CTA tracking for admin dashboard
-    navigate('/admin');
-    setTimeout(() => {
-      globalThis.scrollTo(0, 0);
-    }, 100);
-  };
 
   const getInitials = (email: string) => {
     if (!email) return 'U';
