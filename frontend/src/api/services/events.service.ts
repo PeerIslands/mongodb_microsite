@@ -115,6 +115,44 @@ export const eventsService = {
     link.remove();
     globalThis.URL.revokeObjectURL(url);
   },
+
+  // Download calendar ICS file for an event
+  downloadCalendar: async (eventId: string) => {
+    console.log('[eventsService] Starting calendar download for event:', eventId);
+    
+    const response = await apiClient.get(
+      `/api/v1/events/${eventId}/calendar`,
+      {
+        responseType: 'blob',
+      }
+    );
+    
+    console.log('[eventsService] Calendar file received, size:', response.data.size);
+    
+    // Create download link
+    const blob = new Blob([response.data], {
+      type: 'text/calendar',
+    });
+    const url = globalThis.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `event-${eventId}.ics`;
+    
+    // Add a unique ID to help track if this link is clicked multiple times
+    link.id = `calendar-download-${eventId}-${Date.now()}`;
+    
+    console.log('[eventsService] Triggering download with link:', link.id);
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up after a short delay to ensure download starts
+    setTimeout(() => {
+      link.remove();
+      globalThis.URL.revokeObjectURL(url);
+      console.log('[eventsService] Download cleanup completed');
+    }, 100);
+  },
 };
 
 // Re-export types for convenience

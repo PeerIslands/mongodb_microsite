@@ -54,8 +54,9 @@ class Settings(BaseSettings):
     CONTACTUS_RECEIVER_EMAIL: str = ""
     CONTACTUS_RECEIVER_CC_EMAIL: str = ""  # Comma-separated email addresses
     
-    # Backend Base URL (for generating calendar download links in emails)
-    # BACKEND_BASE_URL: str = ""
+    # Frontend Base URL (for generating calendar download links in emails)
+    # This should be the publicly accessible frontend URL
+    FRONTEND_BASE_URL: str = "https://mongodb.peerislands.io"
     
     def get_contactus_cc_emails(self) -> List[str]:
         """Parse comma-separated CC email addresses into a list"""

@@ -16,6 +16,7 @@ const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const EventsPage = lazy(() => import('@/pages/EventsPage'));
 const AboutPage = lazy(() => import('@/pages/AboutPage'));
+const CalendarDownloadPage = lazy(() => import('@/pages/CalendarDownloadPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Loading component
@@ -119,6 +120,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AboutPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/events/:eventId/calendar',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <CalendarDownloadPage />
               </Suspense>
             ),
           },
