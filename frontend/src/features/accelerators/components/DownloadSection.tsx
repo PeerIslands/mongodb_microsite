@@ -5,10 +5,11 @@ import '@/styles/features/accelerators/DownloadSection.css';
 interface DownloadSectionProps {
   title: string;
   pdfUrl: string;
+  acceleratorId: string;
 }
 
-const DownloadSection = ({ title, pdfUrl }: DownloadSectionProps) => {
-  const { openLoginModal } = useAuthModal();
+const DownloadSection = ({ title, pdfUrl, acceleratorId }: DownloadSectionProps) => {
+  const { openPDFDownloadModal } = useAuthModal();
 
   const isLoggedIn = () => {
     return !!localStorage.getItem('authToken');
@@ -35,8 +36,13 @@ const DownloadSection = ({ title, pdfUrl }: DownloadSectionProps) => {
     if (isLoggedIn()) {
       await downloadPdf();
     } else {
-      // Open login modal with callback to download after successful login
-      openLoginModal(downloadPdf);
+      // Open PDF download lead capture modal
+      openPDFDownloadModal({
+        resourceType: 'accelerator',
+        resourceId: acceleratorId,
+        resourceTitle: title,
+        onSuccess: () => { downloadPdf(); },
+      });
     }
   };
 

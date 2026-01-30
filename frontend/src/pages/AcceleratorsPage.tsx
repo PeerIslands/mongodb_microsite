@@ -113,6 +113,7 @@ const AcceleratorsPage = () => {
             <PDFViewerSection
               pdfUrl={getFileUrl(activeAccelerator.pdf_url)}
               title={activeAccelerator.title}
+              acceleratorId={activeAccelerator.id}
             />
           )}
 
@@ -126,6 +127,7 @@ const AcceleratorsPage = () => {
             <DownloadSection
               title={activeAccelerator.title}
               pdfUrl={getFileUrl(activeAccelerator.pdf_url, true)}
+              acceleratorId={activeAccelerator.id}
             />
           )}
         </>

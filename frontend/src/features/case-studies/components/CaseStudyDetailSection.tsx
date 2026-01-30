@@ -3,6 +3,7 @@ import type { CaseStudyDetail } from '@/types/models/case-study';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
+import { getCaseStudyFileUrl } from '@/api/services/case-studies.service';
 import LeafLoader from '@/components/LeafLoader';
 import '@/styles/features/case-studies/CaseStudyDetailSection.css';
 
@@ -18,7 +19,7 @@ interface CaseStudyDetailSectionProps {
  */
 const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: CaseStudyDetailSectionProps) => {
   const sectionRef = useRef<HTMLElement>(null);
-  const { openLoginModal } = useAuthModal();
+  const { openPDFDownloadModal } = useAuthModal();
 
   // Scroll to this section when it becomes visible or when the case study changes
   useEffect(() => {
@@ -32,20 +33,27 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
   };
 
   const downloadPdf = () => {
-    if (caseStudy?.pdf_url) {
+    if (caseStudy?.id && caseStudy?.pdf_url) {
+      // Use secure proxy endpoint to keep Azure SAS token hidden
+      const secureUrl = getCaseStudyFileUrl(caseStudy.id, 'pdf', true);
       // Track the download
-      analytics.trackDownload(caseStudy.title || 'Case Study', 'pdf', caseStudy.pdf_url);
-      globalThis.open(caseStudy.pdf_url, '_blank');
+      analytics.trackDownload(caseStudy.title || 'Case Study', 'pdf', secureUrl);
+      globalThis.open(secureUrl, '_blank');
     }
   };
 
-  // Handle PDF download - requires login
+  // Handle PDF download - requires login or lead capture
   const handleDownloadPdf = () => {
     if (isLoggedIn()) {
       downloadPdf();
-    } else {
-      // Open login modal with callback to download after successful login
-      openLoginModal(downloadPdf);
+    } else if (caseStudy?.id) {
+      // Open PDF download lead capture modal
+      openPDFDownloadModal({
+        resourceType: 'case_study',
+        resourceId: caseStudy.id,
+        resourceTitle: caseStudy.title || 'Case Study',
+        onSuccess: downloadPdf,
+      });
     }
   };
 

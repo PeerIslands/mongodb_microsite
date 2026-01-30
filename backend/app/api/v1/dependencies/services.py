@@ -23,6 +23,7 @@ from app.api.v1.repositories.event_repository import EventRepository
 from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
 from app.api.v1.repositories.analytics_repository import AnalyticsRepository
 from app.api.v1.repositories.event_registration_repository import EventRegistrationRepository
+from app.api.v1.repositories.pdf_download_repository import PDFDownloadRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
@@ -31,6 +32,7 @@ from app.api.v1.services.blog_service import BlogService
 from app.api.v1.services.accelerator_service import AcceleratorService
 from app.api.v1.services.analytics_service import AnalyticsService
 from app.api.v1.services.event_registration_service import EventRegistrationService
+from app.api.v1.services.pdf_download_service import PDFDownloadService
 from app.api.v1.models.user import UserModel
 from app.api.v1.services.event_service import EventService
 from app.core.database import Database
@@ -127,6 +129,17 @@ def get_event_registration_repository() -> EventRegistrationRepository:
     """
     db = Database.get_db()
     return EventRegistrationRepository(db)
+
+
+def get_pdf_download_repository() -> PDFDownloadRepository:
+    """
+    Get PDFDownloadRepository instance with MongoDB connection.
+    
+    Returns:
+        PDFDownloadRepository instance
+    """
+    db = Database.get_db()
+    return PDFDownloadRepository(db)
 
 
 # =============================================================================
@@ -313,4 +326,15 @@ def get_event_registration_service() -> EventRegistrationService:
     user_repository = get_user_repository()
     event_repository = get_event_repository()
     return EventRegistrationService(repository, user_repository, event_repository)
+
+
+def get_pdf_download_service() -> PDFDownloadService:
+    """
+    Get PDFDownloadService instance.
+    
+    Returns:
+        PDFDownloadService instance with injected repository
+    """
+    repository = get_pdf_download_repository()
+    return PDFDownloadService(repository)
 
