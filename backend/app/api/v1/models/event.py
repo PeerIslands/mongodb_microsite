@@ -42,6 +42,9 @@ class CreateEventRequest(BaseModel):
     category: str = Field(..., min_length=1, description="Event category")
     featured: bool = Field(default=False, description="Whether event is featured")
     status: EventStatus = Field(default=EventStatus.draft, description="Event status: 'draft' or 'published'")
+    # Location fields
+    event_type: str = Field(default="online", description="Event type: 'online', 'in-person', or 'hybrid'")
+    location: str = Field(..., min_length=1, description="Meeting link for online, physical address for in-person, or both for hybrid events")
 
     @field_validator("date")
     @classmethod
@@ -83,6 +86,9 @@ class UpdateEventRequest(BaseModel):
     category: Optional[str] = Field(None, min_length=1, description="Event category")
     featured: Optional[bool] = Field(None, description="Whether event is featured")
     status: Optional[EventStatus] = Field(None, description="Event status: 'draft' or 'published'")
+    # Location fields
+    event_type: Optional[str] = Field(None, description="Event type: 'online', 'in-person', or 'hybrid'")
+    location: Optional[str] = Field(None, description="Meeting link for online, physical address for in-person, or both for hybrid events")
 
     @field_validator("date")
     @classmethod
@@ -132,6 +138,8 @@ class EventResponse(BaseModel):
     category: str = Field(..., description="Event category")
     featured: bool = Field(..., description="Whether event is featured")
     status: str = Field(..., description="Event status")
+    event_type: str = Field(default="online", description="Event type: 'online', 'in-person', or 'hybrid'")
+    location: str = Field(..., description="Meeting link or physical address")
     created_at: str = Field(..., description="Creation timestamp")
     updated_at: str = Field(..., description="Last update timestamp")
 

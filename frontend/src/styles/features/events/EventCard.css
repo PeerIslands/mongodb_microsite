@@ -322,6 +322,22 @@
   transform: translateX(2px);
 }
 
+/* Registered status */
+.event-card__registered {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.event-card__registered span {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: 0.01875em;
+  color: #00ED64;
+}
+
 /* ===== RESPONSIVE STYLES ===== */
 
 /* Large screens (1440px+) */

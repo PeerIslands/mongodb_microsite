@@ -10,7 +10,7 @@ import '@/styles/pages/EventsPage.css';
  */
 const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { events: allEvents, isLoading, error } = useEvents({
+  const { events: allEvents, registeredEventIds, isLoading, error, refetch } = useEvents({
     autoFetch: true,
   });
 
@@ -200,6 +200,7 @@ const EventsPage = () => {
                   <EventGrid 
                     events={displayedEvents} 
                     onEventClick={handleEventClick}
+                    registeredEventIds={registeredEventIds}
                   />
                   
                   {/* View More/Less Button */}
@@ -229,6 +230,8 @@ const EventsPage = () => {
         event={selectedEvent}
         isOpen={isDetailPanelOpen}
         onClose={handleCloseDetailPanel}
+        isRegistered={selectedEvent ? registeredEventIds.has(selectedEvent.id) : false}
+        onRegistrationSuccess={refetch}
       />
     </div>
   );

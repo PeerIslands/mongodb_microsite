@@ -21,6 +21,26 @@ class EmailTemplateRepository:
         self.collection = db.email_templates
         logger.info("EmailTemplateRepository initialized")
     
+    async def ensure_indexes(self):
+        """Create indexes for optimized queries"""
+        try:
+            # Compound index for filtering and sorting
+            await self.collection.create_index([
+                ("category", 1),
+                ("status", 1),
+                ("created_at", -1)
+            ], background=True)
+            
+            # Index for slug lookups
+            await self.collection.create_index("slug", unique=True, background=True)
+            
+            # Index for created_at for sorting
+            await self.collection.create_index([("created_at", -1)], background=True)
+            
+            logger.info("Email template indexes created successfully")
+        except Exception as e:
+            logger.warning(f"Index creation error (may already exist): {e}")
+    
     async def create_template(self, template_data: Dict[str, Any]) -> str:
         """
         Create new email template.
@@ -105,8 +125,16 @@ class EmailTemplateRepository:
         # Get total count
         total = await self.collection.count_documents(filter_dict)
         
-        # Get templates
-        cursor = self.collection.find(filter_dict).skip(skip).limit(limit).sort("created_at", -1)
+        # Projection to exclude large fields (html_content, images, plain_text_content)
+        # This dramatically reduces payload size for list views
+        projection = {
+            'html_content': 0,
+            'images': 0,
+            'plain_text_content': 0
+        }
+        
+        # Get templates with projection
+        cursor = self.collection.find(filter_dict, projection).skip(skip).limit(limit).sort("created_at", -1)
         templates = await cursor.to_list(length=limit)
         
         # Convert ObjectId to string

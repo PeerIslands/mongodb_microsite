@@ -8,7 +8,7 @@
 }
 
 .pdf-viewer-container {
-  max-width: 600px;
+  max-width: 900px;
   width: 100%;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.02);
@@ -92,9 +92,6 @@
   min-height: 600px;
   max-height: 800px;
   overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
   padding: 20px;
   background: rgba(0, 0, 0, 0.2);
 }
@@ -104,6 +101,7 @@
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  min-width: fit-content;
 }
 
 .pdf-page {

@@ -1,6 +1,9 @@
 // Event status enum
 export type EventStatus = 'draft' | 'published';
 
+// Event type enum
+export type EventType = 'online' | 'in-person' | 'hybrid';
+
 // Base Event interface - snake_case to match API response
 export interface Event {
   id: string;
@@ -15,6 +18,8 @@ export interface Event {
   category: string;
   featured: boolean;
   status: EventStatus;
+  event_type: EventType;
+  location: string;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +40,8 @@ export interface CreateEventDto {
   category: string;
   featured?: boolean;
   status?: EventStatus;
+  event_type: EventType;
+  location: string;
 }
 
 // DTO for updating an event (all fields optional)

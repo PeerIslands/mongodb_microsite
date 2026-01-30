@@ -6,12 +6,14 @@ Endpoints:
 - GET /events - Get all events with filters
 - GET /events/categories - Get all unique event categories
 - GET /events/{event_id} - Get a single event by ID
+- GET /events/{event_id}/calendar - Download ICS calendar file for event
 - PUT /events/{event_id} - Update an event
 - DELETE /events/{event_id} - Delete an event
 """
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi.responses import Response
 
 from app.api.v1.models.event import (
     CreateEventRequest,
@@ -128,6 +130,40 @@ async def get_event_by_id(
     """Get a single event by its unique ID."""
     try:
         return await service.get_event_by_id(event_id)
+    except EventNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+
+
+@router.get(
+    "/{event_id}/calendar",
+    summary="Download Calendar File",
+    description="Download an ICS calendar file for the event. Can be added to any calendar application.",
+    responses={
+        200: {
+            "description": "ICS calendar file",
+            "content": {"text/calendar": {}},
+        },
+        404: {"description": "Event not found"},
+    },
+)
+async def download_event_calendar(
+    event_id: str,
+    service: EventService = Depends(get_event_service),
+) -> Response:
+    """Download ICS calendar file for the event."""
+    try:
+        ics_content = await service.generate_calendar_file(event_id)
+        
+        return Response(
+            content=ics_content,
+            media_type="text/calendar",
+            headers={
+                "Content-Disposition": f'attachment; filename="event-{event_id}.ics"',
+            },
+        )
     except EventNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

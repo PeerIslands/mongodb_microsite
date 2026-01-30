@@ -238,6 +238,32 @@ async def create_indexes(db) -> None:
     # Index for source analysis
     await analytics_sessions.create_index("source")
     print("  ✅ analytics_sessions.source")
+    # EVENT REGISTRATIONS COLLECTION
+    # ==========================================================================
+    event_registrations = db["event_registrations"]
+    
+    # Unique compound index to prevent duplicate registrations (one user per event)
+    await event_registrations.create_index(
+        [("user_id", 1), ("event_id", 1)],
+        unique=True
+    )
+    print("  ✅ event_registrations.user_id+event_id (unique compound)")
+    
+    # Index for querying by user
+    await event_registrations.create_index("user_id")
+    print("  ✅ event_registrations.user_id")
+    
+    # Index for querying by event
+    await event_registrations.create_index("event_id")
+    print("  ✅ event_registrations.event_id")
+    
+    # Index for filtering by status
+    await event_registrations.create_index("status")
+    print("  ✅ event_registrations.status")
+    
+    # Index for sorting by registration date
+    await event_registrations.create_index([("registered_at", -1)])
+    print("  ✅ event_registrations.registered_at (descending)")
     
     print("✅ All indexes created successfully!")
 
@@ -271,6 +297,13 @@ async def create_collections(db) -> None:
             print(f"  ✅ Created: {collection_name}")
         else:
             print(f"  ⏭️  Exists: {collection_name}")
+    
+    # Event Registrations Collection
+    if "event_registrations" not in existing:
+        await db.create_collection("event_registrations")
+        print("  ✅ Created: event_registrations")
+    else:
+        print("  ⏭️  Exists: event_registrations")
     
     print("✅ All collections ready!")
 
