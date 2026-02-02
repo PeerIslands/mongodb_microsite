@@ -2,7 +2,7 @@
 .hero {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - 88px); /* Subtract header height */
   max-height: 920px;
   background: #020916;
   overflow: hidden;
@@ -11,6 +11,8 @@
   align-items: center;
   padding: 0 2rem;
   box-sizing: border-box;
+  margin-top: -88px; /* Pull up to compensate for main-content padding */
+  padding-top: 88px; /* Add padding back internally */
 }
 
 /* Main background image - matches Figma node 3:4 exactly */
@@ -297,15 +299,27 @@
 /* Tablet */
 @media (max-width: 1024px) {
   .hero {
-    min-height: auto;
+    min-height: 650px; /* Fixed height for tablet */
     max-height: none;
     padding: 0 1.5rem;
-    padding-bottom: 4rem;
+    padding-bottom: 3rem;
+    margin-top: -72px;
+    padding-top: 72px;
+  }
+
+  .hero-main-bg {
+    top: 72px;
+    height: calc(100% - 72px);
+  }
+
+  .hero-bg-image {
+    object-position: 60% 50%; /* Shift focus slightly on tablet */
+    transform: scale(1.05); /* Slight zoom to fill better */
   }
 
   .hero-title {
     padding-left: 0;
-    margin-top: 120px;
+    margin-top: 80px; /* Reduced */
   }
 
   .hero-description-carousel {
@@ -338,11 +352,15 @@
 
   .hero-cta-group {
     padding-left: 0;
-    margin-top: clamp(120px, 15vh, 160px);
+    margin-top: 100px; /* Fixed value to prevent overlap */
   }
 
   .hero-links-group {
     gap: 1.5rem;
+  }
+  
+  .hero-description-carousel {
+    min-height: 180px;
   }
 }
 
@@ -350,23 +368,35 @@
 @media (max-width: 768px) {
   .hero {
     padding: 0 1rem;
-    padding-bottom: 3rem;
-    min-height: 100vh;
+    padding-bottom: 2rem;
+    min-height: 600px; /* Fixed shorter height for mobile */
+    max-height: 650px; /* Cap the maximum height */
+    margin-top: -64px;
+    padding-top: 64px;
   }
 
   .hero-main-bg {
-    top: 60px;
-    height: calc(100% - 60px);
+    top: 64px;
+    height: calc(100% - 64px);
+  }
+
+  .hero-bg-image {
+    object-position: 65% 50%; /* Adjust focus for mobile */
+    transform: scale(1.1); /* Zoom to ensure full coverage */
   }
 
   .hero-title {
-    margin-top: 100px;
-    font-size: 28px;
+    margin-top: 80px; /* Adjusted for better spacing */
+    font-size: 32px; /* Increased from 28px */
+    font-weight: 200; /* Keep original light weight */
+    background: none; /* Remove gradient */
+    color: #ffffff; /* Solid white */
+    -webkit-text-fill-color: #ffffff; /* Override gradient fill */
   }
 
   .hero-description-carousel {
     padding-left: 0;
-    min-height: 240px;
+    min-height: 200px; /* Reduced for more compact layout */
   }
 
   .hero-description {
@@ -400,7 +430,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-    margin-top: clamp(160px, 20vh, 200px);
+    margin-top: 80px; /* Fixed value to prevent overlap */
   }
 
   .hero-links-group {
@@ -410,24 +440,55 @@
   }
 
   .hero .btn-primary {
-    width: 100%;
+    width: auto;
     max-width: 280px;
+    min-width: auto;
     padding: 14px 24px;
+    margin-left: 0;
   }
 
   .hero-button-wrapper-centered {
+    display: flex;
     justify-content: flex-start;
+    align-self: flex-start;
+    width: 100%;
+  }
+  
+  .hero-description-carousel {
+    min-height: 220px; /* Ensure content doesn't overlap */
   }
 }
 
 /* Small mobile */
 @media (max-width: 480px) {
+  .hero {
+    margin-top: -64px;
+    padding-top: 64px;
+    min-height: 550px; /* Even shorter for small phones */
+    max-height: 600px;
+  }
+
+  .hero-main-bg {
+    top: 64px;
+    height: calc(100% - 64px);
+  }
+
+  .hero-bg-image {
+    object-position: 70% 50%; /* Focus on key part of image */
+    transform: scale(1.1); /* Zoom to fill small screens */
+  }
+
   .hero-title {
-    font-size: 24px;
+    font-size: 28px; /* Increased from 24px */
+    margin-top: 60px;
+    font-weight: 200; /* Keep original light weight */
+    background: none; /* Remove gradient */
+    color: #ffffff; /* Solid white */
+    -webkit-text-fill-color: #ffffff; /* Override gradient fill */
   }
 
   .hero-description-carousel {
-    min-height: 280px;
+    min-height: 220px; /* Reduced for small phones */
   }
 
   .hero-description-subtitle {
@@ -448,5 +509,25 @@
 
   .hero-description-bullets li {
     font-size: 14px;
+  }
+  
+  .hero-cta-group {
+    margin-top: 70px; /* Fixed value to prevent overlap */
+  }
+  
+  .hero-description-carousel {
+    min-height: 240px; /* Ensure enough space */
+  }
+  
+  .hero .btn-primary {
+    min-width: auto;
+    margin-left: 0;
+  }
+  
+  .hero-button-wrapper-centered {
+    display: flex;
+    justify-content: flex-start;
+    align-self: flex-start;
+    width: 100%;
   }
 }

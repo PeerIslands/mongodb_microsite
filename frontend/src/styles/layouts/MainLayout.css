@@ -10,3 +10,31 @@
   width: 100%;
 }
 
+/* Desktop - No padding needed, Hero handles it */
+@media (min-width: 1025px) {
+  .main-content {
+    padding-top: 0;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .main-content {
+    padding-top: 0; /* Hero handles its own spacing */
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 0; /* Hero handles its own spacing */
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .main-content {
+    padding-top: 0; /* Hero handles its own spacing */
+  }
+}
+

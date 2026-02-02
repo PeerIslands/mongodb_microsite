@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import '@/styles/features/about/AboutValuePropositions.css';
 
 interface ValueProposition {
@@ -69,21 +70,52 @@ const valuePropositions: ValueProposition[] = [
 ];
 
 /**
- * About Value Propositions Section - Glass morphism cards
+ * About Value Propositions Section - Glass morphism cards with mobile carousel
  */
 const AboutValuePropositions = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-rotate carousel every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % valuePropositions.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+
   return (
     <section className="about-values">
       <div className="about-values__container">
         <div className="about-values__grid">
           {valuePropositions.map((prop, index) => (
-            <div key={index} className="about-values__card">
+            <div 
+              key={index} 
+              className={`about-values__card ${index === currentSlide ? 'active' : ''}`}
+              data-index={index}
+            >
               <div className="about-values__card-icon">
                 {prop.icon}
               </div>
               <h3 className="about-values__card-title">{prop.title}</h3>
               <p className="about-values__card-description">{prop.description}</p>
             </div>
+          ))}
+        </div>
+        
+        {/* Carousel dots - only visible on mobile */}
+        <div className="about-values__carousel-dots">
+          {valuePropositions.map((_, index) => (
+            <button
+              key={index}
+              className={`about-values__dot ${index === currentSlide ? 'active' : ''}`}
+              onClick={() => goToSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            />
           ))}
         </div>
       </div>

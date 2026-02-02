@@ -1,8 +1,11 @@
 /* Offerings Page */
 .offerings-page {
+  width: 100%;
   background: #020916;
   min-height: 100vh;
   color: #ffffff;
+  position: relative;
+  overflow-x: hidden;
 }
 
 /* Hero Section */
@@ -102,11 +105,11 @@
 /* Offering Card */
 .offering-card {
   background: #0f172a;
-  border: 1px solid rgba(91, 108, 255, 0.08); /* Reduced opacity from 0.2 to 0.08 */
+  border: 1px solid rgba(91, 108, 255, 0.08);
   border-radius: 24px;
   overflow: hidden;
   transition: all 0.3s ease;
-  position: sticky;
+  position: relative; /* Default to relative */
   margin-bottom: 2rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
@@ -116,41 +119,47 @@
   box-shadow: 0 8px 32px rgba(91, 108, 255, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-/* Stacking effect - each card sticks at a slightly lower position and higher z-index */
-.offering-card:nth-child(1) {
-  top: 60px; /* Reduced from 80px */
-  z-index: 1;
-  scroll-margin-top: 60px;
+/* Stacking effect - ONLY when ALL cards are expanded */
+/* Card 2 stacks OVER Card 1, Card 3 OVER Card 2, etc. */
+/* Each card leaves previous card's header visible (70px gap for header visibility) */
+.offerings-cards-container.all-expanded .offering-card.expanded {
+  position: sticky;
 }
 
-.offering-card:nth-child(2) {
-  top: 75px; /* Reduced from 100px */
-  z-index: 2;
-  scroll-margin-top: 75px;
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(1) {
+  top: 80px;
+  z-index: 1; /* Lowest z-index - at bottom */
+  scroll-margin-top: 80px;
 }
 
-.offering-card:nth-child(3) {
-  top: 90px; /* Reduced from 120px */
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(2) {
+  top: 150px; /* 80px + 70px gap */
+  z-index: 2; /* Card 2 OVER Card 1 */
+  scroll-margin-top: 150px;
+}
+
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(3) {
+  top: 220px; /* 150px + 70px gap */
   z-index: 3;
-  scroll-margin-top: 90px;
+  scroll-margin-top: 220px;
 }
 
-.offering-card:nth-child(4) {
-  top: 105px; /* Reduced from 140px */
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(4) {
+  top: 290px; /* 220px + 70px gap */
   z-index: 4;
-  scroll-margin-top: 105px;
+  scroll-margin-top: 290px;
 }
 
-.offering-card:nth-child(5) {
-  top: 120px; /* Reduced from 160px */
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(5) {
+  top: 360px; /* 290px + 70px gap */
   z-index: 5;
-  scroll-margin-top: 120px;
+  scroll-margin-top: 360px;
 }
 
-.offering-card:nth-child(6) {
-  top: 135px; /* Reduced from 180px */
-  z-index: 6;
-  scroll-margin-top: 135px;
+.offerings-cards-container.all-expanded .offering-card.expanded:nth-child(6) {
+  top: 430px; /* 360px + 70px gap */
+  z-index: 6; /* Highest z-index - on top */
+  scroll-margin-top: 430px;
 }
 
 /* Card Header */
@@ -159,6 +168,13 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  user-select: none;
+}
+
+.offering-card-header:hover {
+  background: rgba(91, 108, 255, 0.05);
 }
 
 .offering-icon-wrapper {
@@ -184,12 +200,50 @@
   line-height: 1.3;
   margin: 0;
   color: #e5e7eb;
+  flex: 1;
+}
+
+/* Toggle Button */
+.offering-card-toggle {
+  padding: 0.5rem;
+  color: #9ca3af;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.offering-card-header:hover .offering-card-toggle {
+  color: #ffffff;
+}
+
+.toggle-arrow {
+  transition: transform 0.3s ease;
+}
+
+.offering-card.expanded .toggle-arrow {
+  transform: rotate(180deg);
 }
 
 /* Card Content */
 .offering-card-content {
   border: none;
   background: transparent;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.offering-card.expanded .offering-card-content {
+  max-height: 5000px; /* Large enough to accommodate any content */
+  transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.offering-card.collapsed .offering-card-content {
+  max-height: 0;
 }
 
 .offering-card-body {
@@ -344,26 +398,30 @@
 /* Tablet */
 @media (max-width: 1024px) {
   .offerings-hero {
-    padding: clamp(60px, 12vh, 100px) 1.5rem clamp(40px, 7vh, 70px);
+    padding: 72px 1.5rem 50px;
   }
 
   .offerings-cards-section {
     padding: clamp(20px, 4vh, 40px) 1.5rem;
-    padding-top: 25px;
-    margin-top: -2.5rem;
+    padding-top: 0;
+    margin-top: -1rem;
   }
 
   .offering-card {
     margin-bottom: 1.5rem;
   }
 
-  /* Adjust stacking for tablet */
-  .offering-card:nth-child(1) { top: 55px; z-index: 1; scroll-margin-top: 40px; }
-  .offering-card:nth-child(2) { top: 67px; z-index: 2; scroll-margin-top: 52px; }
-  .offering-card:nth-child(3) { top: 79px; z-index: 3; scroll-margin-top: 64px; }
-  .offering-card:nth-child(4) { top: 91px; z-index: 4; scroll-margin-top: 76px; }
-  .offering-card:nth-child(5) { top: 103px; z-index: 5; scroll-margin-top: 88px; }
-  .offering-card:nth-child(6) { top: 115px; z-index: 6; scroll-margin-top: 100px; }
+  /* Adjust stacking for tablet - Card 1 sticks where it is when hero scrolls past */
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(1) { 
+    top: 450px; /* Sticks lower - when hero finishes scrolling */
+    z-index: 1; 
+    scroll-margin-top: 450px;
+  }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(2) { top: 520px; z-index: 2; scroll-margin-top: 520px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(3) { top: 590px; z-index: 3; scroll-margin-top: 590px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(4) { top: 660px; z-index: 4; scroll-margin-top: 660px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(5) { top: 730px; z-index: 5; scroll-margin-top: 730px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(6) { top: 800px; z-index: 6; scroll-margin-top: 800px; }
 
   .offering-card-body {
     gap: 1.5rem;
@@ -392,13 +450,13 @@
 /* Mobile */
 @media (max-width: 768px) {
   .offerings-hero {
-    padding: 60px 1rem 40px;
+    padding: 68px 1rem 40px;
   }
 
   .offerings-cards-section {
     padding: 20px 1rem;
-    padding-top: 20px;
-    margin-top: -2rem;
+    padding-top: 0;
+    margin-top: -0.5rem;
   }
 
   .offerings-cards-container {
@@ -409,13 +467,17 @@
     margin-bottom: 1rem;
   }
 
-  /* Adjust stacking for mobile */
-  .offering-card:nth-child(1) { top: 50px; z-index: 1; scroll-margin-top: 35px; }
-  .offering-card:nth-child(2) { top: 60px; z-index: 2; scroll-margin-top: 45px; }
-  .offering-card:nth-child(3) { top: 70px; z-index: 3; scroll-margin-top: 55px; }
-  .offering-card:nth-child(4) { top: 80px; z-index: 4; scroll-margin-top: 65px; }
-  .offering-card:nth-child(5) { top: 90px; z-index: 5; scroll-margin-top: 75px; }
-  .offering-card:nth-child(6) { top: 100px; z-index: 6; scroll-margin-top: 85px; }
+  /* Adjust stacking for mobile - Card 1 sticks where it is when hero scrolls past */
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(1) { 
+    top: 450px; /* Sticks lower - when hero finishes scrolling */
+    z-index: 1; 
+    scroll-margin-top: 450px;
+  }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(2) { top: 520px; z-index: 2; scroll-margin-top: 520px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(3) { top: 590px; z-index: 3; scroll-margin-top: 590px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(4) { top: 660px; z-index: 4; scroll-margin-top: 660px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(5) { top: 730px; z-index: 5; scroll-margin-top: 730px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(6) { top: 800px; z-index: 6; scroll-margin-top: 800px; }
 
   .offering-card-header {
     padding: 1rem 1.25rem;
@@ -465,26 +527,30 @@
 /* Small mobile */
 @media (max-width: 480px) {
   .offerings-hero {
-    padding: 50px 1rem 30px;
+    padding: 68px 1rem 35px;
   }
 
   .offerings-cards-section {
     padding: 15px 1rem;
-    padding-top: 15px;
-    margin-top: -1.5rem;
+    padding-top: 0;
+    margin-top: -0.5rem;
   }
 
   .offering-card {
     margin-bottom: 0.75rem;
   }
 
-  /* Smaller stacking gap for small mobile */
-  .offering-card:nth-child(1) { top: 40px; z-index: 1; scroll-margin-top: 25px; }
-  .offering-card:nth-child(2) { top: 48px; z-index: 2; scroll-margin-top: 33px; }
-  .offering-card:nth-child(3) { top: 56px; z-index: 3; scroll-margin-top: 41px; }
-  .offering-card:nth-child(4) { top: 64px; z-index: 4; scroll-margin-top: 49px; }
-  .offering-card:nth-child(5) { top: 72px; z-index: 5; scroll-margin-top: 57px; }
-  .offering-card:nth-child(6) { top: 80px; z-index: 6; scroll-margin-top: 65px; }
+  /* Stacking for small mobile - Card 1 sticks where it is when hero scrolls past */
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(1) { 
+    top: 450px; /* Sticks lower - when hero finishes scrolling */
+    z-index: 1; 
+    scroll-margin-top: 450px;
+  }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(2) { top: 520px; z-index: 2; scroll-margin-top: 520px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(3) { top: 590px; z-index: 3; scroll-margin-top: 590px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(4) { top: 660px; z-index: 4; scroll-margin-top: 660px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(5) { top: 730px; z-index: 5; scroll-margin-top: 730px; }
+  .offerings-cards-container.all-expanded .offering-card.expanded:nth-child(6) { top: 800px; z-index: 6; scroll-margin-top: 800px; }
 
   .offering-card-header {
     padding: 0.875rem 1rem;

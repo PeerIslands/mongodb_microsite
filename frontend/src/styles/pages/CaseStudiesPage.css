@@ -4,6 +4,8 @@
   min-height: 100vh;
   background: #020916;
   color: #ffffff;
+  position: relative;
+  overflow-x: hidden;
 }
 
 /* Ensure smooth scrolling */

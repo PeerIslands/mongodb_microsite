@@ -282,53 +282,27 @@
 /* Mobile */
 @media (max-width: 768px) {
   .case-studies-carousel-wrapper {
+    position: relative;
     flex-direction: column;
     gap: 1.5rem;
+    padding-bottom: 70px; /* Space for arrows below */
   }
   
-  .case-studies-carousel-arrow {
-    display: none;
-  }
-  
-  /* Show arrows below cards on mobile as a row */
-  .case-studies-carousel-wrapper::after {
-    content: '';
-    display: none;
-  }
-}
-
-/* Mobile carousel controls - show arrows in a row below cards */
-@media (max-width: 768px) {
-  .case-studies-carousel-wrapper {
-    position: relative;
-  }
-  
+  /* Show arrows below cards on mobile */
   .case-studies-carousel-arrow {
     display: flex;
-    position: static;
+    position: absolute;
     width: 44px;
     height: 44px;
-    
-  }
-  
-  .case-studies-carousel-arrow-left,
-  .case-studies-carousel-arrow-right {
-    position: absolute;
-    bottom: -60px;
-    
+    bottom: 0;
   }
   
   .case-studies-carousel-arrow-left {
-    left: calc(50% - 54px);
+    left: calc(50% - 60px);
   }
   
   .case-studies-carousel-arrow-right {
-    right: calc(50% - 54px);
-  }
-  
-  /* Add padding to section to accommodate arrows */
-  .case-studies:has(.case-studies-carousel-wrapper) {
-    padding-bottom: calc(3rem + 60px);
+    right: calc(50% - 60px);
   }
   
   /* Mobile Swiper adjustments */

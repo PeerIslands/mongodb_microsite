@@ -255,51 +255,27 @@
 /* Mobile */
 @media (max-width: 768px) {
   .events-carousel-wrapper {
+    position: relative;
     flex-direction: column;
     gap: 1.5rem;
+    padding-bottom: 70px; /* Space for arrows below */
   }
   
-  .events-carousel-arrow {
-    display: none;
-  }
-  
-  /* Show arrows below cards on mobile as a row */
-  .events-carousel-wrapper::after {
-    content: '';
-    display: none;
-  }
-}
-
-/* Mobile carousel controls - show arrows in a row below cards */
-@media (max-width: 768px) {
-  .events-carousel-wrapper {
-    position: relative;
-  }
-  
+  /* Show arrows below cards on mobile */
   .events-carousel-arrow {
     display: flex;
-    position: static;
+    position: absolute;
     width: 44px;
     height: 44px;
-  }
-  
-  .events-carousel-arrow-left,
-  .events-carousel-arrow-right {
-    position: absolute;
-    bottom: -60px;
+    bottom: 0;
   }
   
   .events-carousel-arrow-left {
-    left: calc(50% - 54px);
+    left: calc(50% - 60px);
   }
   
   .events-carousel-arrow-right {
-    right: calc(50% - 54px);
-  }
-  
-  /* Add padding to section to accommodate arrows */
-  .events:has(.events-carousel-wrapper) {
-    padding-bottom: calc(3rem + 60px);
+    right: calc(50% - 60px);
   }
   
   /* Mobile Swiper adjustments */
