@@ -280,8 +280,14 @@ const OfferingsPage = () => {
               </div>
 
               <div className="offering-card-content">
-                  <div className="offering-card-body">
-                    <div className="offering-card-text" style={{ '--offering-color': offering.color } as React.CSSProperties}>
+                  <div 
+                    className="offering-card-body"
+                    style={{ 
+                      '--offering-color': offering.color,
+                      '--offering-bg-image': `url(${offering.image})`
+                    } as React.CSSProperties}
+                  >
+                    <div className="offering-card-text">
                       <div className="offering-subtitle-block">
                         <h3 className="offering-subtitle">{offering.subtitle}</h3>
                         <p className="offering-description">{offering.description}</p>

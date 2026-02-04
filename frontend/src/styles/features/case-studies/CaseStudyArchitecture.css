@@ -399,7 +399,17 @@
   }
 
   .success-stories__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
+    justify-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* Third stat (centered on second row) */
+  .success-stories__stat:nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   .success-stories__stat-value {
@@ -427,8 +437,17 @@
   }
 
   .success-stories__stats {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+    justify-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* Third stat (centered on second row) */
+  .success-stories__stat:nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   .featured-stories__header {
