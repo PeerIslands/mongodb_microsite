@@ -14,7 +14,7 @@ from app.api.v1.endpoints import (
     events,
     analytics,
     event_registrations,
-    pdf_downloads,,
+    pdf_downloads,
     chatbot
 )
 
