@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { eventsService } from '@/api/services/events.service';
 import type { Event } from '@/types/models/event';
 import type { EventCardData } from '@/features/events/EventCard';
+import { withCache } from '@/utils/requestCache';
 
 interface UseEventsOptions {
   /** Filter by category */
@@ -16,6 +17,8 @@ interface UseEventsOptions {
 
 interface UseEventsReturn {
   events: EventCardData[];
+  registeredEventIds: Set<string>;
+  registrationIdByEventId: Map<string, string>;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -62,6 +65,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   } = options;
 
   const [events, setEvents] = useState<EventCardData[]>([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+  const [registrationIdByEventId, setRegistrationIdByEventId] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,12 +75,36 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setIsLoading(true);
       setError(null);
 
-      // Fetch from API
-      const apiData = await eventsService.getAll({ 
-        category, 
-        status: featured ? 'published' : undefined,
-        featured 
-      });
+      // Check if user is logged in
+      const isLoggedIn = !!localStorage.getItem('authToken');
+
+      // Create cache key based on filter params
+      const eventsCacheKey = `events-${category || 'all'}-${featured ? 'published-true' : 'all'}-${limit || 'all'}`;
+      const registrationsCacheKey = 'user-registrations';
+
+      // Fetch events and optionally user registrations in parallel with caching
+      const [apiData, registrations] = await Promise.all([
+        withCache(eventsCacheKey, () =>
+          eventsService.getAll({ 
+            category, 
+            status: featured ? 'published' : undefined,
+            featured 
+          })
+        ),
+        // Only fetch registrations if logged in
+        isLoggedIn 
+          ? withCache(registrationsCacheKey, () =>
+              eventsService.getUserRegistrations()
+            ).catch(() => [])
+          : Promise.resolve([]),
+      ]);
+
+      // Extract registered event IDs and registration ID map
+      const activeRegistrations = registrations.filter(reg => reg.status === 'REGISTERED');
+      const registeredIds = new Set(activeRegistrations.map(reg => reg.event_id));
+      const regIdMap = new Map(activeRegistrations.map(reg => [reg.event_id, reg.id]));
+      setRegisteredEventIds(registeredIds);
+      setRegistrationIdByEventId(regIdMap);
 
       // Transform to card data format
       const transformedData = apiData.map(transformToEventCardData);
@@ -101,6 +130,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   return {
     events,
+    registeredEventIds,
+    registrationIdByEventId,
     isLoading,
     error,
     refetch: fetchEvents,

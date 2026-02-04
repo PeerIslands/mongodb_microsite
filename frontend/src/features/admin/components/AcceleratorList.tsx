@@ -6,11 +6,11 @@ import type { AcceleratorDetail, AcceleratorStatus } from '@/types/models/accele
 interface AcceleratorListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
+const AcceleratorList = ({ onAddNew, onEdit, onLoadComplete }: AcceleratorListProps) => {
   const [accelerators, setAccelerators] = useState<AcceleratorDetail[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Ref to prevent duplicate API calls in React Strict Mode
@@ -25,7 +25,6 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
 
   const fetchAccelerators = async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await acceleratorsService.getAll();
       setAccelerators(data);
@@ -33,7 +32,7 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
       console.error('Failed to fetch accelerators:', err);
       setError('Failed to load accelerators. Please try again.');
     } finally {
-      setLoading(false);
+      onLoadComplete?.();
     }
   };
 
@@ -62,14 +61,6 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
     }
   };
 
-
-  if (loading) {
-    return (
-      <div className="accelerator-list">
-        <div className="loading-state">Loading accelerators...</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

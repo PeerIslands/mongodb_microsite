@@ -20,9 +20,16 @@
 
 .metric-card {
   width: 300px;
-  height: 210px;
+  min-height: 210px;
   flex-shrink: 0;
+  gap: 15px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 38px 10px 40px;
+  box-sizing: border-box;
 }
 
 /* Vertical separator*/
@@ -37,16 +44,15 @@
 }
 
 .metric-value {
-  position: absolute;
-  left: calc(50% - 0.69px);
-  top: 38.5px;
-  transform: translateX(-50%);
   font-family: 'Manrope', sans-serif;
   font-size: 36px;
   font-weight: 300;
-  line-height: normal;
+  line-height: 1.2;
   text-align: center;
-  white-space: nowrap;
+  width: 100%;
+  max-width: 280px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   margin: 0;
   background: linear-gradient(163.171deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
   -webkit-background-clip: text;
@@ -54,18 +60,7 @@
   background-clip: text;
 }
 
-/* Special positioning for "Cost Efficiency" title */
-.metric-card:last-child .metric-value {
-  top: 35.37px;
-  width: 356.186px;
-}
-
 .metric-description {
-  position: absolute;
-  left: calc(50% - 0.19px);
-  top: 162px;
-  transform: translate(-50%, -50%);
-  width: 177.125px;
   font-family: 'Inter', sans-serif;
   font-size: 20px;
   font-weight: 400;
@@ -74,6 +69,10 @@
   line-height: 24px;
   text-align: center;
   margin: 0;
+  margin-top: auto;
+  max-width: 200px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Responsive Design */
@@ -100,7 +99,7 @@
   }
   
   .metric-card {
-    height: auto;
+    min-height: auto;
     padding: 2rem 1.5rem;
     width: 100%;
     max-width: 300px;
@@ -114,19 +113,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  .metric-value {
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
-  }
-  
   .metric-description {
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
-    width: auto;
     margin-top: 1rem;
   }
 }

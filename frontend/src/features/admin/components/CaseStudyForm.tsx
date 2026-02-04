@@ -86,7 +86,6 @@ const CaseStudyForm = ({
 
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // AI Extraction states
@@ -99,7 +98,6 @@ const CaseStudyForm = ({
 
   const fetchCaseStudyData = useCallback(async (id: string) => {
     try {
-      setIsLoading(true);
       setErrorMessage(null);
       const data = await caseStudiesService.getById(id);
       
@@ -143,8 +141,6 @@ const CaseStudyForm = ({
     } catch (err) {
       console.error('Failed to fetch case study:', err);
       setErrorMessage('Failed to load case study data. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   }, [industryOptions]);
 
@@ -402,24 +398,6 @@ const CaseStudyForm = ({
       setIsSubmitting(false);
     }
   };
-
-  // Show loading state when fetching case study data for editing
-  if (isLoading) {
-    return (
-      <div className="case-study-form-container">
-        <div className="form-header">
-          <h2 className="form-title">Edit Case Study</h2>
-          <button className="cancel-button" onClick={onCancel}>
-            ← Back to List
-          </button>
-        </div>
-        <div className="form-loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading case study data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="case-study-form-container">

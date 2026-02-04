@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   AcceleratorTabs,
   AcceleratorHero,
+  PeerAISection,
   DemoVideoSection,
   PDFViewerSection,
   MetricsSection,
@@ -9,6 +10,7 @@ import {
 } from '@/features/accelerators/components';
 import { acceleratorsService, getFileUrl } from '@/api/services/accelerators.service';
 import type { AcceleratorDetail } from '@/types/models/accelerator';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/AcceleratorsPage.css';
 
 /**
@@ -56,25 +58,7 @@ const AcceleratorsPage = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="accelerators-page">
-        <div className="accelerators-loading">
-          <div className="accelerators-loading-spinner" />
-          <p>Loading accelerators...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // No accelerators available
-  if (!activeAccelerator) {
-    return (
-      <div className="accelerators-page">
-        <div className="accelerators-empty">
-          <p>No accelerators available at this time.</p>
-        </div>
-      </div>
-    );
+    return <LeafLoader message="Loading accelerators..." />;
   }
 
   return (
@@ -86,50 +70,67 @@ const AcceleratorsPage = () => {
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <AcceleratorTabs
-        accelerators={accelerators}
-        activeAcceleratorId={activeAccelerator.id}
-        onTabChange={handleAcceleratorChange}
-      />
+      {/* PeerAI Platform Section - Always show */}
+      <PeerAISection />
 
-      {/* Hero Section */}
-      <AcceleratorHero
-        title={activeAccelerator.title}
-        subtitle={activeAccelerator.subtitle}
-        description={activeAccelerator.description}
-      />
-
-      {/* Video Section - Show if video_url exists */}
-      {activeAccelerator.video_url && (
-        <DemoVideoSection
-          videoUrl={getFileUrl(activeAccelerator.video_url)}
-          thumbnailUrl={getFileUrl(activeAccelerator.thumbnail_url)}
-          title={activeAccelerator.title}
-          isPlaying={isVideoPlaying}
-          onPlayToggle={handleVideoPlayToggle}
-        />
+      {/* No accelerators available */}
+      {!activeAccelerator && (
+        <div className="accelerators-empty">
+          <p>No accelerators available at this time.</p>
+        </div>
       )}
 
-      {/* PDF Viewer Section - Show if no video but pdf_url exists */}
-      {!activeAccelerator.video_url && activeAccelerator.pdf_url && (
-        <PDFViewerSection
-          pdfUrl={getFileUrl(activeAccelerator.pdf_url)}
-          title={activeAccelerator.title}
-        />
-      )}
+      {/* Accelerator Content - Only show when accelerator is available */}
+      {activeAccelerator && (
+        <>
+          {/* Tab Navigation */}
+          <AcceleratorTabs
+            accelerators={accelerators}
+            activeAcceleratorId={activeAccelerator.id}
+            onTabChange={handleAcceleratorChange}
+          />
 
-      {/* Metrics Section */}
-      {activeAccelerator.metrics && activeAccelerator.metrics.length > 0 && (
-        <MetricsSection metrics={activeAccelerator.metrics} />
-      )}
+          {/* Hero Section */}
+          <AcceleratorHero
+            title={activeAccelerator.title}
+            subtitle={activeAccelerator.subtitle}
+            description={activeAccelerator.description}
+          />
 
-      {/* Download Section */}
-      {activeAccelerator.pdf_url && (
-        <DownloadSection
-          title={activeAccelerator.title}
-          pdfUrl={getFileUrl(activeAccelerator.pdf_url, true)}
-        />
+          {/* Video Section - Show if video_url exists */}
+          {activeAccelerator.video_url && (
+            <DemoVideoSection
+              videoUrl={getFileUrl(activeAccelerator.video_url)}
+              thumbnailUrl={getFileUrl(activeAccelerator.thumbnail_url)}
+              title={activeAccelerator.title}
+              isPlaying={isVideoPlaying}
+              onPlayToggle={handleVideoPlayToggle}
+            />
+          )}
+
+          {/* PDF Viewer Section - Show if no video but pdf_url exists */}
+          {!activeAccelerator.video_url && activeAccelerator.pdf_url && (
+            <PDFViewerSection
+              pdfUrl={getFileUrl(activeAccelerator.pdf_url)}
+              title={activeAccelerator.title}
+              acceleratorId={activeAccelerator.id}
+            />
+          )}
+
+          {/* Metrics Section */}
+          {activeAccelerator.metrics && activeAccelerator.metrics.length > 0 && (
+            <MetricsSection metrics={activeAccelerator.metrics} />
+          )}
+
+          {/* Download Section */}
+          {activeAccelerator.pdf_url && (
+            <DownloadSection
+              title={activeAccelerator.title}
+              pdfUrl={getFileUrl(activeAccelerator.pdf_url, true)}
+              acceleratorId={activeAccelerator.id}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -355,6 +355,10 @@ async def update_template(
     # Prepare update dict (exclude None values)
     update_dict = update_data.model_dump(exclude_unset=True, exclude_none=True)
     
+    # Exclude html_content and images from update (only update metadata)
+    update_dict.pop('html_content', None)
+    update_dict.pop('images', None)
+    
     # If name is updated, regenerate slug
     if 'name' in update_dict:
         new_slug = slugify(update_dict['name'])
@@ -367,16 +371,9 @@ async def update_template(
             )
         update_dict['slug'] = new_slug
     
-    # If HTML content is updated, re-extract images
-    if 'html_content' in update_dict and 'images' not in update_dict:
-        images = extract_images_from_html(update_dict['html_content'])
-        update_dict['images'] = images
-    
-    # Convert Pydantic models to dicts
-    if 'variables' in update_dict:
+    # Convert Pydantic models to dicts (only if present and not None)
+    if 'variables' in update_dict and update_data.variables is not None:
         update_dict['variables'] = [v.model_dump() for v in update_data.variables]
-    if 'images' in update_dict:
-        update_dict['images'] = [img.model_dump() for img in update_data.images]
     
     # Update in database
     success = await repo.update_template(template_id, update_dict)

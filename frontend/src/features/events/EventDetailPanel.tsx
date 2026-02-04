@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useState } from 'react';
+import axios from 'axios';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { eventsService } from '@/api/services/events.service';
 import type { EventCardData } from './EventCard';
 import RegistrationConfirmModal from '@/features/events/RegistrationConfirmModal';
 import '@/styles/features/events/EventDetailPanel.css';
@@ -9,6 +11,10 @@ interface EventDetailPanelProps {
   event: EventCardData | null;
   isOpen: boolean;
   onClose: () => void;
+  isRegistered?: boolean;
+  registrationId?: string;
+  onRegistrationSuccess?: () => void;
+  onCancelSuccess?: () => void;
 }
 
 /**
@@ -34,10 +40,15 @@ const formatDate = (dateString?: string): string => {
  * EventDetailPanel - Slide-in panel from right displaying event details
  * Shows all event information with markdown support
  */
-const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => {
+const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, registrationId, onRegistrationSuccess, onCancelSuccess }: EventDetailPanelProps) => {
   const { openLoginModal } = useAuthModal();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessageText, setSuccessMessageText] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Check if user is logged in
   const isLoggedIn = () => {
@@ -49,11 +60,13 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
     if (e.key === 'Escape') {
       if (showConfirmModal) {
         setShowConfirmModal(false);
+      } else if (showCancelModal) {
+        setShowCancelModal(false);
       } else {
         onClose();
       }
     }
-  }, [onClose, showConfirmModal]);
+  }, [onClose, showConfirmModal, showCancelModal]);
 
   // Handle click outside panel
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -91,20 +104,104 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
   };
 
   // Handle registration confirmation
-  const handleConfirmRegistration = () => {
-    setShowConfirmModal(false);
-    setShowSuccessMessage(true);
+  const handleConfirmRegistration = async () => {
+    if (!event?.id) return;
 
-    // Hide success message and close panel after 3 seconds
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-      onClose();
-    }, 3000);
+    setIsRegistering(true);
+    setErrorMessage(null);
+
+    try {
+      await eventsService.registerForEvent(event.id);
+      setShowConfirmModal(false);
+      setSuccessMessageText('You have been registered for this event.');
+      setShowSuccessMessage(true);
+
+      // Refetch events to update registration status
+      onRegistrationSuccess?.();
+
+      // Hide success message and close panel after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        onClose();
+      }, 3000);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const status = error.response.status;
+        
+        if (status === 401 || status === 403) {
+          // Close modal and prompt login
+          setShowConfirmModal(false);
+          openLoginModal(showRegistrationModal);
+        } else if (status === 409) {
+          // Already registered
+          setErrorMessage('You are already registered for this event.');
+        } else {
+          setErrorMessage('Failed to register. Please try again.');
+        }
+      } else {
+        setErrorMessage('Failed to register. Please try again.');
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  // Handle cancel registration button click
+  const handleCancelRegistrationClick = () => {
+    setShowCancelModal(true);
+  };
+
+  // Handle cancel registration confirmation
+  const handleConfirmCancellation = async () => {
+    if (!registrationId) return;
+
+    setIsCancelling(true);
+    setErrorMessage(null);
+
+    try {
+      await eventsService.cancelRegistration(registrationId);
+      setShowCancelModal(false);
+      setSuccessMessageText('Your registration has been cancelled.');
+      setShowSuccessMessage(true);
+
+      // Refetch events to update registration status
+      onCancelSuccess?.();
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        onClose();
+      }, 3000);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const status = error.response.status;
+        
+        if (status === 401 || status === 403) {
+          setShowCancelModal(false);
+          setErrorMessage('Please log in to cancel your registration.');
+        } else if (status === 404) {
+          setErrorMessage('Registration not found.');
+        } else {
+          setErrorMessage('Failed to cancel registration. Please try again.');
+        }
+      } else {
+        setErrorMessage('Failed to cancel registration. Please try again.');
+      }
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Handle cancel modal close
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setErrorMessage(null);
   };
 
   // Handle modal close
   const handleCloseModal = () => {
     setShowConfirmModal(false);
+    setErrorMessage(null);
   };
 
   if (!event) return null;
@@ -156,9 +253,11 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
                   strokeLinejoin="round"
                 />
               </svg>
-              <h3 className="event-detail-panel__success-title">Registered Successfully!</h3>
+              <h3 className="event-detail-panel__success-title">
+                {successMessageText.includes('cancelled') ? 'Cancelled Successfully!' : 'Registered Successfully!'}
+              </h3>
               <p className="event-detail-panel__success-text">
-                You have been registered for this event.
+                {successMessageText}
               </p>
             </div>
           </div>
@@ -257,28 +356,37 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
           )}
         </div>
 
-        {/* Footer with Register Button */}
+        {/* Footer with Register Button or Cancel Registration Button */}
         <footer className="event-detail-panel__footer">
-          <button 
-            className="event-detail-panel__register-btn"
-            onClick={handleRegisterClick}
-          >
-            Register Now
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 16 16" 
-              fill="none"
+          {isRegistered ? (
+            <button 
+              className="event-detail-panel__cancel-btn"
+              onClick={handleCancelRegistrationClick}
             >
-              <path 
-                d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-                stroke="currentColor" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+              Cancel Registration
+            </button>
+          ) : (
+            <button 
+              className="event-detail-panel__register-btn"
+              onClick={handleRegisterClick}
+            >
+              Register Now
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 16 16" 
+                fill="none"
+              >
+                <path 
+                  d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
+                  stroke="currentColor" 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
         </footer>
       </aside>
 
@@ -291,7 +399,43 @@ const EventDetailPanel = ({ event, isOpen, onClose }: EventDetailPanelProps) => 
         eventDate={formattedDate}
         eventTime={event.time}
         eventTimezone={event.timezone}
+        isLoading={isRegistering}
       />
+
+      {/* Cancel Registration Confirmation Modal */}
+      <RegistrationConfirmModal
+        isOpen={showCancelModal}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancellation}
+        eventTitle={event.title}
+        eventDate={formattedDate}
+        eventTime={event.time}
+        eventTimezone={event.timezone}
+        isLoading={isCancelling}
+        variant="cancel"
+      />
+
+      {/* Error Message Toast */}
+      {errorMessage && (
+        <div className="event-detail-panel__error-toast">
+          <span>{errorMessage}</span>
+          <button 
+            className="event-detail-panel__error-close"
+            onClick={() => setErrorMessage(null)}
+            aria-label="Close error message"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path 
+                d="M12 4L4 12M4 4L12 12" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
     </>
   );
 };

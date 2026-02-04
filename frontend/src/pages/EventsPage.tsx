@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { EventGrid, EventDetailPanel, type EventCardData } from '@/features/events';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/EventsPage.css';
 
 /**
@@ -10,7 +11,7 @@ import '@/styles/pages/EventsPage.css';
  */
 const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { events: allEvents, isLoading, error } = useEvents({
+  const { events: allEvents, registeredEventIds, registrationIdByEventId, isLoading, error, refetch } = useEvents({
     autoFetch: true,
   });
 
@@ -171,12 +172,7 @@ const EventsPage = () => {
             </button>
           </div>
           {/* Loading State */}
-          {isLoading && (
-            <div className="events-loading">
-              <div className="events-loading__spinner" />
-              <p>Loading events...</p>
-            </div>
-          )}
+          {isLoading && <LeafLoader message="Loading events..." />}
 
           {/* Error State */}
           {error && (
@@ -200,6 +196,7 @@ const EventsPage = () => {
                   <EventGrid 
                     events={displayedEvents} 
                     onEventClick={handleEventClick}
+                    registeredEventIds={registeredEventIds}
                   />
                   
                   {/* View More/Less Button */}
@@ -229,6 +226,10 @@ const EventsPage = () => {
         event={selectedEvent}
         isOpen={isDetailPanelOpen}
         onClose={handleCloseDetailPanel}
+        isRegistered={selectedEvent ? registeredEventIds.has(selectedEvent.id) : false}
+        registrationId={selectedEvent ? registrationIdByEventId.get(selectedEvent.id) : undefined}
+        onRegistrationSuccess={refetch}
+        onCancelSuccess={refetch}
       />
     </div>
   );

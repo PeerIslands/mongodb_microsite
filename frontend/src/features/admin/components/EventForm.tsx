@@ -4,6 +4,28 @@ import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
+import type { EventStatus, EventType } from '@/types/models/event';
+
+// Event type options
+const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
+  { value: 'online', label: 'Online' },
+  { value: 'in-person', label: 'In Person' },
+  { value: 'hybrid', label: 'Hybrid' },
+];
+
+// Get location placeholder based on event type
+const getLocationPlaceholder = (eventType: EventType): string => {
+  switch (eventType) {
+    case 'online':
+      return 'Enter meeting link (e.g., https://zoom.us/j/...)';
+    case 'in-person':
+      return 'Enter physical address';
+    case 'hybrid':
+      return 'Enter meeting link and/or physical address';
+    default:
+      return 'Enter location';
+  }
+};
 
 // Default category options
 const DEFAULT_CATEGORIES = [
@@ -37,7 +59,9 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     attendeeValue: '',
     category: '',
     featured: false,
-    status: 'draft' as 'published' | 'draft',
+    status: 'draft' as 'published' | 'draft' | 'archived',
+    eventType: 'online' as EventType,
+    location: '',
   });
 
   // Date and time picker states
@@ -51,8 +75,15 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Check if selected date is in the past
+  const isDateInPast = useMemo(() => {
+    if (!selectedDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate < today;
+  }, [selectedDate]);
 
   // Combined categories (default + existing from API)
   const allCategories = useMemo(() => {
@@ -75,7 +106,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
   const fetchEventData = useCallback(async (id: string) => {
     try {
-      setIsLoading(true);
       setErrorMessage(null);
       const data = await eventsService.getById(id);
 
@@ -107,6 +137,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         category: data.category || '',
         featured: data.featured || false,
         status: data.status || 'draft',
+        eventType: data.event_type || 'online',
+        location: data.location || '',
       });
 
       // Check if category is custom
@@ -118,8 +150,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     } catch (err) {
       console.error('Failed to fetch event:', err);
       setErrorMessage('Failed to load event data. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   }, [allCategories]);
 
@@ -199,6 +229,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setErrorMessage('Please select a date.');
       return;
     }
+    if (isDateInPast) {
+      setErrorMessage('Please select a future date. Past dates are not allowed.');
+      return;
+    }
     if (!formData.time) {
       setErrorMessage('Please select a time.');
       return;
@@ -223,6 +257,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setErrorMessage('Please select or enter a category.');
       return;
     }
+    if (!formData.location.trim()) {
+      setErrorMessage('Please enter a location.');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -239,6 +277,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         category: formData.category,
         featured: formData.featured,
         status: formData.status,
+        event_type: formData.eventType,
+        location: formData.location,
       };
 
       if (editingId) {
@@ -257,24 +297,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setIsSubmitting(false);
     }
   };
-
-  // Show loading state when fetching event data for editing
-  if (isLoading) {
-    return (
-      <div className="event-form-container">
-        <div className="form-header">
-          <h2 className="form-title">Edit Event</h2>
-          <button className="cancel-button" onClick={onCancel}>
-            ← Back to List
-          </button>
-        </div>
-        <div className="form-loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading event data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="event-form-container">
@@ -366,10 +388,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
               <label>Status</label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value as 'published' | 'draft')}
+                onChange={(e) => handleInputChange('status', e.target.value as EventStatus)}
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -395,6 +418,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                 calendarClassName="event-date-calendar"
                 showPopperArrow={false}
               />
+              {isDateInPast && (
+                <span className="field-warning">
+                  This date is in the past. Please select a future date.
+                </span>
+              )}
             </div>
 
             <div className="form-field">
@@ -433,6 +461,32 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                 value={formData.timezone}
                 onChange={(e) => handleInputChange('timezone', e.target.value)}
                 placeholder="e.g., America/New_York, PST, UTC+5:30"
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Event Type *</label>
+              <select
+                value={formData.eventType}
+                onChange={(e) => handleInputChange('eventType', e.target.value as EventType)}
+                required
+              >
+                {EVENT_TYPE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-field full-width">
+              <label>Location *</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                placeholder={getLocationPlaceholder(formData.eventType)}
+                required
               />
             </div>
           </div>

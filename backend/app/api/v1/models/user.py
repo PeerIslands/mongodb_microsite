@@ -310,6 +310,7 @@ class VerifyLoginTOTPResponse(BaseModel):
     success: bool = Field(default=True)
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field(default="bearer", description="Token type")
+    user_id: str = Field(..., description="User's unique identifier")
     user_email: str = Field(..., description="User's email address")
     is_internal: bool = Field(..., description="Whether user is internal")
     is_admin: bool = Field(..., description="Whether user is admin")

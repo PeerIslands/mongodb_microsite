@@ -3,6 +3,8 @@ Event Service - Business logic layer for event operations.
 Handles validation, data transformation, and orchestrates repository calls.
 """
 
+import uuid
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from app.api.v1.models.event import (
@@ -51,6 +53,8 @@ class EventService:
             category=doc.get("category", ""),
             featured=doc.get("featured", False),
             status=doc.get("status", "draft"),
+            event_type=doc.get("event_type", "online"),
+            location=doc.get("location", ""),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
         )
@@ -70,6 +74,8 @@ class EventService:
             category=doc.get("category", ""),
             featured=doc.get("featured", False),
             status=doc.get("status", "draft"),
+            event_type=doc.get("event_type", "online"),
+            location=doc.get("location", ""),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
         )
@@ -116,7 +122,7 @@ class EventService:
         
         Args:
             category: Filter by category
-            status: Filter by status ('published' or 'draft')
+            status: Filter by status ('draft', 'published', or 'archived')
             featured: Filter by featured status
             
         Returns:
@@ -228,3 +234,100 @@ class EventService:
             List of category names
         """
         return await self._repository.get_categories()
+
+    async def generate_calendar_file(self, event_id: str) -> str:
+        """
+        Generate an ICS calendar file for the event.
+        
+        Args:
+            event_id: The event ID
+            
+        Returns:
+            ICS file content as string
+            
+        Raises:
+            EventNotFoundError: If event not found
+        """
+        doc = await self._repository.get_by_id(event_id)
+        
+        if not doc:
+            raise EventNotFoundError(event_id)
+        
+        return self._generate_ics_content(doc)
+
+    def _generate_ics_content(self, event_data: dict) -> str:
+        """
+        Generate ICS calendar content for an event.
+        
+        Args:
+            event_data: Dictionary containing event details
+            
+        Returns:
+            ICS file content as string with CRLF line endings
+        """
+        # Parse date and time
+        event_date = event_data.get('date', '')
+        event_time = event_data.get('time', '00:00')
+        timezone = event_data.get('timezone', 'UTC')
+        duration_minutes = event_data.get('duration_minutes', 60)
+        
+        # Create datetime string for ICS (format: YYYYMMDDTHHMMSS)
+        try:
+            dt = datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
+            start_dt = dt.strftime("%Y%m%dT%H%M%S")
+            end_dt = (dt + timedelta(minutes=duration_minutes)).strftime("%Y%m%dT%H%M%S")
+        except ValueError:
+            # Fallback if parsing fails
+            start_dt = datetime.now().strftime("%Y%m%dT%H%M%S")
+            end_dt = (datetime.now() + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+        
+        # Generate unique ID for the event
+        uid = str(uuid.uuid4())
+        
+        # Determine location
+        event_type = event_data.get('event_type', 'online')
+        location = event_data.get('location', '')
+        
+        if not location:
+            location = "Online Event" if event_type == 'online' else "TBD"
+        
+        # Escape special characters for ICS
+        def escape_ics(text: str) -> str:
+            if not text:
+                return ""
+            return text.replace("\\", "\\\\").replace(",", "\\,").replace(";", "\\;").replace("\n", "\\n")
+        
+        title = escape_ics(event_data.get('title', 'Event'))
+        description = escape_ics(event_data.get('description', ''))
+        location_escaped = escape_ics(location)
+        
+        # Add meeting link to description if online
+        if event_type in ('online', 'hybrid') and location:
+            description = f"Join the meeting: {escape_ics(location)}"
+        
+        # Current timestamp for DTSTAMP
+        now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        
+        # Build ICS content with CRLF line endings (RFC 5545 requirement)
+        ics_lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Peerislands//Event Registration//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now}",
+            f"DTSTART;TZID={timezone}:{start_dt}",
+            f"DTEND;TZID={timezone}:{end_dt}",
+            f"SUMMARY:{title}",
+            f"DESCRIPTION:{description}",
+            f"LOCATION:{location_escaped}",
+            "STATUS:CONFIRMED",
+            "SEQUENCE:0",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ]
+        
+        # Join with CRLF as required by RFC 5545
+        return "\r\n".join(ics_lines)

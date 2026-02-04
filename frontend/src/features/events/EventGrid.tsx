@@ -6,6 +6,7 @@ interface EventGridProps {
   events: EventCardData[];
   maxItems?: number;
   onEventClick?: (event: EventCardData) => void;
+  registeredEventIds?: Set<string>;
 }
 
 /**

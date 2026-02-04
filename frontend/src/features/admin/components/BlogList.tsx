@@ -6,11 +6,11 @@ import type { BlogCardData } from '@/features/blogs/components/BlogCard';
 interface BlogListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
+const BlogList = ({ onAddNew, onEdit, onLoadComplete }: BlogListProps) => {
   const [blogs, setBlogs] = useState<BlogCardData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Ref to prevent duplicate API calls in React Strict Mode
@@ -25,7 +25,6 @@ const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
 
   const fetchBlogs = async () => {
     try {
-      setLoading(true);
       setError(null);
       
       // Fetch from API
@@ -35,7 +34,7 @@ const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
       console.error('Failed to fetch blogs:', err);
       setError('Failed to load blogs. Please try again.');
     } finally {
-      setLoading(false);
+      onLoadComplete?.();
     }
   };
 
@@ -54,14 +53,6 @@ const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <div className="blog-list">
-        <div className="loading-state">Loading blogs...</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

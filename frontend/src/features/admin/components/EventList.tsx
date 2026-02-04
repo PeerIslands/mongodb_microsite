@@ -1,19 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import '@/styles/features/admin/EventList.css';
 import { eventsService, Event } from '@/api/services/events.service';
+
+interface RegistrationCount {
+  [eventId: string]: number;
+}
 
 interface EventListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const EventList = ({ onAddNew, onEdit }: EventListProps) => {
+const EventList = ({ onAddNew, onEdit, onLoadComplete }: EventListProps) => {
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [registrationCounts, setRegistrationCounts] = useState<RegistrationCount>({});
+  const [downloadingEventId, setDownloadingEventId] = useState<string | null>(null);
 
   // Ref to prevent duplicate API calls in React Strict Mode
   const hasFetchedRef = useRef(false);
+
+  // Fetch registration counts for all events
+  const fetchRegistrationCounts = useCallback(async (eventsList: Event[]) => {
+    const counts: RegistrationCount = {};
+    await Promise.all(
+      eventsList.map(async (event) => {
+        try {
+          const result = await eventsService.getRegistrationCount(event.id, 'REGISTERED');
+          counts[event.id] = result.count;
+        } catch {
+          counts[event.id] = 0;
+        }
+      })
+    );
+    setRegistrationCounts(counts);
+  }, []);
 
   // Fetch events on component mount
   useEffect(() => {
@@ -24,15 +46,28 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
 
   const fetchEvents = async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await eventsService.getAll();
       setEvents(data);
+      // Fetch registration counts after events are loaded
+      fetchRegistrationCounts(data);
     } catch (err) {
       console.error('Failed to fetch events:', err);
       setError('Failed to load events. Please try again.');
     } finally {
-      setLoading(false);
+      onLoadComplete?.();
+    }
+  };
+
+  const handleDownloadRegistrations = async (eventId: string, eventTitle: string) => {
+    try {
+      setDownloadingEventId(eventId);
+      await eventsService.downloadRegistrationsExcel(eventId, eventTitle);
+    } catch (err) {
+      console.error('Failed to download registrations:', err);
+      alert('Failed to download registrations. Please try again.');
+    } finally {
+      setDownloadingEventId(null);
     }
   };
 
@@ -49,6 +84,16 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
     }
   };
 
+  const handleToggleArchive = async (id: string) => {
+    try {
+      await eventsService.update(id, { status: 'archived' });
+      // Refresh the list after update
+      fetchEvents();
+    } catch (err) {
+      console.error('Failed to toggle archive status:', err);
+      alert('Failed to update status. Please try again.');
+    }
+  };
   const handleTogglePublish = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
@@ -90,14 +135,6 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
       return timeStr;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="event-list">
-        <div className="loading-state">Loading events. Please wait.</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -156,6 +193,13 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
             <div className="stat-label">Drafts</div>
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-icon">📦</div>
+          <div className="stat-content">
+            <div className="stat-value">{events.filter(e => e.status === 'archived').length}</div>
+            <div className="stat-label">Archived</div>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -169,13 +213,14 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
               <th>Duration</th>
               <th>Timezone</th>
               <th>Status</th>
+              <th>Registrations</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {events.length === 0 ? (
               <tr>
-                <td colSpan={7} className="empty-state">
+                <td colSpan={8} className="empty-state">
                   No events found. Click "Add New Event" to create one.
                 </td>
               </tr>
@@ -205,11 +250,34 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                   </td>
                   <td>
                     <button
-                      className={`status-badge ${event.status === 'published' ? 'published' : 'draft'}`}
+                      className={`status-badge ${event.status}`}
                       onClick={() => handleTogglePublish(event.id, event.status)}
                     >
-                      {event.status === 'published' ? 'Published' : 'Draft'}
+                      {event.status === 'published' ? 'Published' : event.status === 'archived' ? 'Archived' : 'Draft'}
                     </button>
+                  </td>
+                  <td>
+                    <div className="registrations-cell">
+                      <span className="registration-count">
+                        {registrationCounts[event.id] ?? 0}
+                      </span>
+                      <button
+                        className="download-button"
+                        onClick={() => handleDownloadRegistrations(event.id, event.title)}
+                        disabled={downloadingEventId === event.id}
+                        title={
+                          (registrationCounts[event.id] ?? 0) === 0
+                            ? 'No registrations to download'
+                            : 'Download registrations as Excel'
+                        }
+                      >
+                        {downloadingEventId === event.id ? (
+                          <span className="download-spinner">⏳</span>
+                        ) : (
+                          <span className="download-icon">⬇️</span>
+                        )}
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <div className="action-buttons">
@@ -226,6 +294,13 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                         title="Delete"
                       >
                         🗑️
+                      </button>
+                      <button
+                        className="action-button archive"
+                        onClick={() => handleToggleArchive(event.id)}
+                        title="Archive"
+                      >
+                        📦
                       </button>
                     </div>
                   </td>

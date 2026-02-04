@@ -16,21 +16,12 @@ const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const EventsPage = lazy(() => import('@/pages/EventsPage'));
 const AboutPage = lazy(() => import('@/pages/AboutPage'));
+const CalendarDownloadPage = lazy(() => import('@/pages/CalendarDownloadPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const LeafLoader = lazy(() => import('@/components/LeafLoader'));
 
 // Loading component
-const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    background: '#020916',
-    color: 'white',
-  }}>
-    <div>Loading...</div>
-  </div>
-);
+const PageLoader = () => <LeafLoader />;
 
 // Router configuration
 const router = createBrowserRouter([
@@ -119,6 +110,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AboutPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/events/:eventId/calendar',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <CalendarDownloadPage />
               </Suspense>
             ),
           },

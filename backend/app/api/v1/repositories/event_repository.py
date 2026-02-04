@@ -67,7 +67,7 @@ class EventRepository:
         
         Args:
             category: Filter by category
-            status: Filter by status ('published' or 'draft')
+            status: Filter by status ('draft', 'published', or 'archived')
             featured: Filter by featured status
             skip: Number of documents to skip
             limit: Maximum number of documents to return

@@ -5,6 +5,7 @@ import { caseStudiesService } from '@/api/services/case-studies.service';
 interface CaseStudyListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
 // Interface for API response (snake_case from backend)
@@ -25,9 +26,8 @@ interface CaseStudyApiResponse {
   description: string;
 }
 
-const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
+const CaseStudyList = ({ onAddNew, onEdit, onLoadComplete }: CaseStudyListProps) => {
   const [caseStudies, setCaseStudies] = useState<CaseStudyApiResponse[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Ref to prevent duplicate API calls in React Strict Mode
@@ -42,7 +42,6 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
 
   const fetchCaseStudies = async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await caseStudiesService.getAll();
       // API returns snake_case, cast to our interface
@@ -51,7 +50,7 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
       console.error('Failed to fetch case studies:', err);
       setError('Failed to load case studies. Please try again.');
     } finally {
-      setLoading(false);
+      onLoadComplete?.();
     }
   };
 
@@ -81,14 +80,6 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
       alert('Failed to update status. Please try again.');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="case-study-list">
-        <div className="loading-state">Loading case studies...</div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

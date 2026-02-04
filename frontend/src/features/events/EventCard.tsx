@@ -14,7 +14,7 @@ export interface EventCardData {
   duration_minutes?: number;
   attendee_value?: string;
   tags?: string[];
-  status?: 'published' | 'draft';
+  status?: 'published' | 'draft' | 'archived';
   created_at?: string;
   updated_at?: string;
 }
@@ -22,6 +22,7 @@ export interface EventCardData {
 interface EventCardProps {
   data: EventCardData;
   onCardClick?: (data: EventCardData) => void;
+  isRegistered?: boolean;
 }
 
 /**
@@ -56,9 +57,8 @@ const truncateToWords = (text: string, wordLimit: number): string => {
  * Displays category, title, description, date, and links to event URL
  * Styled similarly to CaseStudyCard with no image
  */
-const EventCard = ({ data, onCardClick }: EventCardProps) => {
+const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [areTagsExpanded, setAreTagsExpanded] = useState(false);
 
   const handleClick = () => {
     // If onCardClick is provided, call it to open the detail panel
@@ -75,15 +75,8 @@ const EventCard = ({ data, onCardClick }: EventCardProps) => {
     setIsDescriptionExpanded(!isDescriptionExpanded);
   };
 
-  const handleTagsToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click when toggling tags
-    if (data.tags && data.tags.length > 1) {
-      setAreTagsExpanded(!areTagsExpanded);
-    }
-  };
 
   const formattedDate = formatDate(data.date);
-  const hasMultipleTags = data.tags && data.tags.length > 1;
   
   // Determine what to display: subtitle (plain text) or description (markdown)
   const hasSubtitle = !!data.subtitle;
@@ -180,53 +173,36 @@ const EventCard = ({ data, onCardClick }: EventCardProps) => {
         )}
       </div>
 
-      {/* Tags if available */}
-      {data.tags && data.tags.length > 0 && (
-        <div className="event-card__tags">
-          <span 
-            className={`event-card__tag ${hasMultipleTags ? 'clickable' : ''}`}
-            onClick={handleTagsToggle}
-            style={{ cursor: hasMultipleTags ? 'pointer' : 'default' }}
-          >
-            {data.tags[0]}
-            {hasMultipleTags && (
-              <span className="event-card__tag-count">
-                {areTagsExpanded ? '−' : `+${data.tags.length - 1}`}
-              </span>
-            )}
-          </span>
-          {areTagsExpanded && data.tags.slice(1).map((tag, index) => (
-            <span key={index + 1} className="event-card__tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Footer - View Event link */}
       <div className="event-card__footer">
-        {/* Read more link */}
-        <span className="event-card__link">
-          <span className="event-card__link-text">Save your Seat</span>
-          <span className="event-card__link-icon">
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 16 16" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path 
-                d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-                stroke="#00ED64" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
+        {isRegistered ? (
+          <span className="event-card__registered">
+            <span>Registered</span>
           </span>
-        </span>
+        ) : (
+          <span className="event-card__link">
+            <span className="event-card__link-text">Save your Seat</span>
+            <span className="event-card__link-icon">
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 16 16" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path 
+                  d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
+                  stroke="#00ED64" 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </span>
+        )}
       </div>
     </article>
   );

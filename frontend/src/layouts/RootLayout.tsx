@@ -5,6 +5,7 @@ import ToastContainer from '@/components/ToastContainer';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import PDFDownloadModal from '@/components/PDFDownloadModal';
 import AIChatbot from '@/components/AIChatbot';
 import '@/styles/layouts/RootLayout.css';
 import { ReactNode, useEffect } from 'react';
@@ -33,6 +34,8 @@ const GlobalAuthModals = () => {
     isLoginModalOpen,
     isSignupModalOpen,
     isForgotPasswordModalOpen,
+    isPDFDownloadModalOpen,
+    pdfDownloadResource,
     closeAllModals,
     switchToSignup,
     switchToLogin,
@@ -59,6 +62,16 @@ const GlobalAuthModals = () => {
         onClose={closeAllModals}
         onSwitchToLogin={switchToLogin}
       />
+      {pdfDownloadResource && (
+        <PDFDownloadModal
+          isOpen={isPDFDownloadModalOpen}
+          onClose={closeAllModals}
+          onSuccess={pdfDownloadResource.onSuccess}
+          resourceType={pdfDownloadResource.resourceType}
+          resourceId={pdfDownloadResource.resourceId}
+          resourceTitle={pdfDownloadResource.resourceTitle}
+        />
+      )}
     </>
   );
 };

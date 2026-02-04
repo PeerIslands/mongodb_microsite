@@ -16,6 +16,9 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Check if current route is the calendar download page
+  const isCalendarDownloadPage = /^\/events\/[^/]+\/calendar$/.test(location.pathname);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
@@ -125,14 +128,15 @@ const Header = () => {
   return (
     <>
       {/* ===== DESKTOP/TABLET HEADER ===== */}
-      <header className="header header-desktop">
-        <div className="header-content">
-          <Link to={ROUTES.HOME} className="logo-section">
-            <img src={logo} alt="PeerAI X MongoDB" className="logo-image" />
-          </Link>
+      {!isCalendarDownloadPage && (
+        <header className="header header-desktop">
+          <div className="header-content">
+            <Link to={ROUTES.HOME} className="logo-section">
+              <img src={logo} alt="PeerAI X MongoDB" className="logo-image" />
+            </Link>
 
-          {/* Desktop Navigation - All links */}
-          <nav className="nav nav-desktop">
+            {/* Desktop Navigation - All links */}
+            <nav className="nav nav-desktop">
             <a href={ROUTES.OFFERINGS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS, 'Offerings Nav')}>Offerings</a>
             <a href={ROUTES.ACCELERATORS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS, 'Accelerators Nav')}>Accelerators</a>
             <a href={ROUTES.SUCCESS_STORIES} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES, 'Success Stories Nav')}>Success Stories</a>
@@ -217,9 +221,11 @@ const Header = () => {
           </div>
         </div>
       </header>
+      )}
 
       {/* ===== PHONE HEADER ===== */}
-      <div className="phone-header">
+      {!isCalendarDownloadPage && (
+        <div className="phone-header">
         <div className="phone-header-inner">
           {/* Logo */}
           <Link to={ROUTES.HOME} className="phone-logo">
@@ -294,6 +300,7 @@ const Header = () => {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 };
