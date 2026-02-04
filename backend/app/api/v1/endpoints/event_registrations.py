@@ -18,7 +18,7 @@ from typing import List, Optional
 from io import BytesIO
 from datetime import datetime
 import logging
-from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks, Response
+from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
