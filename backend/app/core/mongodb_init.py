@@ -265,6 +265,34 @@ async def create_indexes(db) -> None:
     await event_registrations.create_index([("registered_at", -1)])
     print("  ✅ event_registrations.registered_at (descending)")
     
+    # ==========================================================================
+    # PDF DOWNLOADS COLLECTION (Lead Capture)
+    # ==========================================================================
+    pdf_downloads = db["pdf_downloads"]
+    
+    # Index for email-based queries
+    await pdf_downloads.create_index("email")
+    print("  ✅ pdf_downloads.email")
+    
+    # Index for resource type filtering
+    await pdf_downloads.create_index("resource_type")
+    print("  ✅ pdf_downloads.resource_type")
+    
+    # Index for resource id queries
+    await pdf_downloads.create_index("resource_id")
+    print("  ✅ pdf_downloads.resource_id")
+    
+    # Index for time-based queries
+    await pdf_downloads.create_index([("created_at", -1)])
+    print("  ✅ pdf_downloads.created_at (descending)")
+    
+    # Compound index for resource queries
+    await pdf_downloads.create_index([
+        ("resource_type", 1),
+        ("resource_id", 1)
+    ])
+    print("  ✅ pdf_downloads.resource_type+resource_id (compound)")
+    
     print("✅ All indexes created successfully!")
 
 
@@ -289,6 +317,7 @@ async def create_collections(db) -> None:
         "totp_secrets",
         "analytics_events",
         "analytics_sessions",
+        "pdf_downloads",
     ]
     
     for collection_name in collections_to_create:

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useBlogs } from '@/features/blogs/hooks';
 import { BlogGrid, NewsletterCarousel } from '@/features/blogs/components';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/BlogsPage.css';
 
 /**
@@ -131,12 +132,7 @@ const BlogsPage = () => {
             </button>
           </div>
           {/* Loading State */}
-          {isLoading && (
-            <div className="blogs-loading">
-              <div className="blogs-loading__spinner" />
-              <p>Loading articles...</p>
-            </div>
-          )}
+          {isLoading && <LeafLoader message="Loading blogs..." />}
 
           {/* Error State */}
           {error && (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '@/hooks/useEvents';
 import { EventGrid, EventDetailPanel, type EventCardData } from '@/features/events';
+import LeafLoader from '@/components/LeafLoader';
 import '@/styles/pages/EventsPage.css';
 
 /**
@@ -171,12 +172,7 @@ const EventsPage = () => {
             </button>
           </div>
           {/* Loading State */}
-          {isLoading && (
-            <div className="events-loading">
-              <div className="events-loading__spinner" />
-              <p>Loading events...</p>
-            </div>
-          )}
+          {isLoading && <LeafLoader message="Loading events..." />}
 
           {/* Error State */}
           {error && (

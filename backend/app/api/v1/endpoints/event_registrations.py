@@ -115,8 +115,8 @@ async def create_registration(
                 detail=f"Event not found: {request.event_id}",
             )
         
-        # Build calendar download link
-        calendar_download_link = f"mongodb.peerislands.io/api/v1/events/{request.event_id}/calendar"
+        # Build calendar download link (frontend route that proxies to backend)
+        calendar_download_link = f"{settings.FRONTEND_BASE_URL}/events/{request.event_id}/calendar"
         
         # Prepare event data for email
         event_data = {
@@ -228,9 +228,9 @@ async def send_registration_confirmation(
                 detail=f"Event not found: {request.event_id}",
             )
         
-        # Build calendar download link
+        # Build calendar download link (frontend route that proxies to backend)
         event_id = request.event_id
-        calendar_download_link = f"mongodb.peerislands.io/api/v1/events/{event_id}/calendar"
+        calendar_download_link = f"{settings.FRONTEND_BASE_URL}/events/{event_id}/calendar"
         
         # Prepare event data for email
         event_data = {

@@ -12,14 +12,15 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PDFViewerSectionProps {
   pdfUrl: string;
   title: string;
+  acceleratorId: string;
 }
 
-const PDFViewerSection = ({ pdfUrl, title }: PDFViewerSectionProps) => {
+const PDFViewerSection = ({ pdfUrl, title, acceleratorId }: PDFViewerSectionProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [scale, setScale] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { openLoginModal } = useAuthModal();
+  const { openPDFDownloadModal } = useAuthModal();
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -65,13 +66,18 @@ const PDFViewerSection = ({ pdfUrl, title }: PDFViewerSectionProps) => {
     globalThis.open(pdfUrl, '_blank');
   };
 
-  // Download PDF - requires login
+  // Download PDF - requires login or lead capture
   const handleDownload = async () => {
     if (isLoggedIn()) {
       await downloadPdf();
     } else {
-      // Open login modal with callback to download after successful login
-      openLoginModal(downloadPdf);
+      // Open PDF download lead capture modal
+      openPDFDownloadModal({
+        resourceType: 'accelerator',
+        resourceId: acceleratorId,
+        resourceTitle: title,
+        onSuccess: () => { downloadPdf(); },
+      });
     }
   };
 

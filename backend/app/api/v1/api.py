@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     events,
     analytics,
     event_registrations,
+    pdf_downloads,
 )
 
 api_router = APIRouter()
@@ -32,6 +33,7 @@ api_router.include_router(ai_extract.router, tags=["AI Extract"])
 api_router.include_router(events.router, tags=["events"])
 api_router.include_router(analytics.router, tags=["analytics"])
 api_router.include_router(event_registrations.router, tags=["event-registrations"])
+api_router.include_router(pdf_downloads.router, tags=["pdf-downloads"])
 
 
 

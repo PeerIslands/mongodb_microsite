@@ -1,15 +1,26 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
+// PDF Download modal resource info
+interface PDFDownloadResource {
+  resourceType: 'accelerator' | 'case_study';
+  resourceId: string;
+  resourceTitle: string;
+  onSuccess: () => void;
+}
+
 interface AuthModalContextValue {
   // Modal state
   isLoginModalOpen: boolean;
   isSignupModalOpen: boolean;
   isForgotPasswordModalOpen: boolean;
+  isPDFDownloadModalOpen: boolean;
+  pdfDownloadResource: PDFDownloadResource | null;
   
   // Modal controls
   openLoginModal: (onSuccessCallback?: () => void) => void;
   openSignupModal: () => void;
   openForgotPasswordModal: () => void;
+  openPDFDownloadModal: (resource: PDFDownloadResource) => void;
   closeAllModals: () => void;
   
   // Switch between modals
@@ -40,6 +51,8 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [isPDFDownloadModalOpen, setIsPDFDownloadModalOpen] = useState(false);
+  const [pdfDownloadResource, setPdfDownloadResource] = useState<PDFDownloadResource | null>(null);
   
   // Store the callback to execute after successful login
   const [successCallback, setSuccessCallback] = useState<(() => void) | null>(null);
@@ -48,6 +61,8 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
     setIsLoginModalOpen(false);
     setIsSignupModalOpen(false);
     setIsForgotPasswordModalOpen(false);
+    setIsPDFDownloadModalOpen(false);
+    setPdfDownloadResource(null);
   }, []);
 
   const openLoginModal = useCallback((onSuccessCallback?: () => void) => {
@@ -69,6 +84,12 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
   const openForgotPasswordModal = useCallback(() => {
     closeAllModals();
     setIsForgotPasswordModalOpen(true);
+  }, [closeAllModals]);
+
+  const openPDFDownloadModal = useCallback((resource: PDFDownloadResource) => {
+    closeAllModals();
+    setPdfDownloadResource(resource);
+    setIsPDFDownloadModalOpen(true);
   }, [closeAllModals]);
 
   const switchToSignup = useCallback(() => {
@@ -106,9 +127,12 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
         isLoginModalOpen,
         isSignupModalOpen,
         isForgotPasswordModalOpen,
+        isPDFDownloadModalOpen,
+        pdfDownloadResource,
         openLoginModal,
         openSignupModal,
         openForgotPasswordModal,
+        openPDFDownloadModal,
         closeAllModals,
         switchToSignup,
         switchToLogin,

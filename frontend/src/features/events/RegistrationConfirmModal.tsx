@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import '@/styles/features/events/RegistrationConfirmModal.css';
+import LeafLoader from '@/components/LeafLoader';
 
 interface RegistrationConfirmModalProps {
   isOpen: boolean;
@@ -52,6 +53,11 @@ const RegistrationConfirmModal = ({
   }, [isOpen, handleEscapeKey]);
 
   if (!isOpen) return null;
+
+  // Show LeafLoader when registering
+  if (isLoading) {
+    return <LeafLoader message="Registering User" />;
+  }
 
   return (
     <div 
@@ -135,16 +141,14 @@ const RegistrationConfirmModal = ({
             <button 
               className="registration-modal__btn registration-modal__btn--cancel"
               onClick={onClose}
-              disabled={isLoading}
             >
               Cancel
             </button>
             <button 
               className="registration-modal__btn registration-modal__btn--confirm"
               onClick={onConfirm}
-              disabled={isLoading}
             >
-              {isLoading ? 'Please wait...' : 'Confirm'}
+              Confirm
             </button>
           </div>
         </div>

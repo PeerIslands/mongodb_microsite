@@ -50,14 +50,12 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
   });
 
   const [loading, setLoading] = useState(false);
-  const [fetchingData, setFetchingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch existing accelerator data when editing
   useEffect(() => {
     if (editingId) {
       const fetchAccelerator = async () => {
-        setFetchingData(true);
         try {
           const data = await acceleratorsService.getById(editingId);
           setFormData({
@@ -82,8 +80,6 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
         } catch (err) {
           console.error('Failed to fetch accelerator:', err);
           setError('Failed to load accelerator data');
-        } finally {
-          setFetchingData(false);
         }
       };
       fetchAccelerator();
@@ -241,17 +237,6 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
       setLoading(false);
     }
   };
-
-  if (fetchingData) {
-    return (
-      <div className="accelerator-form-container">
-        <div className="form-loading">
-          <div className="spinner"></div>
-          <p>Loading accelerator data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="accelerator-form-container">

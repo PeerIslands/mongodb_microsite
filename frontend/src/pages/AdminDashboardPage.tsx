@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '@/styles/pages/AdminDashboardPage.css';
 import {
   CaseStudyList,
@@ -13,6 +13,7 @@ import {
   EmailTemplateList,
   EmailTemplateForm,
 } from '@/features/admin/components';
+import LeafLoader from '@/components/LeafLoader';
 
 type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
@@ -29,6 +30,31 @@ const AdminDashboard = () => {
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingEmailTemplateId, setEditingEmailTemplateId] = useState<string | null>(null);
+  const [isTabLoading, setIsTabLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Loading...');
+
+  // Loading message map for each tab
+  const getLoadingMessage = (view: MainView): string => {
+    const messages: Record<MainView, string> = {
+      cases: 'Loading Case Studies...',
+      accelerators: 'Loading Accelerators...',
+      blogs: 'Loading Blogs...',
+      events: 'Loading Events...',
+      analytics: 'Loading Analytics...',
+      emailtemplates: 'Loading Newsletters...',
+    };
+    return messages[view];
+  };
+
+  // Effect to handle tab loading transition
+  useEffect(() => {
+    if (isTabLoading) {
+      const timer = setTimeout(() => {
+        setIsTabLoading(false);
+      }, 500); // Brief loading transition
+      return () => clearTimeout(timer);
+    }
+  }, [isTabLoading]);
 
   // Case Study handlers
   const handleCaseAddNew = () => {
@@ -112,6 +138,11 @@ const AdminDashboard = () => {
 
   // Main view change
   const handleMainViewChange = (view: MainView) => {
+    // Only show loader if switching to a different tab
+    if (view !== mainView) {
+      setLoadingMessage(getLoadingMessage(view));
+      setIsTabLoading(true);
+    }
     setMainView(view);
     if (view === 'cases') {
       setCaseView('list');
@@ -174,7 +205,9 @@ const AdminDashboard = () => {
         </div>
 
         {/* Content */}
-        {mainView === 'cases' && (
+        {isTabLoading && <LeafLoader message={loadingMessage} />}
+        
+        {!isTabLoading && mainView === 'cases' && (
           <>
             {caseView === 'list' && (
               <CaseStudyList onAddNew={handleCaseAddNew} onEdit={handleCaseEdit} />
@@ -189,7 +222,7 @@ const AdminDashboard = () => {
           </>
         )}
         
-        {mainView === 'accelerators' && (
+        {!isTabLoading && mainView === 'accelerators' && (
           <>
             {accView === 'list' && (
               <AcceleratorList onAddNew={handleAccAddNew} onEdit={handleAccEdit} />
@@ -204,7 +237,7 @@ const AdminDashboard = () => {
           </>
         )}
         
-        {mainView === 'blogs' && (
+        {!isTabLoading && mainView === 'blogs' && (
           <>
             {blogView === 'list' && (
               <BlogList onAddNew={handleBlogAddNew} onEdit={handleBlogEdit} />
@@ -219,7 +252,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {mainView === 'events' && (
+        {!isTabLoading && mainView === 'events' && (
           <>
             {eventView === 'list' && (
               <EventList onAddNew={handleEventAddNew} onEdit={handleEventEdit} />
@@ -234,9 +267,9 @@ const AdminDashboard = () => {
           </>
         )}
         
-        {mainView === 'analytics' && <AnalyticsDashboard />}
+        {!isTabLoading && mainView === 'analytics' && <AnalyticsDashboard />}
         
-        {mainView === 'emailtemplates' && (
+        {!isTabLoading && mainView === 'emailtemplates' && (
           <>
             {emailTemplateView === 'list' && (
               <EmailTemplateList 

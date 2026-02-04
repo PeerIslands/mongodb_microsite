@@ -1,6 +1,34 @@
 import apiClient from '../client';
 import type { CaseStudyDetail } from '@/types/models/case-study';
 
+// Get the API base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+/**
+ * Build the secure file proxy URL for case study files.
+ * 
+ * This routes file requests through the backend proxy endpoint,
+ * keeping Azure SAS tokens hidden from the client.
+ * 
+ * @param caseId - The case study ID
+ * @param fileType - The type of file ('pdf', 'video', 'thumbnail')
+ * @param forDownload - If true, adds ?download=true query parameter
+ * @returns Full URL for accessing the file through the secure proxy
+ */
+export const getCaseStudyFileUrl = (
+  caseId: string,
+  fileType: 'pdf' | 'video' | 'thumbnail',
+  forDownload: boolean = false
+): string => {
+  if (!caseId) return '';
+
+  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const proxyPath = `/api/v1/case-studies/${caseId}/files/${fileType}`;
+  const fullUrl = `${baseUrl}${proxyPath}`;
+
+  return forDownload ? `${fullUrl}?download=true` : fullUrl;
+};
+
 // Response type for create/update operations
 export interface CaseStudyResponse {
   id: string;
