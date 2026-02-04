@@ -4,7 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
-import type { EventType } from '@/types/models/event';
+import type { EventStatus, EventType } from '@/types/models/event';
 
 // Event type options
 const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
@@ -59,7 +59,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     attendeeValue: '',
     category: '',
     featured: false,
-    status: 'draft' as 'published' | 'draft',
+    status: 'draft' as 'published' | 'draft' | 'archived',
     eventType: 'online' as EventType,
     location: '',
   });
@@ -76,6 +76,14 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Check if selected date is in the past
+  const isDateInPast = useMemo(() => {
+    if (!selectedDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate < today;
+  }, [selectedDate]);
 
   // Combined categories (default + existing from API)
   const allCategories = useMemo(() => {
@@ -219,6 +227,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     }
     if (!formData.date) {
       setErrorMessage('Please select a date.');
+      return;
+    }
+    if (isDateInPast) {
+      setErrorMessage('Please select a future date. Past dates are not allowed.');
       return;
     }
     if (!formData.time) {
@@ -376,10 +388,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
               <label>Status</label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value as 'published' | 'draft')}
+                onChange={(e) => handleInputChange('status', e.target.value as EventStatus)}
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -405,6 +418,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                 calendarClassName="event-date-calendar"
                 showPopperArrow={false}
               />
+              {isDateInPast && (
+                <span className="field-warning">
+                  This date is in the past. Please select a future date.
+                </span>
+              )}
             </div>
 
             <div className="form-field">

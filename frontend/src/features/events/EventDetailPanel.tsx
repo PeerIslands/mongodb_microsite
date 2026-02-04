@@ -12,7 +12,9 @@ interface EventDetailPanelProps {
   isOpen: boolean;
   onClose: () => void;
   isRegistered?: boolean;
+  registrationId?: string;
   onRegistrationSuccess?: () => void;
+  onCancelSuccess?: () => void;
 }
 
 /**
@@ -38,11 +40,14 @@ const formatDate = (dateString?: string): string => {
  * EventDetailPanel - Slide-in panel from right displaying event details
  * Shows all event information with markdown support
  */
-const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegistrationSuccess }: EventDetailPanelProps) => {
+const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, registrationId, onRegistrationSuccess, onCancelSuccess }: EventDetailPanelProps) => {
   const { openLoginModal } = useAuthModal();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessageText, setSuccessMessageText] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Check if user is logged in
@@ -55,11 +60,13 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
     if (e.key === 'Escape') {
       if (showConfirmModal) {
         setShowConfirmModal(false);
+      } else if (showCancelModal) {
+        setShowCancelModal(false);
       } else {
         onClose();
       }
     }
-  }, [onClose, showConfirmModal]);
+  }, [onClose, showConfirmModal, showCancelModal]);
 
   // Handle click outside panel
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -106,6 +113,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
     try {
       await eventsService.registerForEvent(event.id);
       setShowConfirmModal(false);
+      setSuccessMessageText('You have been registered for this event.');
       setShowSuccessMessage(true);
 
       // Refetch events to update registration status
@@ -136,6 +144,58 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
     } finally {
       setIsRegistering(false);
     }
+  };
+
+  // Handle cancel registration button click
+  const handleCancelRegistrationClick = () => {
+    setShowCancelModal(true);
+  };
+
+  // Handle cancel registration confirmation
+  const handleConfirmCancellation = async () => {
+    if (!registrationId) return;
+
+    setIsCancelling(true);
+    setErrorMessage(null);
+
+    try {
+      await eventsService.cancelRegistration(registrationId);
+      setShowCancelModal(false);
+      setSuccessMessageText('Your registration has been cancelled.');
+      setShowSuccessMessage(true);
+
+      // Refetch events to update registration status
+      onCancelSuccess?.();
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        onClose();
+      }, 3000);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const status = error.response.status;
+        
+        if (status === 401 || status === 403) {
+          setShowCancelModal(false);
+          setErrorMessage('Please log in to cancel your registration.');
+        } else if (status === 404) {
+          setErrorMessage('Registration not found.');
+        } else {
+          setErrorMessage('Failed to cancel registration. Please try again.');
+        }
+      } else {
+        setErrorMessage('Failed to cancel registration. Please try again.');
+      }
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Handle cancel modal close
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setErrorMessage(null);
   };
 
   // Handle modal close
@@ -193,9 +253,11 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
                   strokeLinejoin="round"
                 />
               </svg>
-              <h3 className="event-detail-panel__success-title">Registered Successfully!</h3>
+              <h3 className="event-detail-panel__success-title">
+                {successMessageText.includes('cancelled') ? 'Cancelled Successfully!' : 'Registered Successfully!'}
+              </h3>
               <p className="event-detail-panel__success-text">
-                You have been registered for this event.
+                {successMessageText}
               </p>
             </div>
           </div>
@@ -294,12 +356,15 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
           )}
         </div>
 
-        {/* Footer with Register Button or Registered Status */}
+        {/* Footer with Register Button or Cancel Registration Button */}
         <footer className="event-detail-panel__footer">
           {isRegistered ? (
-            <div className="event-detail-panel__registered-status">
-              <span>Already Registered!</span>
-            </div>
+            <button 
+              className="event-detail-panel__cancel-btn"
+              onClick={handleCancelRegistrationClick}
+            >
+              Cancel Registration
+            </button>
           ) : (
             <button 
               className="event-detail-panel__register-btn"
@@ -335,6 +400,19 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, onRegi
         eventTime={event.time}
         eventTimezone={event.timezone}
         isLoading={isRegistering}
+      />
+
+      {/* Cancel Registration Confirmation Modal */}
+      <RegistrationConfirmModal
+        isOpen={showCancelModal}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancellation}
+        eventTitle={event.title}
+        eventDate={formattedDate}
+        eventTime={event.time}
+        eventTimezone={event.timezone}
+        isLoading={isCancelling}
+        variant="cancel"
       />
 
       {/* Error Message Toast */}

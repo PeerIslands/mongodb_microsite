@@ -195,6 +195,23 @@
   transform: translateY(0);
 }
 
+/* Danger button for cancel actions */
+.registration-modal__btn--danger {
+  background: #dc3545;
+  border: none;
+  color: #ffffff;
+}
+
+.registration-modal__btn--danger:hover {
+  background: #e74c5c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+}
+
+.registration-modal__btn--danger:active {
+  transform: translateY(0);
+}
+
 /* ===== RESPONSIVE STYLES ===== */
 
 /* Mobile */

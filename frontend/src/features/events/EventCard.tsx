@@ -14,7 +14,7 @@ export interface EventCardData {
   duration_minutes?: number;
   attendee_value?: string;
   tags?: string[];
-  status?: 'published' | 'draft';
+  status?: 'published' | 'draft' | 'archived';
   created_at?: string;
   updated_at?: string;
 }
@@ -59,7 +59,6 @@ const truncateToWords = (text: string, wordLimit: number): string => {
  */
 const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [areTagsExpanded, setAreTagsExpanded] = useState(false);
 
   const handleClick = () => {
     // If onCardClick is provided, call it to open the detail panel
@@ -76,15 +75,8 @@ const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) 
     setIsDescriptionExpanded(!isDescriptionExpanded);
   };
 
-  const handleTagsToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click when toggling tags
-    if (data.tags && data.tags.length > 1) {
-      setAreTagsExpanded(!areTagsExpanded);
-    }
-  };
 
   const formattedDate = formatDate(data.date);
-  const hasMultipleTags = data.tags && data.tags.length > 1;
   
   // Determine what to display: subtitle (plain text) or description (markdown)
   const hasSubtitle = !!data.subtitle;
@@ -181,28 +173,6 @@ const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) 
         )}
       </div>
 
-      {/* Tags if available */}
-      {data.tags && data.tags.length > 0 && (
-        <div className="event-card__tags">
-          <span 
-            className={`event-card__tag ${hasMultipleTags ? 'clickable' : ''}`}
-            onClick={handleTagsToggle}
-            style={{ cursor: hasMultipleTags ? 'pointer' : 'default' }}
-          >
-            {data.tags[0]}
-            {hasMultipleTags && (
-              <span className="event-card__tag-count">
-                {areTagsExpanded ? '−' : `+${data.tags.length - 1}`}
-              </span>
-            )}
-          </span>
-          {areTagsExpanded && data.tags.slice(1).map((tag, index) => (
-            <span key={index + 1} className="event-card__tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Footer - View Event link */}
       <div className="event-card__footer">

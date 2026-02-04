@@ -11,6 +11,7 @@ interface RegistrationConfirmModalProps {
   eventTime?: string;
   eventTimezone?: string;
   isLoading?: boolean;
+  variant?: 'register' | 'cancel';
 }
 
 /**
@@ -26,7 +27,9 @@ const RegistrationConfirmModal = ({
   eventTime,
   eventTimezone,
   isLoading = false,
+  variant = 'register',
 }: RegistrationConfirmModalProps) => {
+  const isCancel = variant === 'cancel';
   // Handle escape key press
   const handleEscapeKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -54,9 +57,9 @@ const RegistrationConfirmModal = ({
 
   if (!isOpen) return null;
 
-  // Show LeafLoader when registering
+  // Show LeafLoader when processing
   if (isLoading) {
-    return <LeafLoader message="Registering User" />;
+    return <LeafLoader message={isCancel ? "Cancelling Registration" : "Registering User"} />;
   }
 
   return (
@@ -104,7 +107,7 @@ const RegistrationConfirmModal = ({
 
           {/* Title */}
           <h3 id="registration-modal-title" className="registration-modal__title">
-            Confirm Registration
+            {isCancel ? 'Cancel Registration' : 'Confirm Registration'}
           </h3>
 
           {/* Event Details */}
@@ -133,7 +136,9 @@ const RegistrationConfirmModal = ({
 
           {/* Confirmation Message */}
           <p className="registration-modal__message">
-            Would you like to register for this event?
+            {isCancel 
+              ? 'Are you sure you want to cancel your registration for this event?' 
+              : 'Would you like to register for this event?'}
           </p>
 
           {/* Action Buttons */}
@@ -142,13 +147,13 @@ const RegistrationConfirmModal = ({
               className="registration-modal__btn registration-modal__btn--cancel"
               onClick={onClose}
             >
-              Cancel
+              {isCancel ? 'No' : 'Cancel'}
             </button>
             <button 
-              className="registration-modal__btn registration-modal__btn--confirm"
+              className={`registration-modal__btn ${isCancel ? 'registration-modal__btn--danger' : 'registration-modal__btn--confirm'}`}
               onClick={onConfirm}
             >
-              Confirm
+              {isCancel ? 'Yes' : 'Confirm'}
             </button>
           </div>
         </div>

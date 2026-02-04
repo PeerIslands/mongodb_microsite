@@ -70,21 +70,22 @@ class EventRegistrationService:
         self,
         user_id: str,
         event_id: str,
-    ) -> CreateEventRegistrationResponse:
+    ) -> tuple[CreateEventRegistrationResponse, bool]:
         """
-        Create a new event registration.
+        Create a new event registration or re-register if previously cancelled.
         
         Args:
             user_id: User ID (from JWT token)
             event_id: Event ID to register for
             
         Returns:
-            CreateEventRegistrationResponse with id and message
+            Tuple of (CreateEventRegistrationResponse, is_new_registration)
+            - is_new_registration: True if new registration (201), False if re-registration (200)
             
         Raises:
             UserNotFoundForRegistrationError: If user does not exist
             EventNotFoundForRegistrationError: If event does not exist
-            DuplicateRegistrationError: If user is already registered for this event
+            DuplicateRegistrationError: If user is already registered (status=REGISTERED)
         """
         # Check if user exists
         user = await self._user_repository.get_user_by_id(user_id)
@@ -98,10 +99,27 @@ class EventRegistrationService:
 
         # Check for existing registration
         existing = await self._repository.get_by_user_and_event(user_id, event_id)
+        
         if existing:
-            raise DuplicateRegistrationError(user_id, event_id)
+            current_status = existing.get("status", "")
+            
+            # Case: Already registered - return 409 Conflict
+            if current_status == RegistrationStatus.REGISTERED.value:
+                raise DuplicateRegistrationError(user_id, event_id)
+            
+            # Case: Previously cancelled - re-register by updating status using service method
+            if current_status == RegistrationStatus.CANCELLED.value:
+                registration_id = str(existing.get("id", existing.get("_id", "")))
+                update_request = UpdateRegistrationStatusRequest(
+                    status=RegistrationStatus.REGISTERED
+                )
+                await self.update_registration_status(registration_id, update_request)
+                return CreateEventRegistrationResponse(
+                    id=registration_id,
+                    message="Updated status successfully",
+                ), False  # False = not a new registration (200 OK)
 
-        # Prepare registration data
+        # Case: No registration exists - create new
         registration_data = {
             "user_id": user_id,
             "event_id": event_id,
@@ -114,7 +132,7 @@ class EventRegistrationService:
         return CreateEventRegistrationResponse(
             id=str(created["id"]),
             message="Registered successfully",
-        )
+        ), True  # True = new registration (201 Created)
 
     async def get_registrations_by_user(
         self,

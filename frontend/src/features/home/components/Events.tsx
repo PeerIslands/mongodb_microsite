@@ -1,17 +1,14 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
-import type { Swiper as SwiperType } from 'swiper';
+import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import '@/styles/features/home/Events.css';
-import { EventCard } from '@/features/events';
+import { EventCardHorizontal } from '@/features/events';
 import { useEvents } from '@/hooks/useEvents';
 
 const Events = () => {
   const navigate = useNavigate();
-  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   // Use the shared hook to fetch featured events
   const { events: featuredEvents, isLoading } = useEvents({
@@ -22,8 +19,6 @@ const Events = () => {
   const handleEventClick = (eventId: string) => {
     navigate(`/events?id=${eventId}`);
   };
-
-  const showCarouselControls = featuredEvents.length > 3;
 
   // Render loading state
   const renderLoading = () => (
@@ -40,73 +35,35 @@ const Events = () => {
     </div>
   );
 
-  // Render event cards with Swiper
+  // Render horizontal event cards with Swiper (1 at a time with pagination dots)
   const renderEventCards = () => (
     <div className="events-carousel-wrapper">
-      {showCarouselControls && (
-        <button 
-          className="events-carousel-arrow events-carousel-arrow-left"
-          onClick={() => swiperInstance?.slidePrev()}
-          aria-label="Previous events"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      )}
-      
       <Swiper
-        modules={[Navigation]}
-        spaceBetween={24}
+        modules={[Pagination, Autoplay]}
+        spaceBetween={32}
         slidesPerView={1}
-        loop={featuredEvents.length > 3}
+        loop={featuredEvents.length > 1}
         speed={600}
-        breakpoints={{
-          640: {
-            slidesPerView: 1.5,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: 2,
-            spaceBetween: 24,
-          },
-          1024: {
-            slidesPerView: 3,
-            spaceBetween: 24,
-          },
-          1280: {
-            slidesPerView: 3,
-            spaceBetween: 32,
-          },
+        autoplay={{
+          delay: 6000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         }}
-        onSwiper={(swiper) => setSwiperInstance(swiper)}
+        pagination={{
+          clickable: true,
+          dynamicBullets: false,
+        }}
         className="events-swiper"
       >
         {featuredEvents.map((event) => (
           <SwiperSlide key={event.id} className="event-slide">
-            <button 
-              type="button"
-              className="event-card-button"
-              onClick={() => handleEventClick(event.id)}
-              aria-label={`View details for ${event.title}`}
-            >
-              <EventCard data={event} />
-            </button>
+            <EventCardHorizontal 
+              data={event} 
+              onClick={() => handleEventClick(event.id)} 
+            />
           </SwiperSlide>
         ))}
       </Swiper>
-      
-      {showCarouselControls && (
-        <button 
-          className="events-carousel-arrow events-carousel-arrow-right"
-          onClick={() => swiperInstance?.slideNext()}
-          aria-label="Next events"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      )}
     </div>
   );
 

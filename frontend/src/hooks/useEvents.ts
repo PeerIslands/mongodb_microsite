@@ -18,6 +18,7 @@ interface UseEventsOptions {
 interface UseEventsReturn {
   events: EventCardData[];
   registeredEventIds: Set<string>;
+  registrationIdByEventId: Map<string, string>;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -65,6 +66,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   const [events, setEvents] = useState<EventCardData[]>([]);
   const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+  const [registrationIdByEventId, setRegistrationIdByEventId] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,13 +99,12 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
           : Promise.resolve([]),
       ]);
 
-      // Extract registered event IDs
-      const registeredIds = new Set(
-        registrations
-          .filter(reg => reg.status === 'REGISTERED')
-          .map(reg => reg.event_id)
-      );
+      // Extract registered event IDs and registration ID map
+      const activeRegistrations = registrations.filter(reg => reg.status === 'REGISTERED');
+      const registeredIds = new Set(activeRegistrations.map(reg => reg.event_id));
+      const regIdMap = new Map(activeRegistrations.map(reg => [reg.event_id, reg.id]));
       setRegisteredEventIds(registeredIds);
+      setRegistrationIdByEventId(regIdMap);
 
       // Transform to card data format
       const transformedData = apiData.map(transformToEventCardData);
@@ -130,6 +131,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   return {
     events,
     registeredEventIds,
+    registrationIdByEventId,
     isLoading,
     error,
     refetch: fetchEvents,

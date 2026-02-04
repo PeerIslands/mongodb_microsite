@@ -17,7 +17,6 @@ class RegistrationStatus(str, Enum):
     """Event registration status enum."""
     REGISTERED = "REGISTERED"
     CANCELLED = "CANCELLED"
-    ATTENDED = "ATTENDED"
 
 
 # =============================================================================
@@ -36,7 +35,7 @@ class UpdateRegistrationStatusRequest(BaseModel):
     """
     Request model for updating registration status.
     """
-    status: RegistrationStatus = Field(..., description="New registration status: REGISTERED, CANCELLED, or ATTENDED")
+    status: RegistrationStatus = Field(..., description="New registration status: REGISTERED or CANCELLED")
 
 
 # =============================================================================

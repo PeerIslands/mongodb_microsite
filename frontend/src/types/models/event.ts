@@ -1,5 +1,5 @@
 // Event status enum
-export type EventStatus = 'draft' | 'published';
+export type EventStatus = 'draft' | 'published' | 'archived';
 
 // Event type enum
 export type EventType = 'online' | 'in-person' | 'hybrid';

@@ -56,7 +56,7 @@ router = APIRouter(prefix="/events")
     
     **Optional fields:**
     - `featured`: Whether event is featured (default: false)
-    - `status`: 'draft' or 'published' (default: draft)
+    - `status`: 'draft', 'published', or 'archived' (default: draft)
     """,
     responses={
         201: {"description": "Event created successfully"},
@@ -80,7 +80,7 @@ async def create_event(
     
     **Filters:**
     - `category`: Filter by category
-    - `status`: Filter by status ('published' or 'draft')
+    - `status`: Filter by status ('draft', 'published', or 'archived')
     - `featured`: Filter by featured status (true/false)
     
     **Returns:** List of events sorted by date and time (upcoming first).
@@ -88,7 +88,7 @@ async def create_event(
 )
 async def get_all_events(
     category: Optional[str] = Query(default=None, description="Filter by category"),
-    status: Optional[str] = Query(default=None, description="Filter by status ('published' or 'draft')"),
+    status: Optional[str] = Query(default=None, description="Filter by status ('draft', 'published', or 'archived')"),
     featured: Optional[bool] = Query(default=None, description="Filter by featured status (boolean)"),
     service: EventService = Depends(get_event_service),
 ) -> List[EventResponse]:
