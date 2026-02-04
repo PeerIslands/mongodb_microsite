@@ -130,3 +130,33 @@
     margin-top: 1rem;
   }
 }
+
+/* Phone-specific styles */
+@media (max-width: 480px) {
+  .metrics-section {
+    padding: 40px 0;
+  }
+
+  .metrics-container {
+    padding: 0 1rem;
+  }
+  
+  .metric-card {
+    padding: 1.25rem 1rem;
+    max-width: 240px;
+  }
+  
+  .metric-value {
+    font-size: 28px;
+  }
+  
+  .metric-card:last-child .metric-value {
+    width: auto;
+  }
+  
+  .metric-description {
+    font-size: 16px;
+    line-height: 20px;
+    margin-top: 0.75rem;
+  }
+}

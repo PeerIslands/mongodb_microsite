@@ -681,6 +681,23 @@
   font-weight: 500;
 }
 
+.phone-nav-text-clickable {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.phone-nav-text-clickable:hover {
+  color: #5b6cff;
+  opacity: 0.9;
+}
+
+.phone-nav-text-clickable:active {
+  opacity: 0.7;
+}
+
 .phone-nav-arrow {
   background: transparent;
   border: none;
@@ -857,7 +874,8 @@
     max-width: 120px;
   }
   
-  .phone-nav-text {
+  .phone-nav-text,
+  .phone-nav-text-clickable {
     font-size: 13px;
   }
   

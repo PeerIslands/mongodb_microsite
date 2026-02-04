@@ -5,7 +5,7 @@
   min-height: 100vh;
   color: #ffffff;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip; /* Use clip instead of hidden to allow sticky positioning */
 }
 
 /* Hero Section */
@@ -91,6 +91,7 @@
   position: relative;
   padding-top: 30px;
   margin-top: -3rem; /* Negative margin to blend sections */
+  overflow: visible; /* Allow sticky children */
 }
 
 .offerings-cards-container {
@@ -100,6 +101,8 @@
   flex-direction: column;
   gap: 0;
   padding-top: 0;
+  overflow: visible; /* Allow sticky children */
+  height: auto; /* Ensure proper height calculation */
 }
 
 /* Offering Card */
@@ -112,6 +115,11 @@
   position: relative; /* Default to relative */
   margin-bottom: 2rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Allow overflow when all cards are expanded for stacking effect */
+.offerings-cards-container.all-expanded .offering-card.expanded {
+  overflow: visible;
 }
 
 .offering-card:hover {
@@ -272,7 +280,11 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--offering-color, #5b6cff) 0%, transparent 100%);
+  background: linear-gradient(
+    180deg, 
+    color-mix(in srgb, var(--offering-color, #5b6cff) 100%, black 40%) 0%,
+    color-mix(in srgb, var(--offering-color, #5b6cff) 100%, white 60%) 100%
+  );
   border-radius: 2px;
   box-shadow: 0 0 6px var(--offering-color, #5b6cff),
               0 0 12px rgba(91, 108, 255, 0.4);

@@ -228,7 +228,16 @@ const Header = () => {
 
           {/* Center Nav - Shows current page name */}
           <div className="phone-nav">
-            <span className="phone-nav-text">{currentPageLabel}</span>
+            {location.pathname === ROUTES.HOME || location.pathname === '/' ? (
+              <button 
+                className="phone-nav-text phone-nav-text-clickable" 
+                onClick={(e) => handleNavigation(e as any, ROUTES.OFFERINGS, 'Offerings Nav Mobile')}
+              >
+                {currentPageLabel}
+              </button>
+            ) : (
+              <span className="phone-nav-text">{currentPageLabel}</span>
+            )}
             <button className="phone-nav-arrow" onClick={() => setShowMobileDropdown(!showMobileDropdown)} aria-label="More">
               <svg className={showMobileDropdown ? 'rotated' : ''} width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path d="M4 6L8 10L12 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
