@@ -173,9 +173,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Get current index for swiper
-  const currentIndex = navItems.findIndex(item => item.key === mainView);
-
   return (
     <div className="admin-dashboard">
       {/* Desktop Navigation - visible on desktop only */}
