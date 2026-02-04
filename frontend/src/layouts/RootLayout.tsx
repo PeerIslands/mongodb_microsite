@@ -5,6 +5,7 @@ import ToastContainer from '@/components/ToastContainer';
 import LoginModal from '@/components/LoginModal';
 import SignupModal from '@/components/SignupModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import AIChatbot from '@/components/AIChatbot';
 import '@/styles/layouts/RootLayout.css';
 import { ReactNode, useEffect } from 'react';
 import { analytics } from '@/utils/analytics';
@@ -74,6 +75,7 @@ const RootLayout = ({ children }: { children?: ReactNode }) => {
           {children || <Outlet />}
           <ToastContainer />
           <GlobalAuthModals />
+          <AIChatbot />
         </div>
       </AuthModalProvider>
     </ToastProvider>

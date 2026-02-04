@@ -12,7 +12,8 @@ from app.api.v1.endpoints import (
     contact,
     ai_extract,
     events,
-    analytics
+    analytics,
+    chatbot
 )
 
 api_router = APIRouter()
@@ -30,6 +31,7 @@ api_router.include_router(contact.router, prefix="/contact", tags=["contact"])
 api_router.include_router(ai_extract.router, tags=["AI Extract"])
 api_router.include_router(events.router, tags=["events"])
 api_router.include_router(analytics.router, tags=["analytics"])
+api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
 
 
 
