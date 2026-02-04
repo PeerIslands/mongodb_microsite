@@ -248,6 +248,21 @@
   box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.1);
 }
 
+/* Field Warning */
+.event-form .field-warning {
+  color: #ff9800;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-form .field-warning::before {
+  content: '⚠';
+}
+
 /* React DatePicker Theme Customization */
 .react-datepicker {
   font-family: 'Inter', sans-serif;

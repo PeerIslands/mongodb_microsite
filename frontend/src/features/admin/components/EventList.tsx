@@ -9,9 +9,10 @@ interface RegistrationCount {
 interface EventListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const EventList = ({ onAddNew, onEdit }: EventListProps) => {
+const EventList = ({ onAddNew, onEdit, onLoadComplete }: EventListProps) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [registrationCounts, setRegistrationCounts] = useState<RegistrationCount>({});
@@ -26,7 +27,7 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
     await Promise.all(
       eventsList.map(async (event) => {
         try {
-          const result = await eventsService.getRegistrationCount(event.id);
+          const result = await eventsService.getRegistrationCount(event.id, 'REGISTERED');
           counts[event.id] = result.count;
         } catch {
           counts[event.id] = 0;
@@ -53,6 +54,8 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
     } catch (err) {
       console.error('Failed to fetch events:', err);
       setError('Failed to load events. Please try again.');
+    } finally {
+      onLoadComplete?.();
     }
   };
 
@@ -81,6 +84,16 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
     }
   };
 
+  const handleToggleArchive = async (id: string) => {
+    try {
+      await eventsService.update(id, { status: 'archived' });
+      // Refresh the list after update
+      fetchEvents();
+    } catch (err) {
+      console.error('Failed to toggle archive status:', err);
+      alert('Failed to update status. Please try again.');
+    }
+  };
   const handleTogglePublish = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
@@ -180,6 +193,13 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
             <div className="stat-label">Drafts</div>
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-icon">📦</div>
+          <div className="stat-content">
+            <div className="stat-value">{events.filter(e => e.status === 'archived').length}</div>
+            <div className="stat-label">Archived</div>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -230,10 +250,10 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                   </td>
                   <td>
                     <button
-                      className={`status-badge ${event.status === 'published' ? 'published' : 'draft'}`}
+                      className={`status-badge ${event.status}`}
                       onClick={() => handleTogglePublish(event.id, event.status)}
                     >
-                      {event.status === 'published' ? 'Published' : 'Draft'}
+                      {event.status === 'published' ? 'Published' : event.status === 'archived' ? 'Archived' : 'Draft'}
                     </button>
                   </td>
                   <td>
@@ -244,7 +264,7 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                       <button
                         className="download-button"
                         onClick={() => handleDownloadRegistrations(event.id, event.title)}
-                        disabled={downloadingEventId === event.id || (registrationCounts[event.id] ?? 0) === 0}
+                        disabled={downloadingEventId === event.id}
                         title={
                           (registrationCounts[event.id] ?? 0) === 0
                             ? 'No registrations to download'
@@ -254,7 +274,7 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                         {downloadingEventId === event.id ? (
                           <span className="download-spinner">⏳</span>
                         ) : (
-                          <span className="download-icon">📥</span>
+                          <span className="download-icon">⬇️</span>
                         )}
                       </button>
                     </div>
@@ -274,6 +294,13 @@ const EventList = ({ onAddNew, onEdit }: EventListProps) => {
                         title="Delete"
                       >
                         🗑️
+                      </button>
+                      <button
+                        className="action-button archive"
+                        onClick={() => handleToggleArchive(event.id)}
+                        title="Archive"
+                      >
+                        📦
                       </button>
                     </div>
                   </td>

@@ -738,6 +738,116 @@ This email was sent by Peerislands
             logger.error(f"Failed to send event registration confirmation email: {e}")
             return False
 
+    @staticmethod
+    async def send_event_registration_cancellation_email(
+        receiver_email: str,
+        event_data: Dict[str, Any]
+    ) -> bool:
+        """
+        Send an event registration cancellation email
+        
+        Args:
+            receiver_email: Email address to send cancellation notification to
+            event_data: Dictionary containing event details
+                - title: Event title
+                - category: Event category
+                - date: Event date
+                - time: Event time
+                - timezone: Event timezone
+        
+        Returns:
+            True if email sent successfully, False otherwise
+        """
+        try:
+            from pathlib import Path
+            
+            logger.info(f"Sending event registration cancellation email to: {receiver_email}")
+            
+            # Get template path
+            template_path = Path(__file__).parent.parent.parent.parent / "templates" / "event_registration_cancellation.html"
+            
+            # Read and populate template
+            with open(template_path, "r", encoding="utf-8") as f:
+                html_template = f.read()
+            
+            # Format date for display
+            event_date = event_data.get('date', '')
+            event_date_formatted = event_date
+            if event_date:
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(event_date, "%Y-%m-%d")
+                    event_date_formatted = date_obj.strftime("%B %d, %Y")
+                except ValueError:
+                    pass  # Keep original format if parsing fails
+            
+            # Replace placeholders
+            html_content = html_template.replace("{{event_title}}", event_data.get('title', ''))
+            html_content = html_content.replace("{{event_category}}", event_data.get('category', ''))
+            html_content = html_content.replace("{{event_date}}", event_date_formatted)
+            html_content = html_content.replace("{{event_time}}", event_data.get('time', ''))
+            html_content = html_content.replace("{{event_timezone}}", event_data.get('timezone', ''))
+            
+            # Prepare subject
+            subject = f"Registration Cancelled: {event_data.get('title', 'Event')}"
+            
+            # Prepare plain text version
+            plain_text = f"""
+Registration Cancelled
+
+Your registration for the following event has been cancelled:
+
+{event_data.get('category', '').upper()}
+{event_data.get('title', '')}
+
+Date: {event_date_formatted}
+Time: {event_data.get('time', '')} {event_data.get('timezone', '')}
+
+Changed your mind? You can always register again for this event if spots are still available.
+
+---
+This email was sent by Peerislands
+            """
+            
+            # Create email service instance
+            service = EmailService()
+            
+            # Send email
+            if service.client:
+                message = {
+                    "senderAddress": settings.AZURE_COMMUNICATION_SENDER_ADDRESS,
+                    "recipients": {
+                        "to": [{"address": receiver_email}],
+                    },
+                    "content": {
+                        "subject": subject,
+                        "html": html_content,
+                        "plainText": plain_text,
+                    },
+                }
+                
+                try:
+                    logger.info(f"Sending cancellation email to {receiver_email}")
+                    
+                    poller = service.client.begin_send(message)
+                    
+                    # Wait for the email to be sent
+                    result = poller.result()
+                    logger.info(f"Cancellation email sent successfully. Message ID: {result.get('id', 'unknown')}, Status: {result.get('status', 'unknown')}")
+                except Exception as e:
+                    logger.error(f"Failed to send cancellation email: {e}")
+                    return False
+            else:
+                logger.error("Email service client not configured")
+                return False
+            
+            logger.info(f"Event registration cancellation email completed for {receiver_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send event registration cancellation email: {e}")
+            return False
+
 
 # Singleton instance
 email_service = EmailService()

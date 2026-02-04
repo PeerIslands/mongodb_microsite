@@ -5,6 +5,7 @@ import { caseStudiesService } from '@/api/services/case-studies.service';
 interface CaseStudyListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
 // Interface for API response (snake_case from backend)
@@ -25,7 +26,7 @@ interface CaseStudyApiResponse {
   description: string;
 }
 
-const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
+const CaseStudyList = ({ onAddNew, onEdit, onLoadComplete }: CaseStudyListProps) => {
   const [caseStudies, setCaseStudies] = useState<CaseStudyApiResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
   
@@ -48,6 +49,8 @@ const CaseStudyList = ({ onAddNew, onEdit }: CaseStudyListProps) => {
     } catch (err) {
       console.error('Failed to fetch case studies:', err);
       setError('Failed to load case studies. Please try again.');
+    } finally {
+      onLoadComplete?.();
     }
   };
 

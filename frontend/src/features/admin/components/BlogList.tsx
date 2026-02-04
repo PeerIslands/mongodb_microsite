@@ -6,9 +6,10 @@ import type { BlogCardData } from '@/features/blogs/components/BlogCard';
 interface BlogListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
+const BlogList = ({ onAddNew, onEdit, onLoadComplete }: BlogListProps) => {
   const [blogs, setBlogs] = useState<BlogCardData[]>([]);
   const [error, setError] = useState<string | null>(null);
   
@@ -32,6 +33,8 @@ const BlogList = ({ onAddNew, onEdit }: BlogListProps) => {
     } catch (err) {
       console.error('Failed to fetch blogs:', err);
       setError('Failed to load blogs. Please try again.');
+    } finally {
+      onLoadComplete?.();
     }
   };
 

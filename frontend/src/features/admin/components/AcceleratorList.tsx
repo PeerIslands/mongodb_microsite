@@ -6,9 +6,10 @@ import type { AcceleratorDetail, AcceleratorStatus } from '@/types/models/accele
 interface AcceleratorListProps {
   onAddNew: () => void;
   onEdit: (id: string) => void;
+  onLoadComplete?: () => void;
 }
 
-const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
+const AcceleratorList = ({ onAddNew, onEdit, onLoadComplete }: AcceleratorListProps) => {
   const [accelerators, setAccelerators] = useState<AcceleratorDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,8 @@ const AcceleratorList = ({ onAddNew, onEdit }: AcceleratorListProps) => {
     } catch (err) {
       console.error('Failed to fetch accelerators:', err);
       setError('Failed to load accelerators. Please try again.');
+    } finally {
+      onLoadComplete?.();
     }
   };
 

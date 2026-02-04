@@ -80,10 +80,20 @@ export const eventsService = {
     return response.data;
   },
 
+  // Cancel a registration
+  cancelRegistration: async (registrationId: string) => {
+    const response = await apiClient.patch<{ id: string; message: string }>(
+      `/api/v1/event-registrations/${registrationId}/status`,
+      { status: 'CANCELLED' }
+    );
+    return response.data;
+  },
+
   // Get registration count for a specific event
-  getRegistrationCount: async (eventId: string) => {
+  getRegistrationCount: async (eventId: string, status?: string) => {
     const response = await apiClient.get<{ event_id: string; count: number }>(
-      `/api/v1/event-registrations/event/${eventId}/count`
+      `/api/v1/event-registrations/event/${eventId}/count`,
+      {params: status ? {status} : undefined}
     );
     return response.data;
   },

@@ -122,7 +122,7 @@ class EventService:
         
         Args:
             category: Filter by category
-            status: Filter by status ('published' or 'draft')
+            status: Filter by status ('draft', 'published', or 'archived')
             featured: Filter by featured status
             
         Returns:

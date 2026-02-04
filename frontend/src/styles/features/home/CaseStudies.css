@@ -173,9 +173,9 @@
   align-items: stretch;
 }
 
-/* Ensure swiper slides stay within bounds */
+/* Swiper slide styling - allow glow effects to be visible */
 .case-studies-swiper .swiper-slide {
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Swiper slide */

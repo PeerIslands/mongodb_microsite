@@ -11,7 +11,7 @@ import '@/styles/pages/EventsPage.css';
  */
 const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { events: allEvents, registeredEventIds, isLoading, error, refetch } = useEvents({
+  const { events: allEvents, registeredEventIds, registrationIdByEventId, isLoading, error, refetch } = useEvents({
     autoFetch: true,
   });
 
@@ -227,7 +227,9 @@ const EventsPage = () => {
         isOpen={isDetailPanelOpen}
         onClose={handleCloseDetailPanel}
         isRegistered={selectedEvent ? registeredEventIds.has(selectedEvent.id) : false}
+        registrationId={selectedEvent ? registrationIdByEventId.get(selectedEvent.id) : undefined}
         onRegistrationSuccess={refetch}
+        onCancelSuccess={refetch}
       />
     </div>
   );
