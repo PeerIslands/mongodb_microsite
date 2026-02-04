@@ -6,7 +6,7 @@ Provides AI-powered chatbot functionality with adaptive RAG.
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional
 from app.core.database import get_database
 from app.api.v1.services.chatbot_service import ChatbotService
 

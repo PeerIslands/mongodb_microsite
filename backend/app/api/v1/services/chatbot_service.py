@@ -7,7 +7,6 @@ Architecture:
 - Tier 3 (3%): Deep search with expansion (all categories, ~25-40K tokens)
 """
 
-import json
 from typing import List, Dict, Any, Optional, Tuple
 from openai import AzureOpenAI
 from app.core.config import get_settings
