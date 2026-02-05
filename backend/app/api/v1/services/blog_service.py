@@ -3,6 +3,7 @@ Blog Service - Business logic layer for blog operations.
 Handles validation, data transformation, and orchestrates repository calls.
 """
 
+import re
 from typing import List, Optional, Dict, Any
 
 from app.api.v1.models.blog import (
@@ -35,6 +36,39 @@ class BlogService:
     # =========================================================================
     # HELPER METHODS
     # =========================================================================
+
+    def _slugify(self, text: str) -> str:
+        """Convert text to URL-friendly slug"""
+        text = text.lower().strip()
+        text = re.sub(r'[^\w\s-]', '', text)
+        text = re.sub(r'[-\s]+', '-', text)
+        return text.strip('-')
+
+    async def _generate_unique_slug(self, title: str, exclude_id: Optional[str] = None) -> str:
+        """
+        Generate a unique slug from title.
+        If slug exists, append a counter to make it unique.
+        
+        Args:
+            title: Blog title
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            Unique slug string
+        """
+        base_slug = self._slugify(title)
+        slug = base_slug
+        
+        # Ensure slug is not empty
+        if not slug:
+            slug = "blog-post"
+        
+        counter = 1
+        while await self._repository.slug_exists(slug, exclude_id):
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        
+        return slug
 
     def _to_response(self, doc: dict) -> BlogResponse:
         """Convert document to BlogResponse."""
@@ -90,6 +124,9 @@ class BlogService:
         # Convert enum to string
         if blog_data.get("status"):
             blog_data["status"] = blog_data["status"].value if hasattr(blog_data["status"], "value") else blog_data["status"]
+
+        # Generate unique slug from title
+        blog_data["slug"] = await self._generate_unique_slug(blog_data["title"])
 
         # Create in MongoDB
         created = await self._repository.create(blog_data)
@@ -170,6 +207,10 @@ class BlogService:
         # Convert enum to string if present
         if update_data.get("status"):
             update_data["status"] = update_data["status"].value if hasattr(update_data["status"], "value") else update_data["status"]
+
+        # If title is updated, regenerate slug
+        if "title" in update_data:
+            update_data["slug"] = await self._generate_unique_slug(update_data["title"], exclude_id=blog_id)
 
         # Update in MongoDB
         updated = await self._repository.update(blog_id, update_data)
