@@ -51,6 +51,23 @@ class BlogRepository:
         doc = await self._collection.find_one(query)
         return doc is not None
 
+    async def slug_exists(self, slug: str, exclude_id: Optional[str] = None) -> bool:
+        """
+        Check if a slug already exists.
+        
+        Args:
+            slug: The slug to check
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            True if exists, False otherwise
+        """
+        query = {"slug": slug}
+        if exclude_id:
+            query["_id"] = {"$ne": exclude_id}
+        doc = await self._collection.find_one(query)
+        return doc is not None
+
     async def create(self, blog_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new blog in MongoDB.
