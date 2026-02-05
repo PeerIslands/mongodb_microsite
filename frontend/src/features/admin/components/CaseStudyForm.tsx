@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import '@/styles/features/admin/CaseStudyForm.css';
 import FileUpload, { FileUploadResult } from './FileUpload';
 import RichTextEditor from './RichTextEditor';
-import ConfirmModal from '@/components/ConfirmModal';
 import { caseStudiesService } from '@/api/services/case-studies.service';
 import { aiExtractService } from '@/api/services/ai-extract.service';
 
@@ -92,8 +91,6 @@ const CaseStudyForm = ({
   // AI Extraction states
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
-  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
-  const [pendingAIFile, setPendingAIFile] = useState<File | null>(null);
 
   const [customTech, setCustomTech] = useState('');
   const [customIndustry, setCustomIndustry] = useState('');
@@ -274,18 +271,7 @@ const CaseStudyForm = ({
       return;
     }
 
-    // Check if this is a published case study
-    if (editingId && formData.status === 'published') {
-      // Show confirmation modal before proceeding
-      setPendingAIFile(file);
-      setShowOverwriteConfirm(true);
-    } else {
-      // Proceed directly if not published or new case study
-      await handleAIExtraction(file);
-    }
-    
-    // Clear the file input so the same file can be selected again if needed
-    e.target.value = '';
+    await handleAIExtraction(file);
   };
 
   const handleAIExtraction = async (file: File) => {
@@ -330,19 +316,6 @@ const CaseStudyForm = ({
     } finally {
       setIsExtracting(false);
     }
-  };
-
-  const handleConfirmOverwrite = async () => {
-    setShowOverwriteConfirm(false);
-    if (pendingAIFile) {
-      await handleAIExtraction(pendingAIFile);
-      setPendingAIFile(null);
-    }
-  };
-
-  const handleCancelOverwrite = () => {
-    setShowOverwriteConfirm(false);
-    setPendingAIFile(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -802,18 +775,6 @@ const CaseStudyForm = ({
           </button>
         </div>
       </form>
-
-      {/* Overwrite Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showOverwriteConfirm}
-        onConfirm={handleConfirmOverwrite}
-        onCancel={handleCancelOverwrite}
-        title="Overwrite Published Case Study?"
-        message="This case study is already published. Are you sure you want to overwrite its content with AI-extracted data? This action will replace the existing information."
-        confirmText="Yes, Overwrite"
-        cancelText="Cancel"
-        confirmButtonStyle="warning"
-      />
     </div>
   );
 };
