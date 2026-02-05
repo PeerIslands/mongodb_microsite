@@ -13,7 +13,7 @@ interface EventGridProps {
  * EventGrid - Grid container for event cards with carousel on mobile
  * Displays events in a responsive grid layout (desktop) or carousel (mobile)
  */
-const EventGrid = ({ events, maxItems, onEventClick }: EventGridProps) => {
+const EventGrid = ({ events, maxItems, onEventClick, registeredEventIds = new Set() }: EventGridProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Optionally limit the number of displayed events
@@ -66,6 +66,7 @@ const EventGrid = ({ events, maxItems, onEventClick }: EventGridProps) => {
             <EventCard 
               data={event} 
               onCardClick={onEventClick}
+              isRegistered={registeredEventIds.has(event.id)}
             />
           </div>
         ))}
