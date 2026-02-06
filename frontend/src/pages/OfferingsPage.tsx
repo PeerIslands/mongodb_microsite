@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import '@/styles/pages/OfferingsPage.css';
 import offeringImage1 from '@/assets/offering_image_1.png';
@@ -10,6 +10,19 @@ import offeringImage6 from '@/assets/offerings_image_6.png';
 
 const OfferingsPage = () => {
   const location = useLocation();
+  // Track which cards are expanded (all start collapsed)
+  const [expandedCards, setExpandedCards] = useState<boolean[]>([false, false, false, false, false, false]);
+
+  // Check if ALL cards are expanded
+  const allCardsExpanded = expandedCards.every(card => card === true);
+
+  const toggleCard = (index: number) => {
+    setExpandedCards(prev => {
+      const newState = [...prev];
+      newState[index] = !newState[index];
+      return newState;
+    });
+  };
 
   useEffect(() => {
     // Always scroll to top first
@@ -219,25 +232,62 @@ const OfferingsPage = () => {
 
       {/* Offerings Cards */}
       <section className="offerings-cards-section">
-        <div className="offerings-cards-container">
-          {offerings.map((offering) => (
+        <div className={`offerings-cards-container ${allCardsExpanded ? 'all-expanded' : ''}`}>
+          {offerings.map((offering, index) => (
             <div 
               key={offering.id} 
               id={offering.id}
-              className="offering-card"
+              className={`offering-card ${expandedCards[index] ? 'expanded' : 'collapsed'}`}
             >
-              <div className="offering-card-header">
+              <div 
+                className="offering-card-header"
+                onClick={() => toggleCard(index)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleCard(index);
+                  }
+                }}
+              >
                 <div className="offering-icon-wrapper" style={{ background: offering.color }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5L12 19M12 19L7 14M12 19L17 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <h2 className="offering-card-title">{offering.title}</h2>
+                <div 
+                  className="offering-card-toggle"
+                  aria-label={expandedCards[index] ? 'Collapse card' : 'Expand card'}
+                >
+                  <svg 
+                    className="toggle-arrow" 
+                    width="24" 
+                    height="24" 
+                    viewBox="0 0 24 24" 
+                    fill="none"
+                  >
+                    <path 
+                      d="M19 9L12 16L5 9" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </div>
 
               <div className="offering-card-content">
-                  <div className="offering-card-body">
-                    <div className="offering-card-text" style={{ '--offering-color': offering.color } as React.CSSProperties}>
+                  <div 
+                    className="offering-card-body"
+                    style={{ 
+                      '--offering-color': offering.color,
+                      '--offering-bg-image': `url(${offering.image})`
+                    } as React.CSSProperties}
+                  >
+                    <div className="offering-card-text">
                       <div className="offering-subtitle-block">
                         <h3 className="offering-subtitle">{offering.subtitle}</h3>
                         <p className="offering-description">{offering.description}</p>

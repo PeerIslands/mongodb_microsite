@@ -215,22 +215,38 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .events-swiper {
-    padding-bottom: 40px;
+  .events-carousel-wrapper {
+    position: relative;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 70px; /* Space for arrows below */
   }
   
-  .events-swiper .swiper-pagination {
-    gap: 0.625rem;
+  /* Show arrows below cards on mobile */
+  .events-carousel-arrow {
+    display: flex;
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    bottom: 0;
   }
   
-  .events-swiper .swiper-pagination-bullet {
-    width: 8px;
-    height: 8px;
+  .events-carousel-arrow-left {
+    left: calc(50% - 60px);
   }
   
-  .events-swiper .swiper-pagination-bullet-active {
-    width: 10px;
-    height: 10px;
+  .events-carousel-arrow-right {
+    right: calc(50% - 60px);
+  }
+  
+  /* Mobile Swiper adjustments */
+  .event-slide {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .event-slide .event-card {
+    min-height: 350px;
   }
 }
 

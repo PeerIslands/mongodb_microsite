@@ -1,4 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/navigation';
 import '@/styles/pages/AdminDashboardPage.css';
 import {
   CaseStudyList,
@@ -17,6 +22,15 @@ import LeafLoader from '@/components/LeafLoader';
 
 type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
+
+const navItems: { key: MainView; icon: string; label: string }[] = [
+  { key: 'cases', icon: '📚', label: 'Case Studies' },
+  { key: 'accelerators', icon: '🚀', label: 'Accelerators' },
+  { key: 'blogs', icon: '📝', label: 'Blogs' },
+  { key: 'events', icon: '📅', label: 'Events' },
+  { key: 'analytics', icon: '📊', label: 'Analytics' },
+  { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
+];
 
 const AdminDashboard = () => {
   const [mainView, setMainView] = useState<MainView>('cases');
@@ -50,6 +64,7 @@ const AdminDashboard = () => {
   const handleLoadComplete = () => {
     setIsTabLoading(false);
   };
+  const swiperRef = useRef<SwiperType | null>(null);
 
   // Case Study handlers
   const handleCaseAddNew = () => {
@@ -160,45 +175,67 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-        {/* Main Navigation */}
-        <div className="main-navigation">
+      {/* Desktop Navigation - visible on desktop only */}
+      <div className="main-navigation main-navigation-desktop">
+        {navItems.map((item) => (
           <button
-            className={`main-nav-tab ${mainView === 'cases' ? 'active' : ''}`}
-            onClick={() => { handleMainViewChange('cases'); console.log('cases') }}
+            key={item.key}
+            className={`main-nav-tab ${mainView === item.key ? 'active' : ''}`}
+            onClick={() => handleMainViewChange(item.key)}
           >
-            📚 Case Studies
+            {item.icon} {item.label}
           </button>
-          <button
-            className={`main-nav-tab ${mainView === 'accelerators' ? 'active' : ''}`}
-            onClick={() => { handleMainViewChange('accelerators'); console.log('accelerators') }}
-          >
-            🚀 Accelerators
-          </button>
-          <button
-            className={`main-nav-tab ${mainView === 'blogs' ? 'active' : ''}`}
-            onClick={() => { handleMainViewChange('blogs'); console.log('blogs') }}
-          >
-            📝 Blogs
-          </button>
-          <button
-            className={`main-nav-tab ${mainView === 'events' ? 'active' : ''}`}
-            onClick={() => { handleMainViewChange('events'); console.log('events') }}
-          >
-            📅 Events
-          </button>
-          <button
-            className={`main-nav-tab ${mainView === 'analytics' ? 'active' : ''}`}
-            onClick={() => { handleMainViewChange('analytics'); console.log('analytics') }}
-          >
-            📊 Analytics
-          </button>
-          <button
-            className={`main-nav-tab ${mainView === 'emailtemplates' ? 'active' : ''}`}
-            onClick={() => handleMainViewChange('emailtemplates')}
-          >
-            📭 Newsletters
-          </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Mobile/Tablet Navigation Carousel */}
+      <div className="main-navigation-carousel">
+        <button
+          className="admin-nav-arrow admin-nav-arrow-left"
+          onClick={() => swiperRef.current?.slidePrev()}
+          aria-label="Previous tab"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+
+        <Swiper
+          modules={[Navigation]}
+          spaceBetween={8}
+          slidesPerView="auto"
+          centeredSlides={false}
+          initialSlide={0}
+          loop={false}
+          rewind={false}
+          watchOverflow={true}
+          resistance={true}
+          resistanceRatio={0}
+          onSwiper={(swiper) => { swiperRef.current = swiper; }}
+          className="admin-nav-swiper"
+        >
+          {navItems.map((item) => (
+            <SwiperSlide key={item.key} className="admin-nav-slide">
+              <button
+                className={`main-nav-tab ${mainView === item.key ? 'active' : ''}`}
+                onClick={() => handleMainViewChange(item.key)}
+              >
+                {item.icon} {item.label}
+              </button>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        <button
+          className="admin-nav-arrow admin-nav-arrow-right"
+          onClick={() => swiperRef.current?.slideNext()}
+          aria-label="Next tab"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
 
         {/* Loading Overlay */}
         {isTabLoading && <LeafLoader message={loadingMessage} />}
@@ -289,4 +326,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-

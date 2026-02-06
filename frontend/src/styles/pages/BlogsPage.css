@@ -1,7 +1,10 @@
 /* Blogs Page Styles */
 .blogs-page {
+  width: 100%;
   min-height: 100vh;
   background: #020916;
+  position: relative;
+  overflow-x: hidden;
 }
 
 /* Hero Section */
@@ -89,6 +92,7 @@
 .blogs-content {
   padding: 0 2rem 5rem;
   margin-top: -3rem;
+  overflow-x: hidden;
 }
 
 .blogs-content__container {
@@ -425,7 +429,7 @@
 
 @media (max-width: 480px) {
   .blogs-hero {
-    padding: 4rem 1rem 1.5rem;
+    padding: 6rem 1rem 1.5rem;
   }
 
   .blogs-hero__container {

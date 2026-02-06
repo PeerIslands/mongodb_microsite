@@ -72,6 +72,26 @@
   overflow: hidden;
 }
 
+/* Desktop-first: Show grid by default, hide circular display */
+.stats-grid-desktop {
+  display: grid;
+}
+
+.stats-circle-mobile {
+  display: none;
+}
+
+/* Mobile/Tablet - hide grid, show circular display */
+@media (max-width: 1024px) {
+  .stats-grid-desktop {
+    display: none !important;
+  }
+
+  .stats-circle-mobile {
+    display: flex !important;
+  }
+}
+
 .stat-card {
   background: transparent;
   border: none;
@@ -205,28 +225,137 @@
   background: linear-gradient(179.891deg, rgb(156, 224, 138) 0%, rgb(38, 75, 120) 55.24%, rgb(3, 10, 23) 100%);
 }
 
-/* Tablet */
+/* ============================================================================
+   CIRCULAR DISPLAY FOR MOBILE/TABLET
+   ============================================================================ */
+
+.stats-circle-container {
+  /* Display controlled by .stats-circle-mobile class */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.stats-circle {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(91, 108, 255, 0.1) 0%, rgba(91, 108, 255, 0.05) 50%, transparent 70%);
+  box-shadow: 
+    0 0 60px rgba(91, 108, 255, 0.4),
+    0 0 100px rgba(91, 108, 255, 0.2),
+    inset 0 0 60px rgba(91, 108, 255, 0.1);
+}
+
+.stats-circle-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-circle-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none;
+  width: 80%;
+  padding: 1rem;
+}
+
+.stat-circle-item.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.stat-circle-value {
+  font-family: 'Manrope', sans-serif;
+  font-size: 56px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  text-shadow: 
+    0 0 20px rgba(91, 108, 255, 0.6),
+    0 0 40px rgba(91, 108, 255, 0.4);
+}
+
+.stat-circle-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+}
+
+/* Removed circular progress indicator */
+
+/* Dots indicator */
+.stats-circle-dots {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.stats-circle-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.stats-circle-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.2);
+}
+
+.stats-circle-dot.active {
+  background: #5b6cff;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 10px rgba(91, 108, 255, 0.8);
+}
+
+/* Tablet and below - show circular display */
 @media (max-width: 1024px) {
   .statistics-content {
     padding: 0 1.5rem;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Grid/Circle display already handled by .stats-circle-mobile class above */
+
+  .stats-circle {
+    width: 280px;
+    height: 280px;
   }
 
-  .stat-divider-1,
-  .stat-divider-3 {
-    display: none;
+  .stat-circle-value {
+    font-size: 48px;
   }
 
-  .stat-divider-2 {
-    left: 50%;
-  }
-
-  .stat-divider-horizontal {
-    top: auto;
-    /* Adjust for 4 rows with 2 columns */
+  .stat-circle-label {
+    font-size: 16px;
   }
 }
 
@@ -250,36 +379,28 @@
     font-size: 16px;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  /* Circular display on mobile */
+  .stats-circle {
+    width: 260px;
+    height: 260px;
   }
 
-  .stat-card {
-    min-height: 100px;
-    padding: 1.5rem;
+  .stat-circle-value {
+    font-size: 42px;
   }
 
-  .stat-card:nth-child(n) {
-    min-height: 100px;
+  .stat-circle-label {
+    font-size: 15px;
   }
 
-  .stat-divider {
-    display: none;
+  .stats-circle-dot {
+    width: 8px;
+    height: 8px;
   }
 
-  .stat-value-large,
-  .stat-value-medium {
-    font-size: 28px;
-  }
-
-  .stat-card-highlight .stat-value {
-    font-size: 32px;
-  }
-
-  .stat-label {
-    font-size: 14px;
-    margin-top: 0.5rem;
+  .stats-circle-dot.active {
+    width: 10px;
+    height: 10px;
   }
 }
 
@@ -291,5 +412,18 @@
 
   .section-description {
     font-size: 15px;
+  }
+
+  .stats-circle {
+    width: 240px;
+    height: 240px;
+  }
+
+  .stat-circle-value {
+    font-size: 36px;
+  }
+
+  .stat-circle-label {
+    font-size: 14px;
   }
 }

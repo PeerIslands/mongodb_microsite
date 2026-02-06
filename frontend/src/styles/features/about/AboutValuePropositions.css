@@ -98,8 +98,66 @@
   }
 }
 
+/* Carousel dots - hidden on desktop/tablet, shown on mobile */
+.about-values__carousel-dots {
+  display: none;
+}
+
 @media (max-width: 600px) {
   .about-values__grid {
-    grid-template-columns: 1fr;
+    display: block;
+    position: relative;
+    min-height: 300px;
+  }
+  
+  /* Stack all cards on top of each other */
+  .about-values__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+    transform: translateX(0);
+  }
+  
+  /* Show only the active card */
+  .about-values__card.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+  }
+  
+  /* Carousel dots navigation */
+  .about-values__carousel-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding: 0.5rem 0;
+  }
+  
+  .about-values__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .about-values__dot:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.2);
+  }
+  
+  .about-values__dot.active {
+    background: #5b6cff;
+    width: 24px;
+    border-radius: 4px;
   }
 }

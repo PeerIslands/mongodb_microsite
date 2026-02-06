@@ -64,6 +64,26 @@
   justify-content: center;
 }
 
+/* Desktop-first: Show grid by default, hide carousel */
+.capabilities-grid-desktop {
+  display: grid;
+}
+
+.capabilities-carousel-mobile {
+  display: none;
+}
+
+/* Mobile/Tablet - hide grid, show carousel */
+@media (max-width: 1024px) {
+  .capabilities-grid-desktop {
+    display: none !important;
+  }
+
+  .capabilities-carousel-mobile {
+    display: flex !important;
+  }
+}
+
 .capability-card {
   background: rgba(255, 255, 255, 0.02);
   border: 1.547px solid #ffffff;
@@ -88,6 +108,13 @@
   border-color: rgba(91, 108, 255, 0.5);
 }
 
+/* Touch/Active state for mobile */
+.capability-card:active {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(91, 108, 255, 0.15);
+  border-color: rgba(91, 108, 255, 0.5);
+}
+
 /* Decorative glow */
 .capability-card__glow {
   position: absolute;
@@ -104,7 +131,8 @@
   transition: opacity 0.3s ease;
 }
 
-.capability-card:hover .capability-card__glow {
+.capability-card:hover .capability-card__glow,
+.capability-card:active .capability-card__glow {
   opacity: 1;
 }
 
@@ -129,7 +157,8 @@
   border-radius: 24px;
 }
 
-.capability-card:hover .capability-image {
+.capability-card:hover .capability-image,
+.capability-card:active .capability-image {
   transform: scale(1.05);
 }
 
@@ -150,7 +179,8 @@
   justify-content: center;
 }
 
-.capability-card:hover .capability-title {
+.capability-card:hover .capability-title,
+.capability-card:active .capability-title {
   color: #ffffff;
   text-shadow: 
     0 0 20px rgba(91, 108, 255, 0.6),
@@ -158,27 +188,116 @@
     0 0 60px rgba(91, 108, 255, 0.3);
 }
 
-/* Tablet */
+/* Carousel Styles for Mobile/Tablet */
+.capabilities-carousel-wrapper {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px 0;
+  /* Display is controlled by .capabilities-carousel-mobile class */
+}
+
+.capabilities-swiper {
+  width: 100%;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* Ensure all slides have equal height */
+.capabilities-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.capability-slide {
+  height: auto;
+  display: flex;
+}
+
+/* Ensure cards in carousel have consistent height */
+.capability-slide .capability-card {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.capabilities-carousel-arrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.capabilities-carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.capabilities-carousel-arrow:active {
+  transform: scale(0.95);
+}
+
+.capabilities-carousel-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Tablet and below - show carousel */
 @media (max-width: 1024px) {
   .capabilities-content {
     padding: 0 1.5rem;
   }
 
-  .capabilities-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .capabilities-carousel-wrapper {
+    display: flex;
   }
 
   .capability-card {
-    min-height: 220px;
+    min-height: 200px;
+    max-width: 100%;
+    margin: 0 auto;
+    aspect-ratio: unset; /* Remove aspect ratio on tablet */
+  }
+  
+  /* Ensure carousel cards have equal height on tablet */
+  .capability-slide .capability-card {
+    min-height: 200px;
+    height: 100%;
   }
 
   .capability-image-container {
-    padding: 0.75rem;
+    padding: 0.5rem;
+    height: 55%;
   }
 
   .capability-title {
-    font-size: clamp(16px, 2vw, 20px);
-    padding: 1rem;
+    font-size: 16px;
+    padding: 0.75rem;
+    height: 45%;
+  }
+
+  .capabilities-carousel-arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .capabilities-carousel-arrow svg {
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -191,7 +310,7 @@
 
   .capabilities-content {
     padding: 0 1rem;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .capabilities .section-title {
@@ -202,22 +321,61 @@
     font-size: 16px;
   }
 
-  .capabilities-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  /* Carousel shows 1 card on mobile */
+  .capabilities-carousel-wrapper {
+    position: relative;
+    padding-bottom: 70px; /* Space for arrows below */
   }
 
   .capability-card {
     min-height: 200px;
+    max-width: 100%;
+    border-radius: 16px;
+    aspect-ratio: unset;
+    /* Show subtle border glow on mobile by default */
+    border-color: rgba(91, 108, 255, 0.3);
+  }
+  
+  /* Ensure carousel cards have equal height on mobile */
+  .capability-slide .capability-card {
+    min-height: 220px;
+    height: 100%;
   }
 
   .capability-image-container {
-    padding: 0.75rem;
+    padding: 0.5rem;
+    height: 55%;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .capability-image {
+    border-radius: 12px;
   }
 
   .capability-title {
-    font-size: 16px;
-    padding: 1rem;
+    font-size: 15px;
+    padding: 0.6rem;
+    height: 45%;
+    /* Show subtle text glow on mobile by default */
+    text-shadow: 
+      0 0 10px rgba(91, 108, 255, 0.3),
+      0 0 20px rgba(91, 108, 255, 0.2);
+  }
+
+  /* Position arrows at bottom on mobile */
+  .capabilities-carousel-arrow {
+    position: absolute;
+    bottom: 0;
+    width: 44px;
+    height: 44px;
+  }
+
+  .capabilities-carousel-arrow-left {
+    left: calc(50% - 60px);
+  }
+
+  .capabilities-carousel-arrow-right {
+    right: calc(50% - 60px);
   }
 }
 
@@ -233,14 +391,30 @@
 
   .capability-card {
     min-height: 180px;
+    border-radius: 12px;
+    aspect-ratio: unset;
+  }
+  
+  /* Ensure carousel cards have equal height on small mobile */
+  .capability-slide .capability-card {
+    min-height: 180px;
+    height: 100%;
   }
 
   .capability-image-container {
-    padding: 0.5rem;
+    padding: 0.4rem;
+    height: 55%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .capability-image {
+    border-radius: 8px;
   }
 
   .capability-title {
-    font-size: 15px;
-    padding: 0.75rem;
+    font-size: 14px;
+    padding: 0.5rem;
+    height: 45%;
+    line-height: 1.3;
   }
 }
