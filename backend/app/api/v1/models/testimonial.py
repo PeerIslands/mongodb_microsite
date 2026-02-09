@@ -5,7 +5,6 @@ Includes request/response models for testimonial operations.
 Field naming convention: snake_case (matching frontend requirements)
 """
 
-from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, Field
 

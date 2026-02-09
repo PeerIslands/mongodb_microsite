@@ -8,10 +8,6 @@ interface TestimonialDetailSectionProps {
   isLoading?: boolean;
 }
 
-// Generate initials-based placeholder avatars
-const getAvatarUrl = (name: string, bg: string = '5B6CFF') => 
-  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&size=120&font-size=0.35&rounded=true`;
-
 /**
  * TestimonialDetailSection - Displays detailed testimonial information
  * This section is revealed when a user clicks on a testimonial card in the carousel
@@ -44,7 +40,6 @@ const TestimonialDetailSection = ({ testimonial, isVisible, isLoading = false }:
     return null;
   }
 
-  const avatarUrl = getAvatarUrl(testimonial.testimonial_author);
 
   return (
     <section

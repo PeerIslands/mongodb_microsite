@@ -17,10 +17,8 @@ from app.api.v1.models.testimonial import (
 )
 from app.api.v1.repositories.testimonial_repository import TestimonialRepository
 from app.api.v1.repositories.case_study_repository import CaseStudyRepository
-from app.api.v1.exceptions.testimonial_exceptions import (
-    TestimonialNotFoundError,
-    TestimonialValidationError,
-)
+from app.api.v1.exceptions.testimonial_exceptions import TestimonialNotFoundError
+
 
 
 class TestimonialService:
