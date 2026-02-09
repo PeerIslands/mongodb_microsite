@@ -96,27 +96,6 @@ const Header = () => {
     }, 500);
   };
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string, ctaName: string) => {
-    e.preventDefault();
-    analytics.trackCTAClick(ctaName, 'Header Navigation');
-    navigate(path);
-    setShowMoreMenu(false);
-    setShowMobileDropdown(false);
-    setTimeout(() => {
-      globalThis.scrollTo(0, 0);
-    }, 100);
-  };
-
-  const handleAdminNavigation = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    navigate('/admin');
-    setShowMoreMenu(false);
-    setShowMobileDropdown(false);
-    setTimeout(() => {
-      globalThis.scrollTo(0, 0);
-    }, 100);
-  };
-
   const getInitials = (email: string) => {
     if (!email) return 'U';
     return email.charAt(0).toUpperCase();
@@ -137,23 +116,23 @@ const Header = () => {
 
             {/* Desktop Navigation - All links */}
             <nav className="nav nav-desktop">
-            <a href={ROUTES.OFFERINGS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS, 'Offerings Nav')}>Offerings</a>
-            <a href={ROUTES.ACCELERATORS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS, 'Accelerators Nav')}>Accelerators</a>
-            <a href={ROUTES.SUCCESS_STORIES} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES, 'Success Stories Nav')}>Success Stories</a>
-            <a href={ROUTES.INSIGHTS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS, 'Insights Nav')}>Insights</a>
-            <a href={ROUTES.EVENTS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.EVENTS, 'Events Nav')}>Events</a>
-            <a href={ROUTES.ABOUT} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.ABOUT, 'About Nav')}>About</a>
+            <a href={ROUTES.OFFERINGS} className="nav-link">Offerings</a>
+            <a href={ROUTES.ACCELERATORS} className="nav-link">Accelerators</a>
+            <a href={ROUTES.SUCCESS_STORIES} className="nav-link">Success Stories</a>
+            <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
+            <a href={ROUTES.EVENTS} className="nav-link">Events</a>
+            <a href={ROUTES.ABOUT} className="nav-link">About</a>
             {isLoggedIn && isAdmin && (
-              <a href={ROUTES.ADMIN} className="nav-link admin-link" onClick={handleAdminNavigation}>Admin Dashboard</a>
+              <a href={ROUTES.ADMIN} className="nav-link admin-link">Admin Dashboard</a>
             )}
           </nav>
           
           {/* Tablet Navigation - 4 links + dropdown */}
           <nav className="nav nav-tablet">
-            <a href={ROUTES.OFFERINGS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.OFFERINGS, 'Offerings Nav')}>Offerings</a>
-            <a href={ROUTES.ACCELERATORS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.ACCELERATORS, 'Accelerators Nav')}>Accelerators</a>
-            <a href={ROUTES.SUCCESS_STORIES} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.SUCCESS_STORIES, 'Success Stories Nav')}>Success Stories</a>
-            <a href={ROUTES.INSIGHTS} className="nav-link" onClick={(e) => handleNavigation(e, ROUTES.INSIGHTS, 'Insights Nav')}>Insights</a>
+            <a href={ROUTES.OFFERINGS} className="nav-link">Offerings</a>
+            <a href={ROUTES.ACCELERATORS} className="nav-link">Accelerators</a>
+            <a href={ROUTES.SUCCESS_STORIES} className="nav-link">Success Stories</a>
+            <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
             
             <div className="nav-dropdown">
               <button className="nav-dropdown-button" onClick={() => setShowMoreMenu(!showMoreMenu)} aria-label="More">
@@ -165,10 +144,10 @@ const Header = () => {
                 <>
                   <button type="button" className="nav-dropdown-overlay" onClick={() => setShowMoreMenu(false)} aria-label="Close" />
                   <div className="nav-dropdown-menu">
-                    <a href={ROUTES.EVENTS} className="nav-dropdown-link" onClick={(e) => { handleNavigation(e, ROUTES.EVENTS, 'Events Nav'); setShowMoreMenu(false); }}>Events</a>
-                    <a href={ROUTES.ABOUT} className="nav-dropdown-link" onClick={(e) => { handleNavigation(e, ROUTES.ABOUT, 'About Nav'); setShowMoreMenu(false); }}>About</a>
+                    <a href={ROUTES.EVENTS} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Events</a>
+                    <a href={ROUTES.ABOUT} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>About</a>
                     {isLoggedIn && isAdmin && (
-                      <a href={ROUTES.ADMIN} className="nav-dropdown-link" onClick={(e) => { handleAdminNavigation(e); setShowMoreMenu(false); }}>Admin Dashboard</a>
+                      <a href={ROUTES.ADMIN} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Admin Dashboard</a>
                     )}
                   </div>
                 </>
@@ -215,7 +194,13 @@ const Header = () => {
             ) : (
               <button onClick={handleLoginClick} className="login-link login-button">Login</button>
             )}
-            <button className="demo-button" onClick={(e) => { analytics.trackCTAClick('Contact Us Button', 'Header'); handleNavigation(e as any, '/contact', 'Contact Us'); }}>
+            <button 
+              className="demo-button" 
+              onClick={() => {
+                analytics.trackCTAClick('Contact Us Button', 'Header');
+                navigate('/contact');
+              }}
+            >
               Contact Us
             </button>
           </div>
@@ -235,12 +220,12 @@ const Header = () => {
           {/* Center Nav - Shows current page name */}
           <div className="phone-nav">
             {location.pathname === ROUTES.HOME || location.pathname === '/' ? (
-              <button 
-                className="phone-nav-text phone-nav-text-clickable" 
-                onClick={(e) => handleNavigation(e as any, ROUTES.OFFERINGS, 'Offerings Nav Mobile')}
+              <a 
+                href={ROUTES.OFFERINGS}
+                className="phone-nav-text phone-nav-text-clickable"
               >
                 {currentPageLabel}
-              </button>
+              </a>
             ) : (
               <span className="phone-nav-text">{currentPageLabel}</span>
             )}
@@ -259,13 +244,13 @@ const Header = () => {
                       key={item.path}
                       href={item.path} 
                       className="phone-dropdown-item" 
-                      onClick={(e) => { handleNavigation(e, item.path, `${item.label} Nav`); setShowMobileDropdown(false); }}
+                      onClick={() => setShowMobileDropdown(false)}
                     >
                       {item.label}
                     </a>
                   ))}
                   {isLoggedIn && isAdmin && (
-                    <a href={ROUTES.ADMIN} className="phone-dropdown-item" onClick={(e) => { handleAdminNavigation(e); setShowMobileDropdown(false); }}>Admin</a>
+                    <a href={ROUTES.ADMIN} className="phone-dropdown-item" onClick={() => setShowMobileDropdown(false)}>Admin</a>
                   )}
                 </div>
               </>
@@ -294,7 +279,13 @@ const Header = () => {
             ) : (
               <button onClick={handleLoginClick} className="phone-login">Login</button>
             )}
-            <button className="phone-contact" onClick={(e) => { analytics.trackCTAClick('Contact Us', 'Header'); handleNavigation(e as any, '/contact', 'Contact Us'); }}>
+            <button 
+              className="phone-contact" 
+              onClick={() => {
+                analytics.trackCTAClick('Contact Us', 'Header');
+                navigate('/contact');
+              }}
+            >
               📞
             </button>
           </div>

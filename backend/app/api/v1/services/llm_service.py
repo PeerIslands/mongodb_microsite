@@ -3,6 +3,7 @@ LLM Service - Process extracted text with Azure OpenAI to generate case study da
 """
 
 import json
+import re
 from typing import Dict, Any
 from openai import AzureOpenAI
 from app.core.config import get_settings
@@ -81,8 +82,8 @@ Extract these fields:
 - migrationType: Type of migration if mentioned (e.g., "SQL to MongoDB", "Cloud Migration", "Legacy Modernization")
 
 **Problem & Solution:**
-- challenges: Problems or challenges the client faced (detailed paragraph)
-- approach: Solution approach and implementation details (detailed paragraph)
+- challenges: Problems or challenges the client faced (format as markdown with bullet points if multiple challenges, use "- " for each bullet)
+- approach: Solution approach and implementation details (format as markdown with bullet points for key steps, use "- " for each bullet)
 
 **Results & Impact:**
 - metrics: Array of 3-5 quantifiable results with label and value
@@ -91,7 +92,7 @@ Extract these fields:
     {{"label": "Cost Reduction", "value": "50%"}},
     {{"label": "Time Savings", "value": "70%"}}
   ]
-- businessOutcomes: Business outcomes and benefits achieved (detailed paragraph, separate multiple points with ' | ')
+- businessOutcomes: Business outcomes and benefits achieved (format as markdown with bullet points, use "- " for each outcome. Example: "- Reduced operational costs by 40%\n- Improved query performance by 3x\n- Enhanced scalability for future growth")
 
 **Testimonials (if available):**
 - testimonialQuote: Direct quote from client
@@ -134,10 +135,10 @@ Remember: Return ONLY valid JSON. No additional text or explanations.
             "industry": result.get("industry", ""),
             "techStack": result.get("techStack", []),
             "migrationType": result.get("migrationType", ""),
-            "challenges": result.get("challenges", ""),
-            "approach": result.get("approach", ""),
+            "challenges": self._convert_to_markdown_bullets(result.get("challenges", "")),
+            "approach": self._convert_to_markdown_bullets(result.get("approach", "")),
             "metrics": result.get("metrics", []),
-            "businessOutcomes": result.get("businessOutcomes", ""),
+            "businessOutcomes": self._convert_to_markdown_bullets(result.get("businessOutcomes", "")),
             "testimonialQuote": result.get("testimonialQuote", ""),
             "testimonialAuthor": result.get("testimonialAuthor", ""),
             "testimonialPosition": result.get("testimonialPosition", "")
@@ -167,3 +168,37 @@ Remember: Return ONLY valid JSON. No additional text or explanations.
         normalized["metrics"] = validated_metrics
         
         return normalized
+    
+    def _convert_to_markdown_bullets(self, text: str) -> str:
+        """
+        Convert old " | " separated format to markdown bullet points.
+        If text already contains markdown bullets, return as-is.
+        
+        Args:
+            text: Text that may contain " | " separators or markdown bullets
+            
+        Returns:
+            Text formatted with markdown bullet points
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        text = text.strip()
+        
+        # If already contains markdown bullets, return as-is
+        if text.startswith("- ") or "\n- " in text:
+            return text
+        
+        # If contains " | " separator, convert to bullets
+        if " | " in text:
+            parts = [part.strip() for part in text.split(" | ") if part.strip()]
+            return "\n".join(f"- {part}" for part in parts)
+        
+        # If contains multiple sentences, convert to bullets
+        # Split by common sentence endings followed by capital letter
+        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
+        if len(sentences) > 1:
+            return "\n".join(f"- {sentence.strip()}" for sentence in sentences if sentence.strip())
+        
+        # Single sentence/paragraph - return as-is
+        return text

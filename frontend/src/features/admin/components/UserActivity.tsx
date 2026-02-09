@@ -20,8 +20,16 @@ const UserActivity = () => {
         
         // Filter out ALL admin page activity (page views, scrolls, CTAs, etc.)
         const filteredActivities = response.activities.filter((activity: any) => {
+          // Keep Contact Us CTA clicks regardless of page
+          const isContactUsCTA = activity.event_type === 'cta_click' && 
+            activity.cta_name?.toLowerCase().includes('contact');
+          
+          if (isContactUsCTA) {
+            return true; // Always show Contact Us clicks
+          }
+          
           // Remove anything from /admin page
-          if (activity.page_path === '/admin') {
+          if (activity.page_path === '/admin' || activity.page_path?.startsWith('/admin')) {
             return false;
           }
           // Remove admin-related CTA clicks
@@ -160,11 +168,20 @@ const UserActivity = () => {
           <tbody>
             {activities.length > 0 ? (
               activities
-                .filter((activity: any) => 
-                  !activity.page_path?.startsWith('/admin') && 
-                  !activity.page_path?.startsWith('/profile') &&
-                  !activity.page_path?.startsWith('/contact')
-                )
+                .filter((activity: any) => {
+                  // Keep Contact Us CTA clicks regardless of page
+                  const isContactUsCTA = activity.event_type === 'cta_click' && 
+                    activity.cta_name?.toLowerCase().includes('contact');
+                  
+                  if (isContactUsCTA) {
+                    return true; // Always show Contact Us clicks
+                  }
+                  
+                  // Filter out admin, profile, and contact page activity
+                  return !activity.page_path?.startsWith('/admin') && 
+                         !activity.page_path?.startsWith('/profile') &&
+                         !activity.page_path?.startsWith('/contact');
+                })
                 .map((activity: any, index: number) => (
                 <tr key={index}>
                   <td className="user-cell">
@@ -182,7 +199,12 @@ const UserActivity = () => {
                       <span className="event-label">{getEventLabel(activity.event_type)}</span>
                     </div>
                   </td>
-                  <td className="page-cell">{activity.page_title || activity.page_path || '-'}</td>
+                  <td className="page-cell">
+                    {activity.event_type === 'cta_click' && activity.cta_name 
+                      ? `${activity.cta_name} (${activity.page_path || 'Unknown'})`
+                      : activity.page_title || activity.page_path || '-'
+                    }
+                  </td>
                   <td className="time-cell">{formatTimestamp(activity.timestamp)}</td>
                 </tr>
               ))
