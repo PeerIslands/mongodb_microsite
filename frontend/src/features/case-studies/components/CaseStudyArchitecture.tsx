@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
+import { Navigation, Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import CaseStudyCard, { CaseStudyCardData } from './CaseStudyCard';
 import LeafLoader from '@/components/LeafLoader';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import '@/styles/features/case-studies/CaseStudyArchitecture.css';
 
 // Keep the old interface exports for backward compatibility
@@ -208,10 +209,15 @@ const CaseStudyArchitecture = ({
 
                 {/* Swiper Carousel */}
                 <Swiper
-                  modules={[Navigation]}
+                  modules={[Navigation, Pagination]}
                   spaceBetween={24}
                   slidesPerView={1}
                   loop={caseStudies.length > 2}
+                  pagination={{
+                    clickable: true,
+                    bulletClass: 'featured-stories__pagination-bullet',
+                    bulletActiveClass: 'featured-stories__pagination-bullet--active',
+                  }}
                   onSwiper={(swiper) => {
                     swiperRef.current = swiper;
                   }}

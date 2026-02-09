@@ -49,9 +49,9 @@ export interface CreateAcceleratorDto {
   metrics: MetricItem[];
   status?: AcceleratorStatus;
   feature_on_homepage?: boolean;
-  thumbnail_file?: File;
-  video_file?: File;
-  pdf_file?: File;
+  pdf_file: File; // Required
+  thumbnail_file?: File; // Optional
+  video_file?: File; // Optional
 }
 
 /** Data for updating an accelerator (all fields optional) */
@@ -65,6 +65,10 @@ export interface UpdateAcceleratorDto {
   thumbnail_file?: File;
   video_file?: File;
   pdf_file?: File;
+  // File deletion flags
+  delete_thumbnail?: boolean;
+  delete_video?: boolean;
+  delete_pdf?: boolean;
 }
 
 /** Response after creating an accelerator */

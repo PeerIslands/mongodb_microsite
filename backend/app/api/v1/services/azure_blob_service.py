@@ -63,9 +63,9 @@ IMAGE_EXTENSIONS = {
 }
 
 # Maximum file sizes
-MAX_PDF_SIZE = 10 * 1024 * 1024      # 10MB for PDFs
+MAX_PDF_SIZE = 20 * 1024 * 1024      # 20MB for PDFs
 MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos
-MAX_IMAGE_SIZE = 5 * 1024 * 1024     # 5MB for images
+MAX_IMAGE_SIZE = 10 * 1024 * 1024     # 10MB for images
 MAX_SVG_SIZE = 2 * 1024 * 1024       # 2MB for SVG files
 
 # Valid categories for folder organization

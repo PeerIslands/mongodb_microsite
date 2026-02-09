@@ -319,8 +319,10 @@ class CaseStudyService:
         if not existing:
             raise CaseStudyNotFoundError(case_id)
 
-        # Build update data - only include non-None fields
-        update_data = request.model_dump(exclude_none=True)
+        # Build update data - include all fields (even None values for clearing fields)
+        # We don't use exclude_none=True because we want to explicitly set None values
+        # for testimonial fields to clear them in MongoDB
+        update_data = request.model_dump(exclude_unset=True)
 
         # Convert metrics models to dicts if present
         if "metrics" in update_data and update_data["metrics"]:

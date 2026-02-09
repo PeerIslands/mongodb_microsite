@@ -89,8 +89,8 @@ export const TECH_STACK = [
 
 // File Upload Constraints
 export const FILE_UPLOAD = {
-  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
-  MAX_PDF_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_IMAGE_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_PDF_SIZE: 20 * 1024 * 1024, // 20MB
   MAX_VIDEO_SIZE: 50 * 1024 * 1024, // 50MB
   ALLOWED_IMAGE_TYPES: ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'],
   ALLOWED_DOCUMENT_TYPES: ['application/pdf'],

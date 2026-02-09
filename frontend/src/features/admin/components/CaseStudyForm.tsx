@@ -85,6 +85,9 @@ const CaseStudyForm = ({
     pdfFile: { file: null, previewUrl: '' } as FileData,
   });
 
+  // Track initial file URLs (to detect if user removed existing files)
+  const [initialPdfUrl, setInitialPdfUrl] = useState<string>('');
+
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -134,6 +137,9 @@ const CaseStudyForm = ({
       setFileData({
         pdfFile: { file: null, previewUrl: data.pdf_url || '' },
       });
+
+      // Store initial PDF URL to detect if user removes it later
+      setInitialPdfUrl(data.pdf_url || '');
 
       // Check if industry is custom (not in predefined options)
       const industry = data.industry || '';
@@ -349,6 +355,22 @@ const CaseStudyForm = ({
     e.preventDefault();
     setErrorMessage(null);
     
+    // Validate required content fields
+    if (!formData.challenges.trim()) {
+      setErrorMessage('Challenges field is required.');
+      return;
+    }
+    
+    if (!formData.approach.trim()) {
+      setErrorMessage('Approach field is required.');
+      return;
+    }
+    
+    if (!formData.businessOutcomes.trim()) {
+      setErrorMessage('Business Outcomes field is required.');
+      return;
+    }
+    
     // Validate metrics
     if (!areMetricsValid()) {
       setErrorMessage(`Please fill in at least ${MIN_METRICS} metrics with both label and value.`);
@@ -402,9 +424,13 @@ const CaseStudyForm = ({
       const validMetrics = formData.metrics.filter(m => m.label.trim() && m.value.trim());
       submitData.append('metrics', JSON.stringify(validMetrics));
 
-      // Add file fields (only if file exists)
+      // Handle PDF file
       if (fileData.pdfFile.file) {
+        // User is uploading a new PDF
         submitData.append('pdf_file', fileData.pdfFile.file);
+      } else if (editingId && initialPdfUrl && !fileData.pdfFile.previewUrl) {
+        // User removed an existing PDF (was there before, now it's gone)
+        submitData.append('delete_pdf', 'true');
       }
 
       if (editingId) {
@@ -643,7 +669,7 @@ const CaseStudyForm = ({
           
           <div className="form-grid">
             <div className="form-field full-width">
-              <label>Challenges</label>
+              <label>Challenges *</label>
               <RichTextEditor
                 value={formData.challenges}
                 onChange={(markdown) => handleInputChange('challenges', markdown)}
@@ -653,7 +679,7 @@ const CaseStudyForm = ({
             </div>
 
             <div className="form-field full-width">
-              <label>Approach</label>
+              <label>Approach *</label>
               <RichTextEditor
                 value={formData.approach}
                 onChange={(markdown) => handleInputChange('approach', markdown)}
@@ -709,7 +735,7 @@ const CaseStudyForm = ({
             </div>
 
             <div className="form-field full-width">
-              <label>Business Outcomes</label>
+              <label>Business Outcomes *</label>
               <RichTextEditor
                 value={formData.businessOutcomes}
                 onChange={(markdown) => handleInputChange('businessOutcomes', markdown)}
@@ -768,10 +794,10 @@ const CaseStudyForm = ({
               <label>Case Study PDF</label>
               <FileUpload
                 accept="application/pdf"
-                maxSize={10}
+                maxSize={20}
                 onUpload={(result) => handleFileChange('pdfFile', result)}
                 currentFile={fileData.pdfFile.previewUrl}
-                hint="PDF only (Max 10MB)"
+                hint="PDF only (Max 20MB)"
               />
             </div>
           </div>

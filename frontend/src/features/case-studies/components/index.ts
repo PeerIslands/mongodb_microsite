@@ -5,6 +5,8 @@ export { default as CaseStudyTestimonial } from './CaseStudyTestimonial';
 export { default as CaseStudyCard } from './CaseStudyCard';
 export { default as CaseStudyGrid } from './CaseStudyGrid';
 export { default as CaseStudyDetailSection } from './CaseStudyDetailSection';
+export { default as TestimonialCarousel } from './TestimonialCarousel';
+export { default as TestimonialDetailSection } from './TestimonialDetailSection';
 
 // Types
 export type { CaseStudyHeroData } from './CaseStudyHero';

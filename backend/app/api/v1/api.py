@@ -15,7 +15,8 @@ from app.api.v1.endpoints import (
     analytics,
     event_registrations,
     pdf_downloads,
-    chatbot
+    chatbot,
+    testimonials
 )
 
 api_router = APIRouter()
@@ -36,6 +37,7 @@ api_router.include_router(analytics.router, tags=["analytics"])
 api_router.include_router(event_registrations.router, tags=["event-registrations"])
 api_router.include_router(pdf_downloads.router, tags=["pdf-downloads"])
 api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
+api_router.include_router(testimonials.router, tags=["testimonials"])
 
 
 

@@ -45,14 +45,14 @@ class CreateCaseStudyRequest(BaseModel):
     description: str = Field(default="", description="Full description")
     
     # Problem Statement
-    challenges: str = Field(default="", description="Challenges faced (as string)")
+    challenges: str = Field(..., min_length=1, description="Challenges faced (as string)")
     
     # Solution & Architecture
-    approach: str = Field(default="", description="Solution approach")
+    approach: str = Field(..., min_length=1, description="Solution approach")
     
     # Value Delivered
     metrics: List[MetricItem] = Field(default=[], description="Performance metrics (max 5 items)")
-    business_outcomes: str = Field(default="", description="Business outcomes (as string)")
+    business_outcomes: str = Field(..., min_length=1, description="Business outcomes (as string)")
     testimonial_quote: Optional[str] = Field(None, description="Client testimonial quote (nullable)")
     testimonial_author: Optional[str] = Field(None, description="Testimonial author name (nullable)")
     testimonial_position: Optional[str] = Field(None, description="Testimonial author position (nullable)")
@@ -95,14 +95,14 @@ class CaseStudyDetailResponse(CaseStudyResponse):
     Response model for full case study detail.
     """
     # Problem Statement
-    challenges: str = Field(default="", description="Challenges")
+    challenges: str = Field(..., description="Challenges")
     
     # Solution & Architecture
-    approach: str = Field(default="", description="Solution approach")
+    approach: str = Field(..., description="Solution approach")
     
     # Value Delivered
     metrics: List[MetricItem] = Field(default=[], description="Performance metrics (max 5 items)")
-    business_outcomes: str = Field(default="", description="Business outcomes")
+    business_outcomes: str = Field(..., description="Business outcomes")
     testimonial_quote: Optional[str] = Field(None)
     testimonial_author: Optional[str] = Field(None)
     testimonial_position: Optional[str] = Field(None)
@@ -138,14 +138,14 @@ class UpdateCaseStudyRequest(BaseModel):
     description: Optional[str] = Field(None, description="Full description")
     
     # Problem Statement
-    challenges: Optional[str] = Field(None, description="Challenges faced")
+    challenges: Optional[str] = Field(None, min_length=1, description="Challenges faced")
     
     # Solution & Architecture
-    approach: Optional[str] = Field(None, description="Solution approach")
+    approach: Optional[str] = Field(None, min_length=1, description="Solution approach")
     
     # Value Delivered
     metrics: Optional[List[MetricItem]] = Field(None, description="Performance metrics (max 5 items)")
-    business_outcomes: Optional[str] = Field(None, description="Business outcomes")
+    business_outcomes: Optional[str] = Field(None, min_length=1, description="Business outcomes")
     testimonial_quote: Optional[str] = Field(None, description="Client testimonial quote")
     testimonial_author: Optional[str] = Field(None, description="Testimonial author name")
     testimonial_position: Optional[str] = Field(None, description="Testimonial author position")
