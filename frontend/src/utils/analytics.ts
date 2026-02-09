@@ -189,8 +189,9 @@ export class AnalyticsTracker {
   }
 
   async trackCTAClick(ctaName: string, ctaLocation: string) {
-    // Skip tracking for admin and profile pages
-    if (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/profile')) {
+    // Skip tracking for admin and profile pages, EXCEPT for Contact Us CTA
+    const isContactUs = ctaName.toLowerCase().includes('contact');
+    if (!isContactUs && (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/profile'))) {
       return;
     }
     

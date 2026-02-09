@@ -61,6 +61,11 @@ const PageLevelAnalytics = () => {
     ),
     ctaClicks: (data.cta_clicks || []).filter((item: any) => {
       const ctaName = item.cta || item.cta_name || '';
+      // Keep Contact Us CTA regardless of page
+      if (ctaName.toLowerCase().includes('contact')) {
+        return true;
+      }
+      // Filter out admin-related CTAs and homepage CTAs
       return !ctaName.includes('Admin') && item.page !== '/';
     }),
     acceleratorEngagement: data.accelerator_engagement || []
