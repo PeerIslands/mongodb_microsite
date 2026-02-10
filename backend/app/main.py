@@ -18,8 +18,13 @@ async def lifespan(app: FastAPI):
     # Create database indexes for optimized queries
     try:
         from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
+        from app.api.v1.repositories.testimonial_repository import TestimonialRepository
+        
         email_repo = EmailTemplateRepository(Database.get_db())
         await email_repo.ensure_indexes()
+        
+        testimonial_repo = TestimonialRepository(Database.get_db())
+        await testimonial_repo.create_indexes()
     except Exception as e:
         print(f"Warning: Failed to create indexes: {e}")
     

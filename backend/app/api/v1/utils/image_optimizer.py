@@ -17,7 +17,7 @@ MAX_WIDTH = 1200  # Maximum width for images
 MAX_HEIGHT = 1200  # Maximum height for images
 JPEG_QUALITY = 85  # JPEG compression quality (1-100)
 PNG_COMPRESSION = 6  # PNG compression level (0-9)
-MAX_IMAGE_SIZE_MB = 2  # Maximum size per image in MB
+MAX_IMAGE_SIZE_MB = 10  # Maximum size per image in MB
 
 
 def optimize_image(

@@ -96,6 +96,19 @@ const buildFormData = (
     formData.append('pdf_file', data.pdf_file);
   }
 
+  // File deletion flags (only for updates)
+  if (!isCreate) {
+    if ((data as UpdateAcceleratorDto).delete_thumbnail) {
+      formData.append('delete_thumbnail', 'true');
+    }
+    if ((data as UpdateAcceleratorDto).delete_video) {
+      formData.append('delete_video', 'true');
+    }
+    if ((data as UpdateAcceleratorDto).delete_pdf) {
+      formData.append('delete_pdf', 'true');
+    }
+  }
+
   return formData;
 };
 

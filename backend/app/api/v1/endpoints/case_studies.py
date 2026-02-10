@@ -162,9 +162,11 @@ async def create_case_study(
     tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
     migration_type: str = Form(default="", description="Type of migration (nullable)"),
     description: str = Form(default="", description="Full description"),
-    challenges: str = Form(default="", description="Challenges faced"),
-    approach: str = Form(default="", description="Solution approach"),
-    business_outcomes: str = Form(default="", description="Business outcomes"),
+    
+    # Required content fields
+    challenges: str = Form(..., description="Challenges faced"),
+    approach: str = Form(..., description="Solution approach"),
+    business_outcomes: str = Form(..., description="Business outcomes"),
     testimonial_quote: str = Form(default="", description="Testimonial quote (nullable)"),
     testimonial_author: str = Form(default="", description="Testimonial author (nullable)"),
     testimonial_position: str = Form(default="", description="Testimonial position (nullable)"),
@@ -337,12 +339,16 @@ async def get_case_study_by_id(
     description="""
     Update an existing case study with file uploads.
     
-    **All fields are optional** - only provided fields will be updated.
+    **Field behavior:**
+    - Send field with value → Updates the field
+    - Send empty string for testimonial/migration_type → Sets to null
+    - Send empty string for arrays (tech_stack, metrics) → Sets to empty array []
+    - Don't send field at all → No change (field stays as is)
     
-    **File fields:** Uncheck 'Send empty value' to see file picker.
-    
-    **Note:** When uploading new files, the old files in Azure Blob Storage
-    will be automatically deleted and replaced with the new ones.
+    **File deletion:**
+    - To delete existing PDF: Send `delete_pdf=true`
+    - To replace PDF: Upload new `pdf_file` (old one auto-deleted)
+    - To keep PDF: Don't send either field
     
     **Metrics format:** JSON array with max 5 items:
     `[{"label": "Time Reduction", "value": "50%"}, {"label": "Accuracy", "value": "99%"}]`
@@ -355,28 +361,31 @@ async def get_case_study_by_id(
 )
 async def update_case_study(
     case_id: str,
-    # Optional text fields - empty string means "don't update"
-    title: str = Form(default="", description="Case study title"),
-    slug: str = Form(default="", description="URL-friendly slug derived from title"),
-    industry: str = Form(default="", description="Industry sector"),
-    company_name: str = Form(default="", description="Client company name"),
-    featured: str = Form(default="", description="true or false"),
-    status: str = Form(default="", description="Status: 'published' or 'draft'"),
-    tech_stack: str = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
-    migration_type: str = Form(default="", description="Type of migration"),
-    description: str = Form(default="", description="Full description"),
-    challenges: str = Form(default="", description="Challenges faced"),
-    approach: str = Form(default="", description="Solution approach"),
-    business_outcomes: str = Form(default="", description="Business outcomes"),
-    testimonial_quote: str = Form(default="", description="Testimonial quote"),
-    testimonial_author: str = Form(default="", description="Testimonial author"),
-    testimonial_position: str = Form(default="", description="Testimonial position"),
+    # Optional text fields - use default="" to receive empty strings from frontend
+    title: Optional[str] = Form(default="", description="Case study title"),
+    slug: Optional[str] = Form(default="", description="URL-friendly slug derived from title"),
+    industry: Optional[str] = Form(default="", description="Industry sector"),
+    company_name: Optional[str] = Form(default="", description="Client company name"),
+    featured: Optional[str] = Form(default="", description="true or false"),
+    status: Optional[str] = Form(default="", description="Status: 'published' or 'draft'"),
+    tech_stack: Optional[str] = Form(default="", description="JSON array: [\"MongoDB\",\"Python\",\"AWS\"]"),
+    migration_type: Optional[str] = Form(default="", description="Type of migration"),
+    description: Optional[str] = Form(default="", description="Full description"),
+    challenges: Optional[str] = Form(default="", description="Challenges faced"),
+    approach: Optional[str] = Form(default="", description="Solution approach"),
+    business_outcomes: Optional[str] = Form(default="", description="Business outcomes"),
+    testimonial_quote: Optional[str] = Form(default="", description="Testimonial quote"),
+    testimonial_author: Optional[str] = Form(default="", description="Testimonial author"),
+    testimonial_position: Optional[str] = Form(default="", description="Testimonial position"),
     
     # Metrics field - JSON array of {label, value} objects (max 5)
-    metrics: str = Form(default="", description='JSON array: [{"label": "Time Reduction", "value": "50%"}]'),
+    metrics: Optional[str] = Form(default=None, description='JSON array: [{"label": "Time Reduction", "value": "50%"}]'),
     
     # File uploads - stored in Azure Blob Storage
     pdf_file: UploadFile = File(default=None, media_type="application/pdf", description="PDF document"),
+    
+    # File deletion flags - set to "true" to delete existing file
+    delete_pdf: str = Form(default="false", description="Set to 'true' to delete existing PDF file"),
     
     service: CaseStudyService = Depends(get_case_study_service),
 ) -> UpdateCaseStudyResponse:
@@ -388,54 +397,99 @@ async def update_case_study(
     # Get existing case study to retrieve old blob paths for deletion
     existing_blob_paths = await service.get_blob_paths(case_id)
     
-    # Build update data dictionary (only include non-empty fields)
+    # Build update data dictionary
+    # Frontend always sends all fields, so we include everything that's not default empty string
     update_data: Dict[str, Any] = {}
     
+    # Required fields - validate they're not empty if provided
     if title:
+        if not title.strip():
+            raise HTTPException(status_code=422, detail="Title cannot be empty")
         update_data["title"] = title
+    
     if slug:
+        if not slug.strip():
+            raise HTTPException(status_code=422, detail="Slug cannot be empty")
         update_data["slug"] = slug
+    
     if industry:
+        if not industry.strip():
+            raise HTTPException(status_code=422, detail="Industry cannot be empty")
         update_data["industry"] = industry
+    
     if company_name:
+        if not company_name.strip():
+            raise HTTPException(status_code=422, detail="Company name cannot be empty")
         update_data["company_name"] = company_name
+    
+    # Boolean field
     if featured:
         update_data["featured"] = featured.lower() == "true"
+    
+    # Status field
     if status:
         update_data["status"] = status
+    
+    # Array field - tech_stack (empty string becomes empty array)
     if tech_stack:
         # Parse tech stack (accepts JSON array string)
         try:
             parsed = json.loads(tech_stack)
             if isinstance(parsed, list):
                 update_data["tech_stack"] = [str(t).strip() for t in parsed if t]
+            else:
+                update_data["tech_stack"] = []
         except json.JSONDecodeError:
             # Fallback to comma-separated for backwards compatibility
-            update_data["tech_stack"] = [t.strip() for t in tech_stack.split(",") if t.strip()]
-    if migration_type:
-        update_data["migration_type"] = migration_type
-    if description:
-        update_data["description"] = description
+            if tech_stack.strip():
+                update_data["tech_stack"] = [t.strip() for t in tech_stack.split(",") if t.strip()]
+            else:
+                update_data["tech_stack"] = []
+    
+    # Optional string fields - ALWAYS process to allow clearing
+    # migration_type - empty becomes None
+    update_data["migration_type"] = migration_type if migration_type.strip() else None
+    
+    # description - ALWAYS process to allow clearing (empty becomes empty string)
+    update_data["description"] = description
+    
+    # Other optional fields - only update if provided
     if challenges:
+        if not challenges.strip():
+            raise HTTPException(status_code=422, detail="Challenges cannot be empty")
         update_data["challenges"] = challenges
+    
     if approach:
+        if not approach.strip():
+            raise HTTPException(status_code=422, detail="Approach cannot be empty")
         update_data["approach"] = approach
+    
     if business_outcomes:
+        if not business_outcomes.strip():
+            raise HTTPException(status_code=422, detail="Business outcomes cannot be empty")
         update_data["business_outcomes"] = business_outcomes
-    if testimonial_quote:
-        update_data["testimonial_quote"] = testimonial_quote
-    if testimonial_author:
-        update_data["testimonial_author"] = testimonial_author
-    if testimonial_position:
-        update_data["testimonial_position"] = testimonial_position
     
-    # Handle metrics
-    if metrics:
+    # Testimonial fields - ALWAYS process these even if empty (to allow clearing)
+    # Empty string becomes None in MongoDB
+    update_data["testimonial_quote"] = testimonial_quote if testimonial_quote.strip() else None
+    update_data["testimonial_author"] = testimonial_author if testimonial_author.strip() else None
+    update_data["testimonial_position"] = testimonial_position if testimonial_position.strip() else None
+    
+    # Array field - metrics (empty string becomes empty array)
+    # ALWAYS process metrics field to allow clearing
+    if metrics and metrics.strip():
         update_data["metrics"] = parse_metrics(metrics)
+    else:
+        update_data["metrics"] = []
     
-    # Upload new PDF file to Azure Blob Storage (delete old file first)
-    if is_valid_file(pdf_file):
-        # Delete old file if exists
+    # Handle PDF file operations
+    if delete_pdf.lower() == "true":
+        # User wants to delete the existing PDF
+        if existing_blob_paths.get("pdf_url"):
+            await blob_service.delete_file(existing_blob_paths["pdf_url"])
+        update_data["pdf_url"] = ""  # Clear the PDF URL in database
+    elif is_valid_file(pdf_file):
+        # User is uploading a new PDF (delete old file first)
         if existing_blob_paths.get("pdf_url"):
             await blob_service.delete_file(existing_blob_paths["pdf_url"])
         # Upload new file (using category folder structure)

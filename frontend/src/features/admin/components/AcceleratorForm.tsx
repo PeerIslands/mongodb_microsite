@@ -52,6 +52,11 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Track initial file URLs (to detect if user removed existing files)
+  const [initialThumbnailUrl, setInitialThumbnailUrl] = useState<string>('');
+  const [initialVideoUrl, setInitialVideoUrl] = useState<string>('');
+  const [initialPdfUrl, setInitialPdfUrl] = useState<string>('');
+
   // Fetch existing accelerator data when editing
   useEffect(() => {
     if (editingId) {
@@ -77,6 +82,11 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
             existing_video_url: data.video_url || '',
             existing_pdf_url: data.pdf_url || '',
           });
+
+          // Store initial file URLs to detect removal
+          setInitialThumbnailUrl(data.thumbnail_url || '');
+          setInitialVideoUrl(data.video_url || '');
+          setInitialPdfUrl(data.pdf_url || '');
         } catch (err) {
           console.error('Failed to fetch accelerator:', err);
           setError('Failed to load accelerator data');
@@ -124,7 +134,21 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
         setFormData(prev => ({ ...prev, [field]: result[0].file }));
       }
     } else {
-      setFormData(prev => ({ ...prev, [field]: result.file }));
+      // Update the file field
+      const updates: any = { [field]: result.file };
+      
+      // If file is being removed (null), also clear the existing preview URL
+      if (result.file === null) {
+        if (field === 'thumbnail_file') {
+          updates.existing_thumbnail_url = '';
+        } else if (field === 'video_file') {
+          updates.existing_video_url = '';
+        } else if (field === 'pdf_file') {
+          updates.existing_pdf_url = '';
+        }
+      }
+      
+      setFormData(prev => ({ ...prev, ...updates }));
     }
   };
 
@@ -158,10 +182,18 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
       return false;
     }
 
-    // For new accelerators, only PDF is required
+    // PDF is required for both new and existing accelerators
+    // For new accelerators, must have uploaded a file
+    // For existing accelerators, must have either existing file or uploaded new file
     if (!editingId) {
       if (!formData.pdf_file) {
         setError('PDF file is required');
+        return false;
+      }
+    } else {
+      // For editing, ensure PDF exists (either existing or newly uploaded)
+      if (!formData.pdf_file && !formData.existing_pdf_url) {
+        setError('PDF file is required. Please upload a PDF file.');
         return false;
       }
     }
@@ -194,16 +226,33 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
           metrics: validMetrics,
         };
 
-        // Only include files if new ones were uploaded
+        // Handle file uploads and deletions
+
         if (formData.thumbnail_file) {
+          // User is uploading a new thumbnail
           updateData.thumbnail_file = formData.thumbnail_file;
+        } else if (initialThumbnailUrl && !formData.existing_thumbnail_url) {
+          // User removed an existing thumbnail (was there before, now it's gone)
+          
+          updateData.delete_thumbnail = true;
         }
+
         if (formData.video_file) {
+          // User is uploading a new video
           updateData.video_file = formData.video_file;
+        } else if (initialVideoUrl && !formData.existing_video_url) {
+          // User removed an existing video (was there before, now it's gone)
+          updateData.delete_video = true;
         }
+
         if (formData.pdf_file) {
+          // User is uploading a new PDF
           updateData.pdf_file = formData.pdf_file;
+        } else if (initialPdfUrl && !formData.existing_pdf_url) {
+          // User removed an existing PDF (was there before, now it's gone)
+          updateData.delete_pdf = true;
         }
+
 
         await acceleratorsService.update(editingId, updateData);
       } else {
@@ -249,13 +298,7 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
         </button>
       </div>
 
-      {error && (
-        <div className="form-error">
-          <span className="error-icon">⚠️</span>
-          {error}
-          <button type="button" className="error-close" onClick={() => setError(null)}>×</button>
-        </div>
-      )}
+      
 
       <form className="accelerator-form" onSubmit={handleSubmit}>
         {/* Section 1: Basic Information */}
@@ -383,7 +426,7 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
                 maxSize={20}
                 onUpload={(result) => handleFileUpload('pdf_file', result)}
                 currentFile={formData.existing_pdf_url || undefined}
-                hint="Max 20MB"
+                hint="Required - Max 20MB"
               />
             </div>
 
@@ -410,6 +453,14 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
             </div>
           </div>
         </div>
+
+        {error && (
+        <div className="form-error">
+          <span className="error-icon">⚠️</span>
+          {error}
+          <button type="button" className="error-close" onClick={() => setError(null)}>×</button>
+        </div>
+      )}
 
         {/* Form Actions */}
         <div className="form-actions">

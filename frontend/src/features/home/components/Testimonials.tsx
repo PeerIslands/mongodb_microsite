@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@/styles/features/home/Testimonials.css';
-import { caseStudiesService, TestimonialData } from '@/api/services/case-studies.service';
+import { testimonialsService } from '@/api/services/testimonials.service';
+import type { CombinedTestimonial } from '@/types/models/testimonial';
 import { withCache } from '@/utils/requestCache';
 
 // Generate initials-based placeholder avatars using UI Avatars service
@@ -11,7 +12,7 @@ const getAvatarUrl = (name: string, bg: string = '5B6CFF') =>
 const avatarColors = ['6366F1', '8B5CF6', '06B6D4', '10B981', 'F59E0B', 'EC4899', 'EF4444', '3B82F6'];
 
 const Testimonials = () => {
-  const [testimonials, setTestimonials] = useState<TestimonialData[]>([]);
+  const [testimonials, setTestimonials] = useState<CombinedTestimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +22,7 @@ const Testimonials = () => {
         setLoading(true);
         // Use cache to prevent duplicate requests in StrictMode
         const data = await withCache('testimonials', () =>
-          caseStudiesService.getTestimonials()
+          testimonialsService.getCombined()
         );
         console.log('📊 Testimonials fetched:', data);
         console.log('📊 Number of testimonials:', data.length);
@@ -62,8 +63,8 @@ const Testimonials = () => {
   }
 
   // Distribute testimonials into two rows (max 3 per row for optimal display)
-  const row1Testimonials = testimonials.slice(0, 3);
-  const row2Testimonials = testimonials.slice(3, 6);
+  const row1Testimonials = testimonials.slice(0, Math.ceil(testimonials.length / 2));
+  const row2Testimonials = testimonials.slice(Math.ceil(testimonials.length / 2), testimonials.length);
 
   return (
     <section className="testimonials">

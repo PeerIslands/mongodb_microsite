@@ -17,10 +17,12 @@ import {
   AnalyticsDashboard,
   EmailTemplateList,
   EmailTemplateForm,
+  TestimonialList,
+  TestimonialForm,
 } from '@/features/admin/components';
 import LeafLoader from '@/components/LeafLoader';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
 
 const navItems: { key: MainView; icon: string; label: string }[] = [
@@ -28,6 +30,7 @@ const navItems: { key: MainView; icon: string; label: string }[] = [
   { key: 'accelerators', icon: '🚀', label: 'Accelerators' },
   { key: 'blogs', icon: '📝', label: 'Blogs' },
   { key: 'events', icon: '📅', label: 'Events' },
+  { key: 'testimonials', icon: '💬', label: 'Testimonials' },
   { key: 'analytics', icon: '📊', label: 'Analytics' },
   { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
 ];
@@ -39,11 +42,13 @@ const AdminDashboard = () => {
   const [blogView, setBlogView] = useState<SubView>('list');
   const [eventView, setEventView] = useState<SubView>('list');
   const [emailTemplateView, setEmailTemplateView] = useState<SubView>('list');
+  const [testimonialView, setTestimonialView] = useState<SubView>('list');
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingEmailTemplateId, setEditingEmailTemplateId] = useState<string | null>(null);
+  const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Loading...');
 
@@ -56,6 +61,7 @@ const AdminDashboard = () => {
       events: 'Loading Events...',
       analytics: 'Loading Analytics...',
       emailtemplates: 'Loading Newsletters...',
+      testimonials: 'Loading Testimonials...',
     };
     return messages[view];
   };
@@ -146,6 +152,22 @@ const AdminDashboard = () => {
     setEditingEmailTemplateId(null);
   };
 
+  // Testimonial handlers
+  const handleTestimonialAddNew = () => {
+    setEditingTestimonialId(null);
+    setTestimonialView('add');
+  };
+
+  const handleTestimonialEdit = (id: string) => {
+    setEditingTestimonialId(id);
+    setTestimonialView('edit');
+  };
+
+  const handleTestimonialBackToList = () => {
+    setTestimonialView('list');
+    setEditingTestimonialId(null);
+  };
+
   // Main view change
   const handleMainViewChange = (view: MainView) => {
     // Only show loader if switching to a different tab
@@ -170,6 +192,9 @@ const AdminDashboard = () => {
     } else if (view === 'emailtemplates') {
       setEmailTemplateView('list');
       setEditingEmailTemplateId(null);
+    } else if (view === 'testimonials') {
+      setTestimonialView('list');
+      setEditingTestimonialId(null);
     }
   };
 
@@ -301,6 +326,25 @@ const AdminDashboard = () => {
           </>
         )}
         
+        {mainView === 'testimonials' && (
+          <>
+            {testimonialView === 'list' && (
+              <TestimonialList 
+                onAddNew={handleTestimonialAddNew} 
+                onEdit={handleTestimonialEdit} 
+                onLoadComplete={handleLoadComplete} 
+              />
+            )}
+            {(testimonialView === 'add' || testimonialView === 'edit') && (
+              <TestimonialForm 
+                editingId={editingTestimonialId} 
+                onCancel={handleTestimonialBackToList}
+                onSuccess={handleTestimonialBackToList}
+              />
+            )}
+          </>
+        )}
+
         {mainView === 'analytics' && <AnalyticsDashboard />}
         
         {mainView === 'emailtemplates' && (

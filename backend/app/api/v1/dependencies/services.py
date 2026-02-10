@@ -24,6 +24,7 @@ from app.api.v1.repositories.email_template_repository import EmailTemplateRepos
 from app.api.v1.repositories.analytics_repository import AnalyticsRepository
 from app.api.v1.repositories.event_registration_repository import EventRegistrationRepository
 from app.api.v1.repositories.pdf_download_repository import PDFDownloadRepository
+from app.api.v1.repositories.testimonial_repository import TestimonialRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
@@ -33,6 +34,7 @@ from app.api.v1.services.accelerator_service import AcceleratorService
 from app.api.v1.services.analytics_service import AnalyticsService
 from app.api.v1.services.event_registration_service import EventRegistrationService
 from app.api.v1.services.pdf_download_service import PDFDownloadService
+from app.api.v1.services.testimonial_service import TestimonialService
 from app.api.v1.models.user import UserModel
 from app.api.v1.services.event_service import EventService
 from app.core.database import Database
@@ -140,6 +142,17 @@ def get_pdf_download_repository() -> PDFDownloadRepository:
     """
     db = Database.get_db()
     return PDFDownloadRepository(db)
+
+
+def get_testimonial_repository() -> TestimonialRepository:
+    """
+    Get TestimonialRepository instance with MongoDB connection.
+    
+    Returns:
+        TestimonialRepository instance
+    """
+    db = Database.get_db()
+    return TestimonialRepository(db)
 
 
 # =============================================================================
@@ -337,4 +350,16 @@ def get_pdf_download_service() -> PDFDownloadService:
     """
     repository = get_pdf_download_repository()
     return PDFDownloadService(repository)
+
+
+def get_testimonial_service() -> TestimonialService:
+    """
+    Get TestimonialService instance.
+    
+    Returns:
+        TestimonialService instance with injected repositories
+    """
+    repository = get_testimonial_repository()
+    case_study_repository = get_case_study_repository()
+    return TestimonialService(repository, case_study_repository)
 

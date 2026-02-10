@@ -3,9 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import {
   CaseStudyArchitecture,
   CaseStudyDetailSection,
+  TestimonialCarousel,
+  TestimonialDetailSection,
 } from '@/features/case-studies/components';
 import type { CaseStudyDetail } from '@/types/models/case-study';
+import type { CombinedTestimonial } from '@/types/models/testimonial';
 import { caseStudiesService } from '@/api/services/case-studies.service';
+import { testimonialsService } from '@/api/services/testimonials.service';
 import { useCaseStudies } from '@/hooks/useCaseStudies';
 import '@/styles/pages/CaseStudiesPage.css';
 
@@ -27,6 +31,13 @@ const CaseStudiesPage = () => {
 
   // State for detail loading
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+
+  // State to track the selected testimonial
+  const [selectedTestimonial, setSelectedTestimonial] = useState<CombinedTestimonial | null>(null);
+  const [isTestimonialDetailVisible, setIsTestimonialDetailVisible] = useState(false);
+
+  // State for testimonial detail loading
+  const [isTestimonialDetailLoading, setIsTestimonialDetailLoading] = useState(false);
 
   /**
    * Fetch case study details by ID
@@ -63,6 +74,9 @@ const CaseStudiesPage = () => {
     // Update URL with the case study ID for consistency and shareability
     setSearchParams({ id: caseStudyId });
     
+    // Close testimonial detail if open
+    setIsTestimonialDetailVisible(false);
+    
     // If detail section is already visible, close it first with a brief delay
     // to create a visual "reload" effect
     if (isDetailVisible) {
@@ -72,6 +86,44 @@ const CaseStudiesPage = () => {
     }
     
     await fetchCaseStudyDetails(caseStudyId);
+  };
+
+  /**
+   * Fetch testimonial details by ID
+   */
+  const fetchTestimonialDetails = async (testimonialId: string) => {
+    try {
+      setIsTestimonialDetailLoading(true);
+      // Fetch from combined testimonials
+      const testimonials = await testimonialsService.getCombined();
+      const testimonial = testimonials.find(t => t.id === testimonialId);
+      if (testimonial) {
+        setSelectedTestimonial(testimonial);
+        setIsTestimonialDetailVisible(true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch testimonial details:', err);
+    } finally {
+      setIsTestimonialDetailLoading(false);
+    }
+  };
+
+  /**
+   * Handle when a user clicks on a testimonial card
+   * Closes any existing detail section, then loads and displays the new one
+   */
+  const handleTestimonialClick = async (testimonialId: string) => {
+    // Close case study detail if open
+    setIsDetailVisible(false);
+    
+    // If testimonial detail section is already visible, close it first with a brief delay
+    if (isTestimonialDetailVisible) {
+      setIsTestimonialDetailVisible(false);
+      // Small delay to allow the close animation before reopening
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    
+    await fetchTestimonialDetails(testimonialId);
   };
 
   return (
@@ -89,6 +141,18 @@ const CaseStudiesPage = () => {
         caseStudy={selectedCaseStudy} 
         isVisible={isDetailVisible}
         isLoading={isDetailLoading}
+      />
+
+      {/* Testimonial Carousel */}
+      <TestimonialCarousel 
+        onTestimonialClick={handleTestimonialClick}
+      />
+
+      {/* Testimonial Detail Section - revealed when a testimonial is clicked */}
+      <TestimonialDetailSection 
+        testimonial={selectedTestimonial} 
+        isVisible={isTestimonialDetailVisible}
+        isLoading={isTestimonialDetailLoading}
       />
     </div>
   );

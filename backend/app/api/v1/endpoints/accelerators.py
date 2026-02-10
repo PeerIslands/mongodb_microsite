@@ -208,12 +208,12 @@ def parse_metrics(metrics_json: str) -> List[MetricItem]:
     
     **Files are stored in Azure Blob Storage.**
     
-    **File fields:** Uncheck 'Send empty value' to see file picker.
+    **Required files:**
+    - pdf_file: PDF document (REQUIRED - max 10MB)
     
-    **Supported files:**
+    **Optional files:**
     - thumbnail_file: JPEG, PNG, WebP, GIF (max 5MB)
     - video_file: MP4, WebM, MOV, AVI (max 100MB)
-    - pdf_file: PDF only (max 10MB)
     
     **Storage format:** Files are uploaded to Azure Blob with folder structure:
     `accelerators/{accelerator_id}/{field_name}.{ext}`
@@ -236,24 +236,29 @@ async def create_accelerator(
     feature_on_homepage: bool = Form(default=False, description="Whether to feature on homepage"),
     
     # File uploads - stored in Azure Blob Storage
-    thumbnail_file: UploadFile = File(default=None, description="Thumbnail image (JPEG, PNG, WebP, GIF - max 5MB)"),
-    video_file: UploadFile = File(default=None, description="Video file (MP4, WebM, MOV, AVI - max 100MB)"),
-    pdf_file: UploadFile = File(default=None, description="PDF document (max 10MB)"),
+    pdf_file: UploadFile = File(..., description="PDF document (REQUIRED - max 10MB)"),
+    thumbnail_file: UploadFile = File(default=None, description="Thumbnail image (OPTIONAL - JPEG, PNG, WebP, GIF - max 5MB)"),
+    video_file: UploadFile = File(default=None, description="Video file (OPTIONAL - MP4, WebM, MOV, AVI - max 100MB)"),
     
     service: AcceleratorService = Depends(get_accelerator_service),
 ) -> CreateAcceleratorResponse:
     """Create an accelerator with files stored in Azure Blob Storage."""
     
+    # Validate PDF file is provided
+    if not is_valid_file(pdf_file):
+        raise HTTPException(
+            status_code=422,
+            detail="PDF file is required"
+        )
+    
     # Parse metrics
     metrics_list = parse_metrics(metrics)
     if len(metrics_list) < 3:
-        from fastapi import HTTPException
         raise HTTPException(
             status_code=422,
             detail="Metrics must have at least 3 items"
         )
     if len(metrics_list) > 5:
-        from fastapi import HTTPException
         raise HTTPException(
             status_code=422,
             detail="Metrics cannot have more than 5 items"
@@ -276,10 +281,17 @@ async def create_accelerator(
     result = await service.create_accelerator(request)
     accelerator_id = result.id
     
-    # Upload files if provided
+    # Upload files
     blob_service = get_azure_blob_service()
     update_data: Dict[str, str] = {}
     
+    # Upload PDF file (required)
+    pdf_blob_path = await upload_pdf_to_blob(
+        pdf_file, accelerator_id, "pdf_url", blob_service
+    )
+    update_data["pdf_url"] = pdf_blob_path
+    
+    # Upload optional files
     # Upload thumbnail image
     if is_valid_file(thumbnail_file):
         thumbnail_blob_path = await upload_image_to_blob(
@@ -294,17 +306,9 @@ async def create_accelerator(
         )
         update_data["video_url"] = video_blob_path
     
-    # Upload PDF file
-    if is_valid_file(pdf_file):
-        pdf_blob_path = await upload_pdf_to_blob(
-            pdf_file, accelerator_id, "pdf_url", blob_service
-        )
-        update_data["pdf_url"] = pdf_blob_path
-    
-    # Update accelerator with file paths if any files were uploaded
-    if update_data:
-        update_request = UpdateAcceleratorRequest(**update_data)
-        await service.update_accelerator(accelerator_id, update_request)
+    # Update accelerator with file paths
+    update_request = UpdateAcceleratorRequest(**update_data)
+    await service.update_accelerator(accelerator_id, update_request)
     
     return result
 
@@ -364,12 +368,16 @@ async def get_accelerator_by_id(
     description="""
     Update an existing accelerator with file uploads.
     
-    **All fields are optional** - only provided fields will be updated.
+    **Field behavior:**
+    - Send field with value → Updates the field
+    - Send empty string → No change (field stays as is)
     
-    **File fields:** Uncheck 'Send empty value' to see file picker.
-    
-    **Note:** When uploading new files, the old files in Azure Blob Storage
-    will be automatically deleted and replaced with the new ones.
+    **File deletion:**
+    - To delete thumbnail: Send `delete_thumbnail=true`
+    - To delete video: Send `delete_video=true`
+    - To delete PDF: Send `delete_pdf=true`
+    - To replace file: Upload new file (old one auto-deleted)
+    - To keep file: Don't send either field
     
     **Metrics format:** JSON array with 3-5 items:
     `[{"label": "Time Saved", "value": "50%"}, {"label": "Accuracy", "value": "99%"}, {"label": "Cost Reduction", "value": "30%"}]`
@@ -396,6 +404,11 @@ async def update_accelerator(
     thumbnail_file: UploadFile = File(default=None, description="Thumbnail image (JPEG, PNG, WebP, GIF - max 5MB)"),
     video_file: UploadFile = File(default=None, description="Video file (MP4, WebM, MOV, AVI - max 100MB)"),
     pdf_file: UploadFile = File(default=None, description="PDF document (max 10MB)"),
+    
+    # File deletion flags - set to "true" to delete existing files
+    delete_thumbnail: str = Form(default="false", description="Set to 'true' to delete existing thumbnail"),
+    delete_video: str = Form(default="false", description="Set to 'true' to delete existing video"),
+    delete_pdf: str = Form(default="false", description="Set to 'true' to delete existing PDF"),
     
     service: AcceleratorService = Depends(get_accelerator_service),
 ) -> UpdateAcceleratorResponse:
@@ -425,37 +438,53 @@ async def update_accelerator(
     if metrics:
         metrics_list = parse_metrics(metrics)
         if len(metrics_list) < 3:
-            from fastapi import HTTPException
             raise HTTPException(
                 status_code=422,
                 detail="Metrics must have at least 3 items"
             )
         if len(metrics_list) > 5:
-            from fastapi import HTTPException
             raise HTTPException(
                 status_code=422,
                 detail="Metrics cannot have more than 5 items"
             )
         update_data["metrics"] = metrics_list
     
-    # Upload new thumbnail image (delete old file first)
-    if is_valid_file(thumbnail_file):
+    # Handle thumbnail image operations
+    if delete_thumbnail.lower() == "true":
+        # User wants to delete the existing thumbnail
+        if existing_blob_paths.get("thumbnail_url"):
+            await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
+        update_data["thumbnail_url"] = ""  # Clear the thumbnail URL in database
+    elif is_valid_file(thumbnail_file):
+        # User is uploading a new thumbnail (delete old file first)
         if existing_blob_paths.get("thumbnail_url"):
             await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
         update_data["thumbnail_url"] = await upload_image_to_blob(
             thumbnail_file, accelerator_id, "thumbnail_url", blob_service
         )
     
-    # Upload new video file (delete old file first)
-    if is_valid_file(video_file):
+    # Handle video file operations
+    if delete_video.lower() == "true":
+        # User wants to delete the existing video
+        if existing_blob_paths.get("video_url"):
+            await blob_service.delete_file(existing_blob_paths["video_url"])
+        update_data["video_url"] = ""  # Clear the video URL in database
+    elif is_valid_file(video_file):
+        # User is uploading a new video (delete old file first)
         if existing_blob_paths.get("video_url"):
             await blob_service.delete_file(existing_blob_paths["video_url"])
         update_data["video_url"] = await upload_video_to_blob(
             video_file, accelerator_id, "video_url", blob_service
         )
     
-    # Upload new PDF file (delete old file first)
-    if is_valid_file(pdf_file):
+    # Handle PDF file operations
+    if delete_pdf.lower() == "true":
+        # User wants to delete the existing PDF
+        if existing_blob_paths.get("pdf_url"):
+            await blob_service.delete_file(existing_blob_paths["pdf_url"])
+        update_data["pdf_url"] = ""  # Clear the PDF URL in database
+    elif is_valid_file(pdf_file):
+        # User is uploading a new PDF (delete old file first)
         if existing_blob_paths.get("pdf_url"):
             await blob_service.delete_file(existing_blob_paths["pdf_url"])
         update_data["pdf_url"] = await upload_pdf_to_blob(
