@@ -65,12 +65,13 @@ async def get_public_newsletters(
     - Sorted by creation date (newest first)
     """
     try:
-        # Fetch active newsletters
+        # Fetch active newsletters with html_content included for preview
         templates, _ = await repo.get_all_templates(
             skip=0,
             limit=100,
             category="newsletter",
-            status="active"
+            status="active",
+            include_content=True  # Include html_content for newsletter preview
         )
         
         # Return simplified data for frontend
