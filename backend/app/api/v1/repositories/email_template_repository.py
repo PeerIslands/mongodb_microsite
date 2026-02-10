@@ -101,7 +101,8 @@ class EmailTemplateRepository:
         skip: int = 0, 
         limit: int = 100,
         category: Optional[str] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        include_content: bool = False
     ) -> tuple[List[Dict], int]:
         """
         Get all templates with optional filtering.
@@ -111,6 +112,7 @@ class EmailTemplateRepository:
             limit: Maximum number of documents to return
             category: Filter by category (optional)
             status: Filter by status (optional)
+            include_content: If True, includes html_content field (default: False)
         
         Returns:
             Tuple of (templates list, total count)
@@ -127,11 +129,13 @@ class EmailTemplateRepository:
         
         # Projection to exclude large fields (html_content, images, plain_text_content)
         # This dramatically reduces payload size for list views
+        # But include html_content if explicitly requested
         projection = {
-            'html_content': 0,
             'images': 0,
             'plain_text_content': 0
         }
+        if not include_content:
+            projection['html_content'] = 0
         
         # Get templates with projection
         cursor = self.collection.find(filter_dict, projection).skip(skip).limit(limit).sort("created_at", -1)
