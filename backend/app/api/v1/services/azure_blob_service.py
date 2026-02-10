@@ -65,7 +65,7 @@ IMAGE_EXTENSIONS = {
 # Maximum file sizes
 MAX_PDF_SIZE = 10 * 1024 * 1024      # 10MB for PDFs
 MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos
-MAX_IMAGE_SIZE = 5 * 1024 * 1024     # 5MB for images
+MAX_IMAGE_SIZE = 20 * 1024 * 1024    # 20MB for images (increased to support large email template images)
 MAX_SVG_SIZE = 2 * 1024 * 1024       # 2MB for SVG files
 
 # Valid categories for folder organization
@@ -403,13 +403,17 @@ class AzureBlobService:
             "Content-Type": content_type,
         }
         
-        # Upload file using httpx
+        # Upload file using httpx with longer timeout for large images
+        # Calculate timeout based on file size (minimum 60s, +1s per MB)
+        file_size_mb = len(file_content) / (1024 * 1024)
+        timeout = max(60.0, 60.0 + file_size_mb)  # At least 60s, +1s per MB
+        
         async with httpx.AsyncClient() as client:
             response = await client.put(
                 upload_url,
                 content=file_content,
                 headers=headers,
-                timeout=60.0,  # 60 second timeout for images
+                timeout=timeout,
             )
             response.raise_for_status()
         

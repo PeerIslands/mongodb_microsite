@@ -44,20 +44,25 @@ class EmailTemplateImageService:
             Dictionary mapping filename -> public URL
         """
         image_url_map = {}
+        failed_images = []
         
         for image_data, filename, content_type in image_files:
             try:
+                # Log image size for debugging
+                image_size_mb = len(image_data) / (1024 * 1024)
+                logger.info(f"Processing image {filename} ({image_size_mb:.2f} MB)")
+                
                 # Optimize image if requested (skip SVG files as they're already optimized)
                 if optimize and not filename.lower().endswith('.svg'):
                     optimized_data, optimized_content_type = optimize_image(image_data, filename)
+                    optimized_size_mb = len(optimized_data) / (1024 * 1024)
                     logger.info(
-                        f"Optimized {filename}: {len(image_data) / 1024:.1f} KB → "
-                        f"{len(optimized_data) / 1024:.1f} KB"
+                        f"Optimized {filename}: {image_size_mb:.2f} MB → {optimized_size_mb:.2f} MB"
                     )
                     image_data = optimized_data
                     content_type = optimized_content_type
                 elif filename.lower().endswith('.svg'):
-                    logger.info(f"Skipping optimization for SVG: {filename} ({len(image_data) / 1024:.1f} KB)")
+                    logger.info(f"Skipping optimization for SVG: {filename} ({image_size_mb:.2f} MB)")
                 
                 # Generate unique field name for this image (without extension)
                 # The azure_blob_service will add the correct extension based on content_type
@@ -77,11 +82,19 @@ class EmailTemplateImageService:
                 public_url = self.blob_service.get_full_url(blob_path)
                 image_url_map[filename] = public_url
                 
-                logger.info(f"Uploaded image {filename} to {blob_path}")
+                logger.info(f"Successfully uploaded image {filename} to {blob_path}")
                 
             except Exception as e:
-                logger.error(f"Failed to upload image {filename}: {e}")
-                # Continue with other images
+                error_msg = f"Failed to upload image {filename}: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                failed_images.append(filename)
+                # Continue with other images, but log the failure
+        
+        if failed_images:
+            logger.warning(f"Failed to upload {len(failed_images)} image(s): {', '.join(failed_images)}")
+        
+        if not image_url_map and image_files:
+            raise ValueError(f"Failed to upload any images. Errors logged above.")
         
         return image_url_map
     

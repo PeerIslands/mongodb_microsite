@@ -18,6 +18,7 @@ import {
 import { PreviewModal } from './PreviewModal';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import LeafLoader from '@/components/LeafLoader';
+import { FILE_UPLOAD } from '@/constants';
 import '@/styles/features/admin/EmailTemplateForm.css';
 
 interface EmailTemplateFormProps {
@@ -45,6 +46,7 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
   const [htmlFile, setHtmlFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [useBlobStorage, setUseBlobStorage] = useState(true);
+  const [fileValidationErrors, setFileValidationErrors] = useState<string[]>([]);
   
   // Newsletter sending state
   const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>('all_users');
@@ -57,6 +59,14 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, editingId]);
+
+  // Validate files whenever htmlFile or imageFiles change
+  useEffect(() => {
+    if (mode === 'upload') {
+      validateFiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [htmlFile, imageFiles, mode]);
 
   const fetchTemplate = async () => {
     if (!editingId) return;
@@ -77,14 +87,55 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const validateFiles = (): boolean => {
+    const errors: string[] = [];
+    
+    // Validate HTML file size (if using blob storage, HTML can be larger, but let's set a reasonable limit)
+    if (htmlFile) {
+      const maxHtmlSize = 50 * 1024 * 1024; // 50MB for HTML files
+      if (htmlFile.size > maxHtmlSize) {
+        errors.push(`HTML file is too large (${formatFileSize(htmlFile.size)}). Maximum size is ${formatFileSize(maxHtmlSize)}.`);
+      }
+    }
+    
+    // Validate image file sizes
+    imageFiles.forEach((file) => {
+      if (file.size > FILE_UPLOAD.MAX_IMAGE_SIZE) {
+        errors.push(`${file.name} is too large (${formatFileSize(file.size)}). Maximum size is ${formatFileSize(FILE_UPLOAD.MAX_IMAGE_SIZE)}.`);
+      }
+    });
+    
+    setFileValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.name.endsWith('.html')) {
         showToast('Please select an HTML file', 'error');
+        e.target.value = ''; // Reset input
         return;
       }
+      
       setHtmlFile(file);
+      
+      // Validate file size
+      const maxHtmlSize = 50 * 1024 * 1024; // 50MB for HTML files
+      if (file.size > maxHtmlSize) {
+        const errorMsg = `HTML file is too large (${formatFileSize(file.size)}). Maximum size is ${formatFileSize(maxHtmlSize)}.`;
+        showToast(errorMsg, 'error');
+        setHtmlFile(null);
+        e.target.value = ''; // Reset input
+        validateFiles(); // Update validation state
+        return;
+      }
 
       // Read file content for preview
       const reader = new FileReader();
@@ -100,26 +151,53 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
         setHtmlContent(content);
       };
       reader.readAsText(file);
+      
+      // Validate all files after setting HTML file
+      validateFiles();
     }
   };
 
   const handleImageFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const imageFilesArray = Array.from(files).filter(file => {
+      const imageFilesArray: File[] = [];
+      const oversizedFiles: string[] = [];
+      
+      Array.from(files).forEach(file => {
         const isImage = file.type.startsWith('image/');
         if (!isImage) {
           showToast(`${file.name} is not an image file`, 'warning');
+          return;
         }
-        return isImage;
+        
+        // Check file size
+        if (file.size > FILE_UPLOAD.MAX_IMAGE_SIZE) {
+          oversizedFiles.push(`${file.name} (${formatFileSize(file.size)})`);
+          return;
+        }
+        
+        imageFilesArray.push(file);
       });
-      setImageFiles(imageFilesArray);
-      showToast(`${imageFilesArray.length} image(s) selected`, 'success');
       
-      // If we have HTML content, embed the images for preview
-      if (htmlContent) {
-        await embedImagesInHTML(imageFilesArray);
+      // Show error for oversized files
+      if (oversizedFiles.length > 0) {
+        const errorMsg = `The following image(s) exceed the ${formatFileSize(FILE_UPLOAD.MAX_IMAGE_SIZE)} limit: ${oversizedFiles.join(', ')}`;
+        showToast(errorMsg, 'error');
       }
+      
+      setImageFiles(imageFilesArray);
+      
+      if (imageFilesArray.length > 0) {
+        showToast(`${imageFilesArray.length} image(s) selected`, 'success');
+        
+        // If we have HTML content, embed the images for preview
+        if (htmlContent) {
+          await embedImagesInHTML(imageFilesArray);
+        }
+      }
+      
+      // Validate all files after setting image files
+      validateFiles();
     }
   };
 
@@ -196,6 +274,12 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
 
     if (mode === 'upload' && !htmlFile) {
       showToast('Please select an HTML file', 'error');
+      return;
+    }
+
+    // Validate files before submitting
+    if (mode === 'upload' && !validateFiles()) {
+      showToast('Please fix file size errors before uploading', 'error');
       return;
     }
 
@@ -733,13 +817,33 @@ export const EmailTemplateForm = ({ editingId, mode, onCancel, onSuccess }: Emai
           </>
         )}
 
+        {/* File Validation Errors */}
+        {mode === 'upload' && fileValidationErrors.length > 0 && (
+          <div className="form-section" style={{ border: '1px solid #ff4444', borderRadius: '8px', padding: '1rem', backgroundColor: 'rgba(255, 68, 68, 0.1)' }}>
+            <h3 style={{ color: '#ff4444', marginTop: 0 }}>⚠️ File Size Validation Errors</h3>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#ffcccc' }}>
+              {fileValidationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+            <p style={{ marginTop: '0.5rem', marginBottom: 0, fontSize: '0.875rem', color: '#ffcccc' }}>
+              Please remove or replace oversized files to enable upload.
+            </p>
+          </div>
+        )}
+
         {/* Actions - Only show for upload mode */}
         {mode === 'upload' && (
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={onCancel}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={fileValidationErrors.length > 0 || !htmlFile}
+              title={fileValidationErrors.length > 0 ? 'Please fix file size errors before uploading' : !htmlFile ? 'Please select an HTML file' : ''}
+            >
               Upload Template
             </button>
           </div>
