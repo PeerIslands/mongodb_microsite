@@ -32,27 +32,28 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
     return !!localStorage.getItem('authToken');
   };
 
-  const downloadPdf = () => {
+  const openPdf = () => {
     if (caseStudy?.id && caseStudy?.pdf_url) {
-      // Use secure proxy endpoint to keep Azure SAS token hidden
-      const secureUrl = getCaseStudyFileUrl(caseStudy.id, 'pdf', true);
-      // Track the download
+      // Use secure proxy endpoint to keep Azure SAS token hidden (no download flag)
+      const secureUrl = getCaseStudyFileUrl(caseStudy.id, 'pdf');
+      // Track the view
       analytics.trackDownload(caseStudy.title || 'Case Study', 'pdf', secureUrl);
       globalThis.open(secureUrl, '_blank');
     }
   };
 
-  // Handle PDF download - requires login or lead capture
-  const handleDownloadPdf = () => {
+  // Handle PDF open - requires login or lead capture
+  const handleOpenPdf = () => {
     if (isLoggedIn()) {
-      downloadPdf();
+      openPdf();
+      
     } else if (caseStudy?.id) {
-      // Open PDF download lead capture modal
+      // Open PDF lead capture modal
       openPDFDownloadModal({
         resourceType: 'case_study',
         resourceId: caseStudy.id,
         resourceTitle: caseStudy.title || 'Case Study',
-        onSuccess: downloadPdf,
+        onSuccess: openPdf,
       });
     }
   };
@@ -90,12 +91,12 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
             <p className="case-study-detail__company">{caseStudy.company_name}</p>
           </div>
 
-          {/* Download PDF Button */}
+          {/* View PDF Button */}
           {caseStudy.pdf_url && (
             <button
               type="button"
               className="case-study-detail__download-btn"
-              onClick={handleDownloadPdf}
+              onClick={handleOpenPdf}
             >
               <svg
                 width="16"
@@ -106,14 +107,14 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
                 aria-hidden="true"
               >
                 <path
-                  d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"
+                  d="M11 3H17V9M17 3L9 11M8 3H4C3.44772 3 3 3.44772 3 4V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V12"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
-              Download PDF
+              View PDF
             </button>
           )}
         </header>
