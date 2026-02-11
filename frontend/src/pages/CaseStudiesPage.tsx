@@ -136,13 +136,6 @@ const CaseStudiesPage = () => {
         onCardClick={handleCardClick} 
       />
 
-      {/* Case Study Detail Section - revealed when a card is clicked */}
-      <CaseStudyDetailSection 
-        caseStudy={selectedCaseStudy} 
-        isVisible={isDetailVisible}
-        isLoading={isDetailLoading}
-      />
-
       {/* Testimonial Carousel */}
       <TestimonialCarousel 
         onTestimonialClick={handleTestimonialClick}
@@ -154,6 +147,15 @@ const CaseStudiesPage = () => {
         isVisible={isTestimonialDetailVisible}
         isLoading={isTestimonialDetailLoading}
       />
+
+      {/* Case Study Detail Section - revealed when a card is clicked */}
+      <CaseStudyDetailSection 
+        caseStudy={selectedCaseStudy} 
+        isVisible={isDetailVisible}
+        isLoading={isDetailLoading}
+      />
+
+      
     </div>
   );
 };
