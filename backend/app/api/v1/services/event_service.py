@@ -3,6 +3,7 @@ Event Service - Business logic layer for event operations.
 Handles validation, data transformation, and orchestrates repository calls.
 """
 
+import re
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -35,7 +36,44 @@ class EventService:
         self._repository = repository
 
     # =========================================================================
-    # HELPER METHODS
+    # SLUG HELPERS
+    # =========================================================================
+
+    def _slugify(self, text: str) -> str:
+        """Convert text to URL-friendly slug."""
+        text = text.lower().strip()
+        text = re.sub(r'[^\w\s-]', '', text)
+        text = re.sub(r'[-\s]+', '-', text)
+        return text.strip('-')
+
+    async def _generate_unique_slug(self, title: str, exclude_id: Optional[str] = None) -> str:
+        """
+        Generate a unique slug from title.
+        If slug exists, append a counter to make it unique.
+        
+        Args:
+            title: Event title
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            Unique slug string
+        """
+        base_slug = self._slugify(title)
+        slug = base_slug
+
+        # Ensure slug is not empty
+        if not slug:
+            slug = "event"
+
+        counter = 1
+        while await self._repository.slug_exists(slug, exclude_id):
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+    # =========================================================================
+    # RESPONSE HELPERS
     # =========================================================================
 
     def _to_response(self, doc: dict) -> EventResponse:
@@ -43,6 +81,7 @@ class EventService:
         return EventResponse(
             id=str(doc.get("id", doc.get("_id", ""))),
             title=doc.get("title", ""),
+            slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
             date=doc.get("date", ""),
             time=doc.get("time", ""),
@@ -64,6 +103,7 @@ class EventService:
         return EventDetailResponse(
             id=str(doc.get("id", doc.get("_id", ""))),
             title=doc.get("title", ""),
+            slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
             date=doc.get("date", ""),
             time=doc.get("time", ""),
@@ -102,6 +142,9 @@ class EventService:
         # Convert enum to string
         if event_data.get("status"):
             event_data["status"] = event_data["status"].value if hasattr(event_data["status"], "value") else event_data["status"]
+
+        # Generate unique slug from title
+        event_data["slug"] = await self._generate_unique_slug(event_data["title"])
 
         # Create in MongoDB
         created = await self._repository.create(event_data)
@@ -185,6 +228,12 @@ class EventService:
         # Convert enum to string if present
         if update_data.get("status"):
             update_data["status"] = update_data["status"].value if hasattr(update_data["status"], "value") else update_data["status"]
+
+        # If title is updated, regenerate slug
+        if "title" in update_data:
+            update_data["slug"] = await self._generate_unique_slug(
+                update_data["title"], exclude_id=event_id
+            )
 
         # Update in MongoDB
         updated = await self._repository.update(event_id, update_data)
