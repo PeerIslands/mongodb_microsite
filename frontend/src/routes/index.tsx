@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout, MainLayout, AdminLayout } from '@/layouts';
 import { ROUTES } from '@/constants';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Lazy load pages for code splitting
 import { lazy, Suspense } from 'react';
@@ -125,7 +126,11 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.ADMIN,
-        element: <AdminLayout />,
+        element: (
+          <ProtectedRoute requireAdmin>
+            <AdminLayout />
+          </ProtectedRoute>
+        ),
         children: [
           {
             index: true,

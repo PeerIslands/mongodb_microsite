@@ -136,9 +136,9 @@ const PDFDownloadModal = ({
 
         {/* Modal Header */}
         <div className="modal-header">
-          <h2 className="modal-title">Download PDF</h2>
+          <h2 className="modal-title">View PDF</h2>
           <p className="modal-subtitle">
-            Please provide your details to download <strong>{resourceTitle}</strong>
+            Please provide your details to view <strong>{resourceTitle}</strong>
           </p>
         </div>
 
@@ -296,7 +296,7 @@ const PDFDownloadModal = ({
             disabled={loading}
             style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
-            {loading ? 'Processing...' : 'Download PDF'}
+            {loading ? 'Processing...' : 'View PDF'}
           </button>
         </form>
 
