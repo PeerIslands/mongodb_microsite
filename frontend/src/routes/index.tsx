@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout, MainLayout, AdminLayout } from '@/layouts';
 import { ROUTES } from '@/constants';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminRoute from '@/components/AdminRoute';
 
 // Lazy load pages for code splitting
 import { lazy, Suspense } from 'react';
@@ -84,9 +86,11 @@ const router = createBrowserRouter([
           {
             path: '/profile',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ProfilePage />
-              </Suspense>
+              <ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <ProfilePage />
+                </Suspense>
+              </ProtectedRoute>
             ),
           },
           {
@@ -125,7 +129,11 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.ADMIN,
-        element: <AdminLayout />,
+        element: (
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        ),
         children: [
           {
             index: true,

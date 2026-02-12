@@ -17,7 +17,7 @@ interface UseAuthReturn {
     businessPhone: string,
     country: string
   ) => Promise<{ success: boolean; data?: SignupResponse; error?: string }>;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
 }
@@ -69,7 +69,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
     setLoading(true);
     setError(null);
     
@@ -78,6 +78,18 @@ export const useAuth = (): UseAuthReturn => {
         user_email: email,
         user_password: password,
       });
+      
+      // Check if registration is incomplete (user hasn't completed TOTP setup)
+      if (response.registration_incomplete) {
+        setLoading(false);
+        return {
+          success: false,
+          registrationIncomplete: true,
+          registrationStatus: response.registration_status,
+          redirectTo: response.redirect_to,
+          message: response.message || 'Please complete MFA setup to access your account',
+        };
+      }
       
       // Check if TOTP verification is required
       if (response.requires_totp) {
@@ -91,8 +103,8 @@ export const useAuth = (): UseAuthReturn => {
       }
       
       // Standard login (no TOTP) - store tokens immediately
-      localStorage.setItem('authToken', response.access_token);
-      localStorage.setItem('userEmail', response.user_email);
+      localStorage.setItem('authToken', response.access_token!);
+      localStorage.setItem('userEmail', response.user_email!);
       localStorage.setItem('isAdmin', String(response.is_admin));
       localStorage.setItem('isInternal', String(response.is_internal));
       

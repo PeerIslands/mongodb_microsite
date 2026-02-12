@@ -10,7 +10,7 @@ Endpoints:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.api.v1.models.user import (
     UserCreateRequest,
@@ -95,26 +95,44 @@ async def save_user(
 @router.get(
     "/users",
     response_model=Dict[str, Any],
-    summary="Get all users (Debug only)",
-    description="Returns all registered users. Remove in production.",
+    summary="Get all users with filtering",
+    description="Returns all registered users with optional filters.",
 )
 async def get_all_users(
     skip: int = 0,
     limit: int = 100,
+    is_admin: Optional[bool] = None,
+    is_internal: Optional[bool] = None,
+    registration_status: Optional[str] = None,
+    search: Optional[str] = None,
     user_service: UserService = Depends(get_user_service),
 ) -> Dict[str, Any]:
     """
-    Get all users from the User table.
+    Get all users from the User table with optional filters.
     
     Args:
         skip: Number of users to skip (pagination)
         limit: Maximum users to return
+        is_admin: Filter by admin status (optional)
+        is_internal: Filter by internal status (optional)
+        registration_status: Filter by registration status (optional)
+        search: Search by name or email (optional)
         user_service: Injected UserService instance
         
     Returns:
-        Dictionary with total count and list of users
+        Dictionary with total count, filtered count, and list of users
     """
-    return await user_service.get_all_users(skip=skip, limit=limit)
+    filters = {}
+    if is_admin is not None:
+        filters['is_admin'] = is_admin
+    if is_internal is not None:
+        filters['is_internal'] = is_internal
+    if registration_status is not None:
+        filters['registration_status'] = registration_status
+    if search is not None:
+        filters['search'] = search
+        
+    return await user_service.get_all_users(skip=skip, limit=limit, filters=filters)
 
 
 @router.get(
@@ -256,6 +274,112 @@ async def debug_totp(
 
 
 @router.post(
+    "/register/resend-totp-setup",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "TOTP setup information retrieved"},
+        400: {"model": ErrorResponse, "description": "User already completed setup or invalid credentials"},
+        401: {"model": ErrorResponse, "description": "Invalid email or password"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Resend TOTP setup information",
+    description="Allows users in pending_mfa status to retrieve their TOTP setup QR code again by providing credentials.",
+)
+async def resend_totp_setup(
+    request: Dict[str, str],
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    Resend TOTP setup information for users who missed it during registration.
+    
+    This endpoint allows users who are in 'pending_mfa' status to retrieve
+    their TOTP QR code again by providing their email and password.
+    
+    Args:
+        request: Dict with 'user_email' and 'user_password'
+        user_service: Injected UserService instance
+        
+    Returns:
+        TOTP setup information with QR code
+        
+    Raises:
+        HTTPException 401: If credentials are invalid
+        HTTPException 400: If user already completed setup
+        HTTPException 404: If user not found
+    """
+    try:
+        from app.api.v1.services.totp_service import TOTPService
+        from app.api.v1.dependencies.services import get_totp_repository
+        
+        # Authenticate user first
+        user_email = request.get('user_email')
+        user_password = request.get('user_password')
+        
+        if not user_email or not user_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email and password are required"
+            )
+        
+        # Verify credentials
+        user_data = await user_service.authenticate_user(user_email, user_password)
+        user_id = user_data['_id']
+        registration_status = user_data.get('registration_status')
+        
+        # Check if user is in pending_mfa status
+        if registration_status != 'pending_mfa':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="TOTP setup already completed or not required"
+            )
+        
+        # Get TOTP secret
+        totp_service = TOTPService()
+        totp_repo = get_totp_repository()
+        
+        totp_secret_doc = await totp_repo.get_totp_secret_by_user_id(user_id)
+        if not totp_secret_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="TOTP setup not found. Please contact support."
+            )
+        
+        # Decrypt secret and regenerate QR code
+        secret = totp_service.decrypt_secret(totp_secret_doc["secret_encrypted"])
+        qr_code = totp_service.generate_qr_code(secret, user_email)
+        otpauth_url = totp_service.generate_otpauth_url(secret, user_email)
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "user_email": user_email,
+            "totp_setup": {
+                "secret": secret,
+                "qr_code": qr_code,
+                "manual_entry_key": secret,
+                "issuer": "MongoDB Microsite",
+                "account_name": user_email,
+                "otpauth_url": otpauth_url,
+            },
+            "message": "Scan the QR code with your authenticator app",
+            "next_step": "verify_totp"
+        }
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve TOTP setup: {str(e)}"
+        )
+
+
+@router.post(
     "/register/acknowledge-backup-codes",
     status_code=status.HTTP_200_OK,
     responses={
@@ -353,6 +477,159 @@ async def get_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve profile: {str(e)}",
+        )
+
+
+@router.put(
+    "/users/{user_id}/admin-status",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Admin status updated successfully"},
+        400: {"model": ErrorResponse, "description": "Cannot change admin status for external users"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Only admins can change admin status"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Toggle admin status for internal user",
+    description="Admin can toggle admin status for internal users only.",
+)
+async def toggle_admin_status(
+    user_id: str,
+    is_admin: bool,
+    current_user: UserModel = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    Toggle admin status for a user (internal users only).
+    
+    Args:
+        user_id: ID of the user to update
+        is_admin: New admin status
+        current_user: Current authenticated user (must be admin)
+        user_service: User service instance
+    
+    Returns:
+        Success message and updated user data
+    """
+    # Check if current user is admin
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can change admin status",
+        )
+    
+    try:
+        result = await user_service.toggle_admin_status(user_id, is_admin)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+
+
+@router.delete(
+    "/users/{user_id}",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "User deleted successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Only admins can delete users"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Soft delete a user",
+    description="Admin can soft delete a user. This marks the user as deleted and allows their email to be reused.",
+)
+async def delete_user(
+    user_id: str,
+    current_user: UserModel = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    Soft delete a user (mark as deleted, allowing email reuse).
+    
+    Args:
+        user_id: ID of the user to delete
+        current_user: Current authenticated user (must be admin)
+        user_service: User service instance
+    
+    Returns:
+        Success message and deleted user data
+    """
+    # Check if current user is admin
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can delete users",
+        )
+    
+    try:
+        result = await user_service.soft_delete_user(user_id)
+        return result
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.put(
+    "/users/{user_id}/block-status",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Block status updated successfully"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Only admins can block users"},
+        404: {"model": ErrorResponse, "description": "User not found"},
+    },
+    summary="Block or unblock user access",
+    description="Admin can block or unblock user access to the system.",
+)
+async def toggle_block_status(
+    user_id: str,
+    is_blocked: bool,
+    current_user: UserModel = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> Dict[str, Any]:
+    """
+    Block or unblock a user's access.
+    
+    Args:
+        user_id: ID of the user to update
+        is_blocked: New block status (True = blocked, False = active)
+        current_user: Current authenticated user (must be admin)
+        user_service: User service instance
+    
+    Returns:
+        Success message and updated user data
+    """
+    # Check if current user is admin
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can block/unblock users",
+        )
+    
+    try:
+        result = await user_service.toggle_block_status(user_id, is_blocked)
+        return result
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
         )
 
 

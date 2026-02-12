@@ -231,37 +231,67 @@ class UserService:
         }
 
     async def get_all_users(
-        self, skip: int = 0, limit: int = 100
+        self, skip: int = 0, limit: int = 100, filters: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Get all users with pagination.
+        Get all users with pagination and filtering.
         
         Args:
             skip: Number of users to skip
             limit: Maximum number of users to return
+            filters: Optional filters (is_admin, is_internal, registration_status, search)
             
         Returns:
-            Dictionary with total count and list of users
+            Dictionary with total count, filtered count, and list of users with statistics
         """
-        users = await self._repository.get_all_users(skip=skip, limit=limit)
+        users = await self._repository.get_all_users(skip=skip, limit=limit, filters=filters)
         total = await self._repository.get_user_count()
+        
+        # Get filtered count
+        filtered_count = await self._repository.get_user_count(filters=filters)
 
-        # Exclude sensitive data
+        # Exclude sensitive data and add more fields for admin view
         safe_users = [
             {
                 "_id": u["_id"],
                 "first_name": u["first_name"],
                 "last_name": u["last_name"],
                 "user_email": u["user_email"],
+                "company": u.get("company", ""),
+                "job_function": u.get("job_function", ""),
+                "country": u.get("country", ""),
                 "is_internal": u["is_internal"],
                 "is_admin": u["is_admin"],
+                "totp_enabled": u.get("totp_enabled", False),
+                "registration_status": u.get("registration_status", "completed"),
+                "account_active": u.get("account_active", True),
+                "is_deleted": u.get("is_deleted", False),
+                "deleted_at": u.get("deleted_at"),
+                "original_email": u.get("original_email"),
                 "created_at": u["created_at"],
+                "registration_completed_at": u.get("registration_completed_at"),
             }
             for u in users
         ]
+        
+        # Calculate statistics (including deleted users for total count)
+        all_users_including_deleted = await self._repository.get_all_users(skip=0, limit=10000, filters={"include_deleted": True})
+        all_users = await self._repository.get_all_users(skip=0, limit=10000)
+        stats = {
+            "total": len(all_users),
+            "admin": sum(1 for u in all_users if u.get("is_admin", False)),
+            "internal": sum(1 for u in all_users if u.get("is_internal", False)),
+            "external": sum(1 for u in all_users if not u.get("is_internal", False)),
+            "active": sum(1 for u in all_users if u.get("account_active", True)),
+            "pending_mfa": sum(1 for u in all_users if u.get("registration_status") == "pending_mfa"),
+            "completed": sum(1 for u in all_users if u.get("registration_status") == "completed"),
+            "deleted": sum(1 for u in all_users_including_deleted if u.get("is_deleted", False)),
+        }
 
         return {
             "total_users": total,
+            "filtered_count": filtered_count,
+            "stats": stats,
             "users": safe_users,
         }
 
@@ -473,4 +503,126 @@ class UserService:
             raise UserNotFoundError(f"User with ID {user_id} not found")
         
         return updated_user
+    
+    async def toggle_admin_status(
+        self,
+        user_id: str,
+        is_admin: bool
+    ) -> Dict[str, Any]:
+        """
+        Toggle admin status for internal users only.
+        
+        Args:
+            user_id: ID of the user to update
+            is_admin: New admin status
+        
+        Returns:
+            Success message and updated user data
+        
+        Raises:
+            UserNotFoundError: If user doesn't exist
+            ValueError: If user is not internal
+        """
+        user = await self._repository.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        # Only internal users can be made admins
+        if not user.get("is_internal", False):
+            raise ValueError("Only internal users can be granted admin access")
+        
+        # Update admin status
+        updated_user = await self._repository.update_user(
+            user_id=user_id,
+            update_data={"is_admin": is_admin}
+        )
+        
+        return {
+            "success": True,
+            "message": f"User {'granted' if is_admin else 'revoked'} admin access",
+            "user": {
+                "id": updated_user.id,
+                "email": updated_user.user_email,
+                "is_admin": updated_user.is_admin,
+            }
+        }
+    
+    async def toggle_block_status(
+        self,
+        user_id: str,
+        is_blocked: bool
+    ) -> Dict[str, Any]:
+        """
+        Block or unblock a user's access.
+        
+        Args:
+            user_id: ID of the user to update
+            is_blocked: New block status (True = blocked, False = active)
+        
+        Returns:
+            Success message and updated user data
+        
+        Raises:
+            UserNotFoundError: If user doesn't exist
+        """
+        user = await self._repository.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        # Update block status
+        # account_active = not is_blocked (if blocked, account is not active)
+        # can_login = not is_blocked (if blocked, cannot login)
+        updated_user = await self._repository.update_user(
+            user_id=user_id,
+            update_data={
+                "account_active": not is_blocked,
+                "can_login": not is_blocked,
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": f"User access {'blocked' if is_blocked else 'restored'}",
+            "user": {
+                "id": updated_user.id,
+                "email": updated_user.user_email,
+                "account_active": updated_user.account_active,
+                "can_login": updated_user.can_login,
+            }
+        }
+    
+    async def soft_delete_user(
+        self,
+        user_id: str
+    ) -> Dict[str, Any]:
+        """
+        Soft delete a user (mark as deleted, allowing email reuse).
+        
+        Args:
+            user_id: ID of the user to delete
+        
+        Returns:
+            Success message and deleted user data
+        
+        Raises:
+            UserNotFoundError: If user doesn't exist
+        """
+        user = await self._repository.get_user_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        # Soft delete the user
+        success = await self._repository.soft_delete_user(user_id)
+        
+        if not success:
+            raise ValueError("Failed to delete user")
+        
+        return {
+            "success": True,
+            "message": f"User deleted successfully",
+            "user": {
+                "id": user_id,
+                "email": user.get("user_email"),
+            }
+        }
 

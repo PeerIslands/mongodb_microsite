@@ -19,10 +19,11 @@ import {
   EmailTemplateForm,
   TestimonialList,
   TestimonialForm,
+  UserList,
 } from '@/features/admin/components';
 import LeafLoader from '@/components/LeafLoader';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
 
 const navItems: { key: MainView; icon: string; label: string }[] = [
@@ -33,6 +34,7 @@ const navItems: { key: MainView; icon: string; label: string }[] = [
   { key: 'testimonials', icon: '💬', label: 'Testimonials' },
   { key: 'analytics', icon: '📊', label: 'Analytics' },
   { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
+  { key: 'users', icon: '👥', label: 'Users' },
 ];
 
 const AdminDashboard = () => {
@@ -62,6 +64,7 @@ const AdminDashboard = () => {
       analytics: 'Loading Analytics...',
       emailtemplates: 'Loading Newsletters...',
       testimonials: 'Loading Testimonials...',
+      users: 'Loading Users...',
     };
     return messages[view];
   };
@@ -195,6 +198,8 @@ const AdminDashboard = () => {
     } else if (view === 'testimonials') {
       setTestimonialView('list');
       setEditingTestimonialId(null);
+    } else if (view === 'users') {
+      // Users view doesn't have sub-views, but we handle it for consistency
     }
   };
 
@@ -365,6 +370,8 @@ const AdminDashboard = () => {
             )}
           </>
         )}
+        
+        {mainView === 'users' && <UserList onLoadComplete={handleLoadComplete} />}
       </div>
   );
 };

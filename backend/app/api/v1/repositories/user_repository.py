@@ -35,16 +35,19 @@ class UserRepository:
 
     async def email_exists(self, email: str) -> bool:
         """
-        Check if email already exists in the database.
+        Check if email already exists in the database (excluding deleted users).
         
         Args:
             email: Email address to check
             
         Returns:
-            True if email exists, False otherwise
+            True if email exists and is not deleted, False otherwise
         """
         result = await self.users_collection.find_one(
-            {"user_email": {"$regex": f"^{email}$", "$options": "i"}}
+            {
+                "user_email": {"$regex": f"^{email}$", "$options": "i"},
+                "is_deleted": {"$ne": True}  # Exclude deleted users
+            }
         )
         return result is not None
 
@@ -116,6 +119,10 @@ class UserRepository:
             # Account access - blocked until MFA setup
             account_active=False,
             can_login=False,
+            # Soft delete - new user is not deleted
+            is_deleted=False,
+            deleted_at=None,
+            original_email=None,
             created_at=now,
         )
 
@@ -147,37 +154,101 @@ class UserRepository:
 
     async def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """
-        Get a user by their email address.
+        Get a user by their email address (excluding deleted users).
         
         Args:
             email: The user's email address
             
         Returns:
-            User data dictionary if found, None otherwise
+            User data dictionary if found and not deleted, None otherwise
         """
         return await self.users_collection.find_one(
-            {"user_email": {"$regex": f"^{email}$", "$options": "i"}}
+            {
+                "user_email": {"$regex": f"^{email}$", "$options": "i"},
+                "is_deleted": {"$ne": True}  # Exclude deleted users
+            }
         )
 
     async def get_all_users(
-        self, skip: int = 0, limit: int = 100
+        self, skip: int = 0, limit: int = 100, filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Get all users with pagination.
+        Get all users with pagination and optional filters.
         
         Args:
             skip: Number of users to skip
             limit: Maximum number of users to return
+            filters: Optional filters (is_admin, is_internal, registration_status, search, include_deleted)
             
         Returns:
             List of user data dictionaries
         """
-        cursor = self.users_collection.find().skip(skip).limit(limit)
+        query = {}
+        
+        # By default, exclude deleted users unless specifically requested
+        include_deleted = filters.get('include_deleted', False) if filters else False
+        if not include_deleted:
+            query['is_deleted'] = {"$ne": True}
+        
+        if filters:
+            if 'is_admin' in filters:
+                query['is_admin'] = filters['is_admin']
+            if 'is_internal' in filters:
+                query['is_internal'] = filters['is_internal']
+            if 'registration_status' in filters:
+                query['registration_status'] = filters['registration_status']
+            if 'is_deleted' in filters:
+                query['is_deleted'] = filters['is_deleted']
+            if 'search' in filters and filters['search']:
+                # Search in first_name, last_name, user_email
+                search_regex = {"$regex": filters['search'], "$options": "i"}
+                query['$or'] = [
+                    {"first_name": search_regex},
+                    {"last_name": search_regex},
+                    {"user_email": search_regex},
+                    {"company": search_regex},
+                ]
+        
+        cursor = self.users_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
         return await cursor.to_list(length=limit)
 
-    async def get_user_count(self) -> int:
-        """Get total number of users."""
-        return await self.users_collection.count_documents({})
+    async def get_user_count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+        """
+        Get total number of users with optional filters.
+        
+        Args:
+            filters: Optional filters (is_admin, is_internal, registration_status, search, include_deleted)
+            
+        Returns:
+            Count of users matching the filters
+        """
+        query = {}
+        
+        # By default, exclude deleted users unless specifically requested
+        include_deleted = filters.get('include_deleted', False) if filters else False
+        if not include_deleted:
+            query['is_deleted'] = {"$ne": True}
+        
+        if filters:
+            if 'is_admin' in filters:
+                query['is_admin'] = filters['is_admin']
+            if 'is_internal' in filters:
+                query['is_internal'] = filters['is_internal']
+            if 'registration_status' in filters:
+                query['registration_status'] = filters['registration_status']
+            if 'is_deleted' in filters:
+                query['is_deleted'] = filters['is_deleted']
+            if 'search' in filters and filters['search']:
+                # Search in first_name, last_name, user_email
+                search_regex = {"$regex": filters['search'], "$options": "i"}
+                query['$or'] = [
+                    {"first_name": search_regex},
+                    {"last_name": search_regex},
+                    {"user_email": search_regex},
+                    {"company": search_regex},
+                ]
+        
+        return await self.users_collection.count_documents(query)
 
     async def get_login_creds(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -236,7 +307,9 @@ class UserRepository:
 
     async def delete_user(self, user_id: str) -> bool:
         """
-        Delete a user and their login credentials.
+        HARD Delete a user and their login credentials.
+        WARNING: This permanently removes the user from the database.
+        Use soft_delete_user() for non-destructive deletion.
         
         Args:
             user_id: The user's ID
@@ -249,6 +322,60 @@ class UserRepository:
         await self.login_creds_collection.delete_one({"_id": user_id})
         
         return user_result.deleted_count > 0
+    
+    async def soft_delete_user(self, user_id: str) -> bool:
+        """
+        Soft delete a user (marks as deleted, doesn't remove from database).
+        This allows the email to be reused for new registrations.
+        
+        The user's email is modified to prevent unique constraint violation:
+        - Original: user@example.com
+        - After deletion: deleted_<timestamp>_user@example.com
+        
+        Args:
+            user_id: The user's ID
+            
+        Returns:
+            True if marked as deleted, False if user not found
+        """
+        # Get the user first to access their email
+        user = await self.users_collection.find_one({"_id": user_id})
+        if not user:
+            return False
+        
+        now = datetime.now(timezone.utc)
+        timestamp = int(now.timestamp())
+        
+        # Modify the email to free up the original email for reuse
+        # Format: deleted_<timestamp>_<original_email>
+        original_email = user.get("user_email", "")
+        deleted_email = f"deleted_{timestamp}_{original_email}"
+        
+        result = await self.users_collection.update_one(
+            {"_id": user_id},
+            {
+                "$set": {
+                    "user_email": deleted_email,
+                    "original_email": original_email,  # Store original email
+                    "is_deleted": True,
+                    "deleted_at": now.isoformat(),
+                    "account_active": False,
+                    "can_login": False,
+                }
+            }
+        )
+        
+        # Also update the login_creds collection
+        await self.login_creds_collection.update_one(
+            {"_id": user_id},
+            {
+                "$set": {
+                    "user_email": deleted_email,
+                }
+            }
+        )
+        
+        return result.modified_count > 0 or result.matched_count > 0
     
     # =========================================================================
     # MFA/TOTP-RELATED METHODS (NEW)

@@ -17,6 +17,7 @@ export { default as PageLevelAnalytics } from './PageLevelAnalytics';
 export { PreviewModal } from './PreviewModal';
 export { default as RichTextEditor } from './RichTextEditor';
 export { default as SiteWideAnalytics } from './SiteWideAnalytics';
+export { default as UserList } from './UserList';
 export { default as VideoUploader } from './VideoUploader';
 export { default as TestimonialForm } from './TestimonialForm';
 export { default as TestimonialList } from './TestimonialList';
