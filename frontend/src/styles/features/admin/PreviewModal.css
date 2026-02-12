@@ -107,6 +107,152 @@
   font-family: 'Inter', sans-serif;
 }
 
+/* Access Request Styles */
+.preview-access-request {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 3rem;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.access-request-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.preview-access-request h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #212529;
+  margin: 0 0 1rem 0;
+}
+
+.access-request-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  color: #6c757d;
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.btn-request-access {
+  background: linear-gradient(135deg, #5b6cff 0%, #4854cc 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(91, 108, 255, 0.3);
+}
+
+.btn-request-access:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(91, 108, 255, 0.4);
+}
+
+.btn-request-access:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-request-access:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-prompt-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-login {
+  flex: 1;
+  background: linear-gradient(135deg, #00c853 0%, #00a843 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 200, 83, 0.4);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+.btn-cancel {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-cancel:active {
+  transform: translateY(0);
+}
+
+.access-request-pending {
+  margin-top: 1rem;
+}
+
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 193, 7, 0.15);
+  color: #856404;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
 @media (max-width: 768px) {
   .preview-modal-overlay {
     padding: 1rem;
@@ -122,5 +268,37 @@
   
   .preview-modal-header h2 {
     font-size: 1.25rem;
+  }
+
+  .preview-access-request {
+    padding: 2rem 1.5rem;
+  }
+
+  .access-request-icon {
+    font-size: 3.5rem;
+  }
+
+  .preview-access-request h3 {
+    font-size: 1.5rem;
+  }
+
+  .access-request-message {
+    font-size: 1rem;
+  }
+
+  .btn-request-access {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+
+  .login-prompt-actions {
+    flex-direction: column;
+  }
+
+  .btn-login,
+  .btn-cancel {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
   }
 }

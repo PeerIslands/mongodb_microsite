@@ -12,6 +12,8 @@ const OfferingsPage = () => {
   const location = useLocation();
   // Track which cards are expanded (all start collapsed)
   const [expandedCards, setExpandedCards] = useState<boolean[]>([false, false, false, false, false, false]);
+  // Track which card should be highlighted (for navigation from capabilities)
+  const [highlightedCard, setHighlightedCard] = useState<number | null>(null);
 
   // Check if ALL cards are expanded
   const allCardsExpanded = expandedCards.every(card => card === true);
@@ -39,12 +41,27 @@ const OfferingsPage = () => {
         'ai-consulting-governance': 5,
       };
       
-      setTimeout(() => {
-        const targetId = location.hash.substring(1);
-        const cardIndex = cardIndexMap[targetId];
+      const targetId = location.hash.substring(1);
+      const cardIndex = cardIndexMap[targetId];
+      
+      if (cardIndex !== undefined) {
+        // Collapse all cards first, then expand only the target card
+        setExpandedCards(prev => {
+          const newState = prev.map(() => false);
+          newState[cardIndex] = true;
+          return newState;
+        });
         
-        if (cardIndex !== undefined) {
-          // Get all offering cards
+        // Highlight the target card
+        setHighlightedCard(cardIndex);
+        
+        // Remove highlight after animation
+        setTimeout(() => {
+          setHighlightedCard(null);
+        }, 2000);
+        
+        // Then scroll to it after a delay to allow expansion animation
+        setTimeout(() => {
           const cards = document.querySelectorAll('.offering-card');
           if (cards[cardIndex]) {
             const element = cards[cardIndex] as HTMLElement;
@@ -55,8 +72,8 @@ const OfferingsPage = () => {
               behavior: 'smooth'
             });
           }
-        }
-      }, 300);
+        }, 300);
+      }
     }
   }, [location]);
 
@@ -237,7 +254,7 @@ const OfferingsPage = () => {
             <div 
               key={offering.id} 
               id={offering.id}
-              className={`offering-card ${expandedCards[index] ? 'expanded' : 'collapsed'}`}
+              className={`offering-card ${expandedCards[index] ? 'expanded' : 'collapsed'} ${highlightedCard === index ? 'highlighted' : ''}`}
             >
               <div 
                 className="offering-card-header"

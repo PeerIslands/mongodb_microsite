@@ -43,51 +43,86 @@ router = APIRouter()
 
 
 # =====================================================
-# Public Newsletter Endpoint (No Auth Required)
+# Public Newsletter Endpoint ( Auth Required)
 # =====================================================
 
 @router.get(
     "/newsletters",
     response_model=List[dict],
     summary="Get Active Newsletters",
-    description="Get all active newsletters for public display (No auth required)"
+    description="Get all active newsletters for public display (Access control enabled)"
 )
 async def get_public_newsletters(
+    user_email: Optional[str] = None,
     repo: EmailTemplateRepository = Depends(get_email_template_repository)
 ) -> List[dict]:
     """
     Get all active newsletters for public display on the Insights page.
     
-    **No authentication required**
+    **Access control enabled**
     
+    - Admin users automatically have access
+    - Non-admin users require approved access via newsletter access request
+    - User must provide email via query parameter
+    - Returns newsletter list without html_content if no access
+    - Returns full content if user has approved access or is admin
     - Filters by category="newsletter" and status="active"
-    - Returns only essential fields for display
     - Sorted by creation date (newest first)
     """
     try:
-        # Fetch active newsletters with html_content included for preview
+        from app.api.v1.repositories.newsletter_access_repository import NewsletterAccessRepository
+        from app.api.v1.repositories.user_repository import UserRepository
+        from app.core.database import Database
+        
+        # Check if user has access
+        has_access = False
+        if user_email:
+            db = Database.get_db()
+            
+            # First check if user is admin
+            user_repo = UserRepository(db)
+            user_data = await user_repo.get_user_by_email(user_email)
+            
+            if user_data and user_data.get('is_admin'):
+                # Admin users automatically have access
+                has_access = True
+            else:
+                # Non-admin users need approved access
+                access_repo = NewsletterAccessRepository(db)
+                has_access = await access_repo.has_access(user_email)
+        
+        # Fetch active newsletters
+        include_content = has_access  # Only include content if user has access
         templates, _ = await repo.get_all_templates(
             skip=0,
             limit=100,
             category="newsletter",
             status="active",
-            include_content=True  # Include html_content for newsletter preview
+            include_content=include_content
         )
         
         # Return simplified data for frontend
         newsletters = []
         for template in templates:
-            newsletters.append({
+            newsletter_data = {
                 "_id": str(template.get("_id", "")),
                 "name": template.get("name", ""),
                 "description": template.get("description", ""),
                 "subject": template.get("subject", ""),
-                "html_content": template.get("html_content", ""),
                 "created_at": template.get("created_at"),
                 "updated_at": template.get("updated_at"),
-            })
+                "has_access": has_access  # Indicate if user has access
+            }
+            
+            # Only include html_content if user has access
+            if has_access:
+                newsletter_data["html_content"] = template.get("html_content", "")
+            else:
+                newsletter_data["html_content"] = None  # Explicitly set to None
+            
+            newsletters.append(newsletter_data)
         
-        logger.info(f"📬 Fetched {len(newsletters)} active newsletters for public display")
+        logger.info(f"📬 Fetched {len(newsletters)} active newsletters (access: {has_access}) for {user_email or 'anonymous'}")
         return newsletters
         
     except Exception as e:

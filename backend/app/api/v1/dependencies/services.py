@@ -317,6 +317,45 @@ async def get_current_active_user(
             detail="Inactive user account"
         )
     return current_user
+
+
+async def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> UserModel | None:
+    """
+    Get current user if authenticated, otherwise return None.
+    Used for endpoints that support both authenticated and unauthenticated access.
+    
+    Args:
+        credentials: Optional HTTP Bearer token credentials
+        auth_service: Auth service instance
+    
+    Returns:
+        Current authenticated user or None if not authenticated
+    """
+    if credentials is None:
+        return None
+    
+    try:
+        # Decode the JWT token
+        payload = auth_service.decode_token(credentials.credentials)
+        email: str = payload.get("sub")
+        
+        if email is None:
+            return None
+        
+        # Get user from database
+        user_repository = get_user_repository()
+        user_data = await user_repository.get_user_by_email(email)
+        
+        if user_data is None:
+            return None
+        
+        return UserModel(**user_data)
+        
+    except Exception:
+        return None
 def get_event_service() -> EventService:
     """
     Get EventService instance.
