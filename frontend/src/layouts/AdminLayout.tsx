@@ -11,6 +11,8 @@ import '@/styles/features/admin/AnalyticsDashboard.css';
 import '@/styles/features/admin/EmailTemplateList.css';
 import '@/styles/features/admin/EmailTemplateForm.css';
 import logo from '@/assets/logo.svg';
+import { newsletterAccessService } from '@/api/services/newsletter-access.service';
+import { AccessRequestsPanel } from '@/features/admin/components/AccessRequestsPanel';
 
 /**
  * Admin layout with header and sidebar
@@ -21,6 +23,9 @@ const AdminLayout = () => {
   const { showToast } = useToast();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if we're on admin page
   const isOnAdminPage = location.pathname.startsWith('/admin');
@@ -29,7 +34,29 @@ const AdminLayout = () => {
     // Get user email from localStorage
     const email = localStorage.getItem('userEmail');
     setUserEmail(email);
+    
+    // Check if user is admin
+    const adminStatus = localStorage.getItem('isAdmin') === 'true';
+    setIsAdmin(adminStatus);
+    
+    // Fetch pending requests count if admin
+    if (adminStatus) {
+      fetchPendingCount();
+      
+      // Poll for updates every 30 seconds
+      const interval = setInterval(fetchPendingCount, 30000);
+      return () => clearInterval(interval);
+    }
   }, []);
+
+  const fetchPendingCount = async () => {
+    try {
+      const count = await newsletterAccessService.getPendingCount();
+      setPendingRequestsCount(count);
+    } catch (error) {
+      console.error('Failed to fetch pending requests count:', error);
+    }
+  };
 
   const getInitials = (email: string) => {
     if (!email) return 'U';
@@ -68,6 +95,25 @@ const AdminLayout = () => {
           
           <div className="admin-actions">
             <span className="admin-badge">ADMIN</span>
+            
+            {/* Notification Bell Icon - Only show for admin users */}
+            {isAdmin && (
+              <button
+                className="notification-bell-button"
+                onClick={() => setShowNotifications(!showNotifications)}
+                aria-label="Notifications"
+                title="Newsletter Access Requests"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {pendingRequestsCount > 0 && (
+                  <span className="notification-badge">{pendingRequestsCount}</span>
+                )}
+              </button>
+            )}
+            
             {userEmail && (
               <div className="user-menu-container">
                 <button 
@@ -142,6 +188,13 @@ const AdminLayout = () => {
       <main className="admin-main">
         <Outlet />
       </main>
+
+      {/* Access Requests Panel */}
+      <AccessRequestsPanel
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onRequestHandled={fetchPendingCount}
+      />
     </div>
   );
 };
