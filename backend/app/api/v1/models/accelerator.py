@@ -94,6 +94,7 @@ class AcceleratorResponse(BaseModel):
     """Response model for accelerator list."""
     id: str = Field(..., description="Unique accelerator ID")
     title: str = Field(..., description="Accelerator title")
+    slug: str = Field(default="", description="URL-friendly slug derived from title")
     subtitle: str = Field(..., description="Accelerator subtitle")
     description: str = Field(..., description="Description")
     status: str = Field(..., description="Status: 'published' or 'draft'")

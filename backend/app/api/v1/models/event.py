@@ -129,6 +129,7 @@ class EventResponse(BaseModel):
     """
     id: str = Field(..., description="Unique event ID")
     title: str = Field(..., description="Event title")
+    slug: str = Field(default="", description="URL-friendly slug derived from title")
     subtitle: str = Field(..., description="Event subtitle")
     date: str = Field(..., description="Event date (YYYY-MM-DD)")
     time: str = Field(..., description="Event time (HH:mm)")

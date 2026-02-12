@@ -32,6 +32,23 @@ class EventRepository:
         """Generate a unique event ID."""
         return str(uuid.uuid4())
 
+    async def slug_exists(self, slug: str, exclude_id: Optional[str] = None) -> bool:
+        """
+        Check if a slug already exists.
+        
+        Args:
+            slug: The slug to check
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            True if exists, False otherwise
+        """
+        query: Dict[str, Any] = {"slug": slug}
+        if exclude_id:
+            query["_id"] = {"$ne": exclude_id}
+        doc = await self._collection.find_one(query)
+        return doc is not None
+
     async def create(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new event in MongoDB.
@@ -191,6 +208,7 @@ class EventRepository:
 
     async def create_indexes(self) -> None:
         """Create indexes for better query performance."""
+        await self._collection.create_index("slug", unique=True)
         await self._collection.create_index("status")
         await self._collection.create_index("category")
         await self._collection.create_index("featured")

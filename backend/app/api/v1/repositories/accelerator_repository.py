@@ -35,6 +35,23 @@ class AcceleratorRepository:
         doc = await self._collection.find_one(query)
         return doc is not None
 
+    async def slug_exists(self, slug: str, exclude_id: Optional[str] = None) -> bool:
+        """
+        Check if a slug already exists.
+        
+        Args:
+            slug: The slug to check
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            True if exists, False otherwise
+        """
+        query: Dict[str, Any] = {"slug": slug}
+        if exclude_id:
+            query["_id"] = {"$ne": exclude_id}
+        doc = await self._collection.find_one(query)
+        return doc is not None
+
     async def create(self, accelerator_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new accelerator in the database.
@@ -173,6 +190,7 @@ class AcceleratorRepository:
     async def create_indexes(self) -> None:
         """Create database indexes for optimal query performance."""
         await self._collection.create_index("title", unique=True)
+        await self._collection.create_index("slug", unique=True)
         await self._collection.create_index("status")
         await self._collection.create_index("feature_on_homepage")
         await self._collection.create_index("created_at")

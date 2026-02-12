@@ -46,7 +46,7 @@
 .metric-value {
   font-family: 'Manrope', sans-serif;
   font-size: 36px;
-  font-weight: 300;
+  font-weight: 500;
   line-height: 1.2;
   text-align: center;
   width: 100%;
@@ -54,10 +54,7 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   margin: 0;
-  background: linear-gradient(163.171deg, rgb(255, 255, 255) 11.53%, rgba(255, 255, 255, 0) 109.53%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 }
 
 .metric-description {
@@ -65,7 +62,7 @@
   font-size: 20px;
   font-weight: 400;
   font-style: normal;
-  color: rgba(239, 237, 253, 0.6);
+  color: #00ED64;
   line-height: 24px;
   text-align: center;
   margin: 0;
