@@ -1,5 +1,4 @@
 import { clearSession } from './sessionStorage';
-import * as sessionStorage from './sessionStorage';
 
 /**
  * Centralized authentication utilities

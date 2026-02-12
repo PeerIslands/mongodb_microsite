@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
 import type { User, SignupResponse } from '@/types/models/user';
-import { setUserId, setSessionData, clearSession } from '@/utils/sessionStorage';
+import { setSessionData, clearSession } from '@/utils/sessionStorage';
 
 interface UseAuthReturn {
   user: User | null;
@@ -54,8 +54,7 @@ export const useAuth = (): UseAuthReturn => {
         country: country,
       });
       
-      // Store user ID from response
-      setUserId(response.user_id);
+      // User ID is stored in sessionStorage via setSessionData when login completes
       
       setLoading(false);
       

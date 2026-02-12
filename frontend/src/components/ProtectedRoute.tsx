@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthModal } from '@/contexts/AuthModalContext';
-import { isAuthenticated } from '@/utils/sessionStorage';
+import { isAuthenticated as checkIsAuthenticated } from '@/utils/sessionStorage';
 import LeafLoader from './LeafLoader';
 
 interface ProtectedRouteProps {
@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Check authentication status
     const checkAuth = () => {
       try {
-        const authenticated = isAuthenticated();
+        const authenticated = checkIsAuthenticated();
         setIsAuthenticated(authenticated);
         
         if (!authenticated) {
