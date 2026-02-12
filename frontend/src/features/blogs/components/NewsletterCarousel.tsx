@@ -114,10 +114,6 @@ const NewsletterCarousel = () => {
     });
   };
 
-  const handleCloseLoginPrompt = () => {
-    setShowLoginPrompt(false);
-  };
-
   if (loading) {
     return (
       <section className="newsletter-carousel-section">

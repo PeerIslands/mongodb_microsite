@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { analytics } from '@/utils/analytics';
 import '@/styles/features/home/Hero.css';
 import heroCard1 from '@/assets/HeroCard1.png';
