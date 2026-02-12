@@ -4,6 +4,7 @@ import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
 import { getCaseStudyFileUrl } from '@/api/services/case-studies.service';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import LeafLoader from '@/components/LeafLoader';
 import '@/styles/features/case-studies/CaseStudyDetailSection.css';
 
@@ -29,7 +30,7 @@ const CaseStudyDetailSection = ({ caseStudy, isVisible, isLoading = false }: Cas
   }, [isVisible, caseStudy?.id]);
 
   const isLoggedIn = () => {
-    return !!localStorage.getItem('authToken');
+    return isAuthenticated();
   };
 
   const openPdf = () => {

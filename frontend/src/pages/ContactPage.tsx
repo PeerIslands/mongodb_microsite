@@ -5,6 +5,7 @@ import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
 import LeafLoader from '@/components/LeafLoader';
 import { analytics } from '@/utils/analytics';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import '@/styles/pages/ContactPage.css';
 
 // Helper to convert country name to ISO country code
@@ -51,9 +52,9 @@ const ContactPage = () => {
   // Check if user is logged in and fetch their data
   useEffect(() => {
     const fetchUserData = async () => {
-      const authToken = localStorage.getItem('authToken');
+      const authenticated = isAuthenticated();
       
-      if (authToken) {
+      if (authenticated) {
         setIsLoggedIn(true);
         
         try {

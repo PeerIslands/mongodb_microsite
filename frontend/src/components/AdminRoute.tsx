@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { useToast } from '@/contexts/ToastContext';
+import { isAuthenticated, isAdmin } from '@/utils/sessionStorage';
 import LeafLoader from './LeafLoader';
 
 interface AdminRouteProps {
@@ -24,11 +25,10 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     // Check authentication and admin status
     const checkAuth = () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const authenticated = isAuthenticated();
+        const adminStatus = isAdmin();
         
-        const authenticated = !!token;
-        const authorized = authenticated && isAdmin;
+        const authorized = authenticated && adminStatus;
         
         setIsAuthorized(authorized);
         
@@ -37,7 +37,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
           setTimeout(() => {
             openLoginModal(() => {
               // After successful login, check if they're admin
-              const newIsAdmin = localStorage.getItem('isAdmin') === 'true';
+              const newIsAdmin = isAdmin();
               if (newIsAdmin) {
                 window.location.href = location.pathname;
               } else {
@@ -45,12 +45,12 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
               }
             });
           }, 100);
-        } else if (!isAdmin) {
+        } else if (!adminStatus) {
           // User is authenticated but not admin
           showToast('You do not have permission to access this page. Admin access required.', 'error');
         }
       } catch (error) {
-        // Handle localStorage errors
+        // Handle sessionStorage errors
         console.error('Error checking authentication:', error);
         setIsAuthorized(false);
         setTimeout(() => {

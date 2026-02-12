@@ -3,6 +3,7 @@ import axios from 'axios';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { eventsService } from '@/api/services/events.service';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import type { EventCardData } from './EventCard';
 import RegistrationConfirmModal from '@/features/events/RegistrationConfirmModal';
 import '@/styles/features/events/EventDetailPanel.css';
@@ -52,7 +53,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
 
   // Check if user is logged in
   const isLoggedIn = () => {
-    return !!localStorage.getItem('authToken');
+    return isAuthenticated();
   };
 
   // Handle escape key press

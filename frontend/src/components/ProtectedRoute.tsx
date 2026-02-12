@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import LeafLoader from './LeafLoader';
 
 interface ProtectedRouteProps {
@@ -21,8 +22,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     // Check authentication status
     const checkAuth = () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const authenticated = !!token;
+        const authenticated = isAuthenticated();
         setIsAuthenticated(authenticated);
         
         if (!authenticated) {
@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           }, 100);
         }
       } catch (error) {
-        // Handle localStorage errors (e.g., in private browsing mode)
+        // Handle sessionStorage errors (e.g., in private browsing mode)
         console.error('Error checking authentication:', error);
         setIsAuthenticated(false);
         setTimeout(() => {

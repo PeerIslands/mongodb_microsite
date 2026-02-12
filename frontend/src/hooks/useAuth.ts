@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
 import type { User, SignupResponse } from '@/types/models/user';
+import { setUserId, setSessionData, clearSession } from '@/utils/sessionStorage';
 
 interface UseAuthReturn {
   user: User | null;
@@ -55,7 +56,6 @@ export const useAuth = (): UseAuthReturn => {
       
       // Store user ID from response
       setUserId(response.user_id);
-      localStorage.setItem('userId', response.user_id);
       
       setLoading(false);
       
@@ -102,11 +102,14 @@ export const useAuth = (): UseAuthReturn => {
         };
       }
       
-      // Standard login (no TOTP) - store tokens immediately
-      localStorage.setItem('authToken', response.access_token!);
-      localStorage.setItem('userEmail', response.user_email!);
-      localStorage.setItem('isAdmin', String(response.is_admin));
-      localStorage.setItem('isInternal', String(response.is_internal));
+      // Standard login (no TOTP) - store tokens immediately in sessionStorage
+      setSessionData({
+        authToken: response.access_token!,
+        userEmail: response.user_email!,
+        isAdmin: response.is_admin || false,
+        isInternal: response.is_internal || false,
+        userId: response.user_email!, // Use email as userId if no separate ID
+      });
       
       setLoading(false);
       return { 
@@ -125,11 +128,7 @@ export const useAuth = (): UseAuthReturn => {
   const logout = (): void => {
     setUser(null);
     setUserId(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isInternal');
+    clearSession();
   };
 
   const clearError = () => {

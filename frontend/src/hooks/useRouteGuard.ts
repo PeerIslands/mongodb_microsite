@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { isAuthenticated as checkIsAuthenticated, isAdmin as checkIsAdmin } from '@/utils/sessionStorage';
 
 interface UseRouteGuardOptions {
   requireAuth?: boolean;
@@ -44,10 +45,9 @@ export const useRouteGuard = (options: UseRouteGuardOptions = {}): UseRouteGuard
 
   const checkAuth = () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const adminStatus = localStorage.getItem('isAdmin') === 'true';
+      const authenticated = checkIsAuthenticated();
+      const adminStatus = checkIsAdmin();
       
-      const authenticated = !!token;
       const authorized = authenticated && (requireAdmin ? adminStatus : true);
       
       setIsAuthenticated(authenticated);
@@ -62,7 +62,7 @@ export const useRouteGuard = (options: UseRouteGuardOptions = {}): UseRouteGuard
         setTimeout(() => {
           openLoginModal(() => {
             // After successful login, check authorization again
-            const newIsAdmin = localStorage.getItem('isAdmin') === 'true';
+            const newIsAdmin = checkIsAdmin();
             if (requireAdmin && !newIsAdmin) {
               if (showErrorToast) {
                 showToast('You do not have permission to access this page', 'error');
@@ -81,7 +81,7 @@ export const useRouteGuard = (options: UseRouteGuardOptions = {}): UseRouteGuard
         navigate(redirectTo, { replace: true });
       }
     } catch (error) {
-      // Handle localStorage errors
+      // Handle sessionStorage errors
       console.error('Error checking authentication:', error);
       setIsAuthenticated(false);
       setIsAdmin(false);
@@ -106,9 +106,9 @@ export const useRouteGuard = (options: UseRouteGuardOptions = {}): UseRouteGuard
     } else {
       // If no requirements, just check status without redirecting
       try {
-        const token = localStorage.getItem('authToken');
-        const adminStatus = localStorage.getItem('isAdmin') === 'true';
-        setIsAuthenticated(!!token);
+        const authenticated = checkIsAuthenticated();
+        const adminStatus = checkIsAdmin();
+        setIsAuthenticated(authenticated);
         setIsAdmin(adminStatus);
         setIsAuthorized(true);
       } catch (error) {

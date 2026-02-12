@@ -44,7 +44,7 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           {
-            path: ROUTES.HOME,
+            index: true,
             element: (
               <Suspense fallback={<PageLoader />}>
                 <HomePage />

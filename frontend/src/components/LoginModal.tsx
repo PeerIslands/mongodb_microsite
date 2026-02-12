@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
 import { analytics } from '@/utils/analytics';
+import { setSessionData } from '@/utils/sessionStorage';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import BackupCodesDisplay from './BackupCodesDisplay';
 import '@/styles/components/LoginModal.css';
@@ -252,12 +253,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
       });
 
       if (response.data && response.data.access_token) {
-        // Store tokens
-        localStorage.setItem('authToken', response.data.access_token);
-        localStorage.setItem('userEmail', response.data.user_email);
-        localStorage.setItem('isAdmin', String(response.data.is_admin));
-        localStorage.setItem('isInternal', String(response.data.is_internal));
+        // Store tokens in sessionStorage
+        setSessionData({
+          authToken: response.data.access_token,
+          userEmail: response.data.user_email,
+          isAdmin: response.data.is_admin || false,
+          isInternal: response.data.is_internal || false,
+        });
         
+        // Store rememberMe preference in localStorage (user preference, not auth data)
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         }

@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { isAuthenticated, isAdmin, getUserEmail, clearSession } from '@/utils/sessionStorage';
 import '@/styles/layouts/AdminLayout.css';
 // Pre-import admin component CSS to prevent flash of unstyled content during lazy loading
 import '@/styles/pages/AdminDashboardPage.css';
@@ -33,12 +34,11 @@ const AdminLayout = () => {
   useEffect(() => {
     const checkAuthAndAdmin = () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const isAdmin = localStorage.getItem('isAdmin') === 'true';
-        const email = localStorage.getItem('userEmail');
+        const authenticated = isAuthenticated();
+        const adminStatus = isAdmin();
+        const email = getUserEmail();
         
-        const authenticated = !!token;
-        const authorized = authenticated && isAdmin;
+        const authorized = authenticated && adminStatus;
         
         setIsAuthorized(authorized);
         setUserEmail(email);
@@ -49,7 +49,7 @@ const AdminLayout = () => {
           showToast('Please log in to access the admin dashboard', 'error');
           setTimeout(() => {
             openLoginModal(() => {
-              const newIsAdmin = localStorage.getItem('isAdmin') === 'true';
+              const newIsAdmin = isAdmin();
               if (newIsAdmin) {
                 window.location.href = location.pathname;
               } else {
@@ -58,12 +58,12 @@ const AdminLayout = () => {
             });
           }, 100);
           navigate('/', { replace: true });
-        } else if (!isAdmin) {
+        } else if (!adminStatus) {
           showToast('You do not have permission to access this page. Admin access required.', 'error');
           navigate('/', { replace: true });
         }
       } catch (error) {
-        // Handle localStorage errors
+        // Handle sessionStorage errors
         console.error('Error checking authentication:', error);
         setIsAuthorized(false);
         showToast('Error checking authentication. Please try again.', 'error');
@@ -88,12 +88,8 @@ const AdminLayout = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isInternal');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('rememberMe');
+    clearSession();
+    // Note: rememberMe stays in localStorage as it's a user preference
     
     setShowUserMenu(false);
     showToast('Logged out successfully', 'success');

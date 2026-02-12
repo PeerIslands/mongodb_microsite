@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '@/styles/features/accelerators/PDFViewerSection.css';
@@ -48,7 +49,7 @@ const PDFViewerSection = ({ pdfUrl, title, acceleratorId }: PDFViewerSectionProp
   };
 
   const isLoggedIn = () => {
-    return !!localStorage.getItem('authToken');
+    return isAuthenticated();
   };
 
   const downloadPdf = async () => {
