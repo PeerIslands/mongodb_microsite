@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
-import { isAuthenticated, isAdmin, getUserEmail, clearSession } from '@/utils/sessionStorage';
+import { isAuthenticated, isAdmin as checkIsAdmin, getUserEmail, clearSession } from '@/utils/sessionStorage';
 import '@/styles/layouts/AdminLayout.css';
 // Pre-import admin component CSS to prevent flash of unstyled content during lazy loading
 import '@/styles/pages/AdminDashboardPage.css';
@@ -40,7 +40,7 @@ const AdminLayout = () => {
     const checkAuthAndAdmin = () => {
       try {
         const authenticated = isAuthenticated();
-        const adminStatus = isAdmin();
+        const adminStatus = checkIsAdmin();
         const email = getUserEmail();
         
         const authorized = authenticated && adminStatus;
@@ -54,7 +54,7 @@ const AdminLayout = () => {
           showToast('Please log in to access the admin dashboard', 'error');
           setTimeout(() => {
             openLoginModal(() => {
-              const newIsAdmin = isAdmin();
+              const newIsAdmin = checkIsAdmin();
               if (newIsAdmin) {
                 window.location.href = location.pathname;
               } else {
@@ -86,6 +86,9 @@ const AdminLayout = () => {
   if (!isAuthorized) {
     return null;
   }
+
+  // Fetch pending requests count for admin users
+  useEffect(() => {
     // Get user email from localStorage
     const email = localStorage.getItem('userEmail');
     setUserEmail(email);

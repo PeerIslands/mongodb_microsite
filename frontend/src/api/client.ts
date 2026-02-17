@@ -1,6 +1,11 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getAuthToken } from '@/utils/sessionStorage';
 import { handleTokenExpiration } from '@/utils/auth';
+
+// Extend Axios request config to include _retry property
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -49,7 +54,7 @@ apiClient.interceptors.response.use(
         case 401:
           // Unauthorized - check if this is token expiration
           const hadToken = !!getAuthToken();
-          const originalRequest = error.config;
+          const originalRequest = error.config as ExtendedAxiosRequestConfig;
           
           // If we had a token and got 401, it's likely expired
           if (hadToken && originalRequest && !originalRequest._retry) {
