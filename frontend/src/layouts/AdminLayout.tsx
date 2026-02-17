@@ -1,6 +1,8 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/contexts/ToastContext';
+import { useAuthModal } from '@/contexts/AuthModalContext';
+import { isAuthenticated, isAdmin, getUserEmail, clearSession } from '@/utils/sessionStorage';
 import '@/styles/layouts/AdminLayout.css';
 // Pre-import admin component CSS to prevent flash of unstyled content during lazy loading
 import '@/styles/pages/AdminDashboardPage.css';
@@ -21,8 +23,10 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
+  const { openLoginModal } = useAuthModal();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -30,7 +34,58 @@ const AdminLayout = () => {
   // Check if we're on admin page
   const isOnAdminPage = location.pathname.startsWith('/admin');
 
+  // Check authentication and admin status on mount (additional security layer)
+  // Note: AdminRoute component handles the main protection, this is defense-in-depth
   useEffect(() => {
+    const checkAuthAndAdmin = () => {
+      try {
+        const authenticated = isAuthenticated();
+        const adminStatus = isAdmin();
+        const email = getUserEmail();
+        
+        const authorized = authenticated && adminStatus;
+        
+        setIsAuthorized(authorized);
+        setUserEmail(email);
+        
+        // Additional security check - if somehow we reach here without proper auth,
+        // show error and redirect (AdminRoute should have caught this, but this is a safety net)
+        if (!authenticated) {
+          showToast('Please log in to access the admin dashboard', 'error');
+          setTimeout(() => {
+            openLoginModal(() => {
+              const newIsAdmin = isAdmin();
+              if (newIsAdmin) {
+                window.location.href = location.pathname;
+              } else {
+                showToast('You do not have permission to access this page', 'error');
+              }
+            });
+          }, 100);
+          navigate('/', { replace: true });
+        } else if (!adminStatus) {
+          showToast('You do not have permission to access this page. Admin access required.', 'error');
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        // Handle sessionStorage errors
+        console.error('Error checking authentication:', error);
+        setIsAuthorized(false);
+        showToast('Error checking authentication. Please try again.', 'error');
+        setTimeout(() => {
+          openLoginModal();
+        }, 100);
+        navigate('/', { replace: true });
+      }
+    };
+
+    checkAuthAndAdmin();
+  }, [navigate, location.pathname, showToast, openLoginModal]);
+
+  // Don't render content if not authorized (safety check - AdminRoute should have handled redirect)
+  if (!isAuthorized) {
+    return null;
+  }
     // Get user email from localStorage
     const email = localStorage.getItem('userEmail');
     setUserEmail(email);
@@ -64,12 +119,8 @@ const AdminLayout = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isInternal');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('rememberMe');
+    clearSession();
+    // Note: rememberMe stays in localStorage as it's a user preference
     
     setShowUserMenu(false);
     showToast('Logged out successfully', 'success');

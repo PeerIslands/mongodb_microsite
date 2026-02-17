@@ -3,6 +3,7 @@ import { eventsService } from '@/api/services/events.service';
 import type { Event } from '@/types/models/event';
 import type { EventCardData } from '@/features/events/EventCard';
 import { withCache } from '@/utils/requestCache';
+import { isAuthenticated } from '@/utils/sessionStorage';
 
 interface UseEventsOptions {
   /** Filter by category */
@@ -76,7 +77,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setError(null);
 
       // Check if user is logged in
-      const isLoggedIn = !!localStorage.getItem('authToken');
+      const isLoggedIn = isAuthenticated();
 
       // Create cache key based on filter params
       const eventsCacheKey = `events-${category || 'all'}-${featured ? 'published-true' : 'all'}-${limit || 'all'}`;

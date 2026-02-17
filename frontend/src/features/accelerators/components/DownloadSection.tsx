@@ -1,5 +1,6 @@
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
+import { isAuthenticated } from '@/utils/sessionStorage';
 import '@/styles/features/accelerators/DownloadSection.css';
 
 interface DownloadSectionProps {
@@ -12,7 +13,7 @@ const DownloadSection = ({ title, pdfUrl, acceleratorId }: DownloadSectionProps)
   const { openPDFDownloadModal } = useAuthModal();
 
   const isLoggedIn = () => {
-    return !!localStorage.getItem('authToken');
+    return isAuthenticated();
   };
 
   const openPdf = async () => {

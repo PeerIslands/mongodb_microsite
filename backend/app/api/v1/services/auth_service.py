@@ -249,12 +249,16 @@ class AuthService:
         is_admin = user["is_admin"]
         
         # Step 7: CHECK MFA STATUS (NEW) - Critical security check
-        can_login = user.get("can_login", True)  # Default True for backwards compat
-        registration_status = user.get("registration_status", "completed")
-        account_active = user.get("account_active", True)
+        can_login = user.get("can_login", False)  # Default False - must explicitly enable
+        registration_status = user.get("registration_status", "pending_mfa")  # Default pending
+        account_active = user.get("account_active", False)  # Default False - must explicitly activate
+        
+        # Check if user is blocked (account not active but registration completed)
+        if not account_active and registration_status == "completed":
+            raise AuthenticationError("Your account has been blocked by an administrator. Please contact support for assistance.")
         
         # If registration is incomplete, block login and redirect to complete setup
-        if not can_login or registration_status == "pending_mfa" or not account_active:
+        if not can_login or registration_status == "pending_mfa":
             return SignInResponse(
                 success=False,
                 registration_incomplete=True,

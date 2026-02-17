@@ -11,6 +11,7 @@
 
 import apiClient from '@/api/client';
 import { withCache } from './requestCache';
+import { getAuthToken } from './sessionStorage';
 
 export class AnalyticsTracker {
   private sessionId: string;
@@ -72,7 +73,7 @@ export class AnalyticsTracker {
 
   private getUserId(): string | null {
     // Get from auth context if available
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));

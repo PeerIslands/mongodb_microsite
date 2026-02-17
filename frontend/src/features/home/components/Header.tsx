@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { analytics } from '@/utils/analytics';
+import { isAuthenticated, isAdmin as checkIsAdmin, getUserEmail, clearSession } from '@/utils/sessionStorage';
 import '@/styles/features/home/Header.css';
 import logo from '@/assets/logo.svg';
 
@@ -56,18 +57,29 @@ const Header = () => {
 
   useEffect(() => {
     const checkAuthStatus = () => {
-      const token = localStorage.getItem('authToken');
-      const email = localStorage.getItem('userEmail');
-      const adminStatus = localStorage.getItem('isAdmin') === 'true';
+      const authenticated = isAuthenticated();
+      const email = getUserEmail();
+      const adminStatus = checkIsAdmin();
       
-      setIsLoggedIn(!!token);
+      setIsLoggedIn(authenticated);
       setUserEmail(email || '');
       setIsAdmin(adminStatus);
     };
 
     checkAuthStatus();
-    globalThis.addEventListener('storage', checkAuthStatus);
-    return () => globalThis.removeEventListener('storage', checkAuthStatus);
+    
+    // Listen for token expiration events from API client
+    const handleTokenExpired = () => {
+      checkAuthStatus();
+    };
+    
+    globalThis.addEventListener('token-expired', handleTokenExpired);
+    
+    // Note: sessionStorage events only fire in other tabs/windows, not same tab
+    // So we listen for custom token-expired events instead
+    return () => {
+      globalThis.removeEventListener('token-expired', handleTokenExpired);
+    };
   }, []);
 
   const handleLoginClick = (e: React.MouseEvent) => {
@@ -76,12 +88,8 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isInternal');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('rememberMe');
+    clearSession();
+    // Note: rememberMe stays in localStorage as it's a user preference
     
     setIsLoggedIn(false);
     setUserEmail('');

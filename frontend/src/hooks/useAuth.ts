@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
 import type { User, SignupResponse } from '@/types/models/user';
+import { setSessionData, clearSession } from '@/utils/sessionStorage';
 
 interface UseAuthReturn {
   user: User | null;
@@ -17,7 +18,7 @@ interface UseAuthReturn {
     businessPhone: string,
     country: string
   ) => Promise<{ success: boolean; data?: SignupResponse; error?: string }>;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
   logout: () => void;
   clearError: () => void;
 }
@@ -53,9 +54,7 @@ export const useAuth = (): UseAuthReturn => {
         country: country,
       });
       
-      // Store user ID from response
-      setUserId(response.user_id);
-      localStorage.setItem('userId', response.user_id);
+      // User ID is stored in sessionStorage via setSessionData when login completes
       
       setLoading(false);
       
@@ -69,7 +68,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
     setLoading(true);
     setError(null);
     
@@ -78,6 +77,18 @@ export const useAuth = (): UseAuthReturn => {
         user_email: email,
         user_password: password,
       });
+      
+      // Check if registration is incomplete (user hasn't completed TOTP setup)
+      if (response.registration_incomplete) {
+        setLoading(false);
+        return {
+          success: false,
+          registrationIncomplete: true,
+          registrationStatus: response.registration_status,
+          redirectTo: response.redirect_to,
+          message: response.message || 'Please complete MFA setup to access your account',
+        };
+      }
       
       // Check if TOTP verification is required
       if (response.requires_totp) {
@@ -90,11 +101,14 @@ export const useAuth = (): UseAuthReturn => {
         };
       }
       
-      // Standard login (no TOTP) - store tokens immediately
-      localStorage.setItem('authToken', response.access_token);
-      localStorage.setItem('userEmail', response.user_email);
-      localStorage.setItem('isAdmin', String(response.is_admin));
-      localStorage.setItem('isInternal', String(response.is_internal));
+      // Standard login (no TOTP) - store tokens immediately in sessionStorage
+      setSessionData({
+        authToken: response.access_token!,
+        userEmail: response.user_email!,
+        isAdmin: response.is_admin || false,
+        isInternal: response.is_internal || false,
+        userId: response.user_email!, // Use email as userId if no separate ID
+      });
       
       setLoading(false);
       return { 
@@ -113,11 +127,7 @@ export const useAuth = (): UseAuthReturn => {
   const logout = (): void => {
     setUser(null);
     setUserId(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isInternal');
+    clearSession();
   };
 
   const clearError = () => {

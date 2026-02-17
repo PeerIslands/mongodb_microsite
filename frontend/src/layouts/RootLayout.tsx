@@ -7,6 +7,7 @@ import SignupModal from '@/components/SignupModal';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import PDFDownloadModal from '@/components/PDFDownloadModal';
 import AIChatbot from '@/components/AIChatbot';
+import TokenExpirationHandler from '@/components/TokenExpirationHandler';
 import '@/styles/layouts/RootLayout.css';
 import { ReactNode, useEffect } from 'react';
 import { analytics } from '@/utils/analytics';
@@ -85,6 +86,7 @@ const RootLayout = ({ children }: { children?: ReactNode }) => {
       <AuthModalProvider>
         <div className="root-layout">
           <AnalyticsTracker />
+          <TokenExpirationHandler />
           {children || <Outlet />}
           <ToastContainer />
           <GlobalAuthModals />

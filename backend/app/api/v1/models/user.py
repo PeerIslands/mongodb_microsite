@@ -414,6 +414,11 @@ class UserModel(BaseModel):
     account_active: bool = Field(default=False)
     can_login: bool = Field(default=False)
     
+    # Soft Delete (NEW)
+    is_deleted: bool = Field(default=False)
+    deleted_at: Optional[datetime] = None
+    original_email: Optional[str] = None  # Store original email before deletion
+    
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:

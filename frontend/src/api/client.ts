@@ -1,4 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import { getAuthToken } from '@/utils/sessionStorage';
+import { handleTokenExpiration } from '@/utils/auth';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -7,6 +9,9 @@ const API_TIMEOUT = 30000;
 if (!API_BASE_URL) {
   throw new Error('VITE_API_BASE_URL environment variable is not set. Please configure it in your .env file.');
 }
+
+// Track if we're currently handling token expiration to prevent multiple calls
+let isHandlingTokenExpiration = false;
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -20,8 +25,8 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add auth token if available (using 'authToken' key)
-    const token = localStorage.getItem('authToken');
+    // Add auth token if available from sessionStorage
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,14 +42,40 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
-    // Handle common errors (just log them, don't redirect)
-    // Components should handle errors appropriately via toast notifications
+  (error: AxiosError) => {
+    // Handle common errors
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          // Unauthorized - let the calling component handle it
-          console.error('Unauthorized:', error.response.data);
+          // Unauthorized - check if this is token expiration
+          const hadToken = !!getAuthToken();
+          const originalRequest = error.config;
+          
+          // If we had a token and got 401, it's likely expired
+          if (hadToken && originalRequest && !originalRequest._retry) {
+            originalRequest._retry = true;
+            
+            // Prevent multiple simultaneous token expiration handlers
+            if (!isHandlingTokenExpiration) {
+              isHandlingTokenExpiration = true;
+              
+              // Dispatch custom event for components to listen to
+              window.dispatchEvent(new CustomEvent('token-expired', {
+                detail: { message: 'Session expired. Please log in again.' }
+              }));
+              
+              // Handle token expiration
+              handleTokenExpiration();
+              
+              // Reset flag after delay
+              setTimeout(() => {
+                isHandlingTokenExpiration = false;
+              }, 1000);
+            }
+          } else {
+            // No token or retry already attempted - let component handle it
+            console.error('Unauthorized:', error.response.data);
+          }
           break;
         case 403:
           console.error('Forbidden:', error.response.data);

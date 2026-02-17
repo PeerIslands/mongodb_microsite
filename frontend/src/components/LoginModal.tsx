@@ -3,7 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
 import { analytics } from '@/utils/analytics';
+import { setSessionData } from '@/utils/sessionStorage';
 import TOTPVerificationInput from './TOTPVerificationInput';
+import BackupCodesDisplay from './BackupCodesDisplay';
 import '@/styles/components/LoginModal.css';
 
 interface LoginModalProps {
@@ -14,7 +16,7 @@ interface LoginModalProps {
   onLoginSuccess?: () => void;
 }
 
-type LoginStep = 'credentials' | 'verify-totp';
+type LoginStep = 'credentials' | 'verify-totp' | 'incomplete-registration' | 'backup-codes';
 
 const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }: LoginModalProps) => {
   // Credentials form state
@@ -28,6 +30,13 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
   const [sessionToken, setSessionToken] = useState('');
   const [verificationError, setVerificationError] = useState('');
   const [verifying, setVerifying] = useState(false);
+  
+  // Incomplete registration state
+  const [userId, setUserId] = useState('');
+  const [qrCode, setQrCode] = useState('');
+  const [totpSecret, setTotpSecret] = useState('');
+  const [resendingSetup, setResendingSetup] = useState(false);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   const { login, loading, clearError } = useAuth();
   const { showToast } = useToast();
@@ -49,6 +58,11 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
       setEmail('');
       setPassword('');
       setShowPassword(false);
+      setUserId('');
+      setQrCode('');
+      setTotpSecret('');
+      setResendingSetup(false);
+      setBackupCodes([]);
     }
   }, [isOpen]);
 
@@ -101,9 +115,127 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         }, 1000);
       }
     } else {
+      // Check if registration is incomplete (TOTP not set up)
+      if (result.registrationIncomplete) {
+        const msg = result.message || 'Please complete MFA setup to access your account';
+        showToast(msg, 'warning');
+        
+        // Show incomplete registration step
+        setStep('incomplete-registration');
+        return;
+      }
+      
       // Show error toast with message from API
       const errorMsg = result.error || 'Login failed. Please try again.';
       showToast(errorMsg, 'error');
+    }
+  };
+  
+  // ==========================================================================
+  // INCOMPLETE REGISTRATION: Resend TOTP Setup
+  // ==========================================================================
+  const handleResendTotpSetup = async () => {
+    setResendingSetup(true);
+    setVerificationError('');
+    
+    try {
+      const response = await apiClient.post('/api/v1/register/resend-totp-setup', {
+        user_email: email,
+        user_password: password,
+      });
+
+      if (response.data && response.data.totp_setup) {
+        // Store TOTP setup data
+        setUserId(response.data.user_id);
+        setQrCode(response.data.totp_setup.qr_code);
+        setTotpSecret(response.data.totp_setup.manual_entry_key);
+        
+        showToast('TOTP setup retrieved. Scan the QR code with your authenticator app.', 'success');
+      } else {
+        showToast('Failed to retrieve TOTP setup. Please try again.', 'error');
+      }
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Failed to retrieve TOTP setup';
+      console.error('Resend TOTP Setup Error:', error);
+      setVerificationError(errorMsg);
+      showToast(errorMsg, 'error');
+    } finally {
+      setResendingSetup(false);
+    }
+  };
+  
+  // ==========================================================================
+  // INCOMPLETE REGISTRATION: Complete TOTP Verification
+  // ==========================================================================
+  const handleCompleteRegistration = async (code: string) => {
+    setVerifying(true);
+    setVerificationError('');
+    
+    try {
+      const response = await apiClient.post('/api/v1/register/verify-mfa', {
+        user_id: userId,
+        totp_code: code,
+      });
+
+      if (response.data && response.data.success) {
+        showToast('MFA verified successfully!', 'success');
+        
+        // Store backup codes and move to backup codes step
+        if (response.data.backup_codes && response.data.backup_codes.length > 0) {
+          setBackupCodes(response.data.backup_codes);
+          setStep('backup-codes');
+        } else {
+          // No backup codes, just complete registration
+          showToast('Registration complete! You can now log in.', 'success');
+          setStep('credentials');
+          setEmail('');
+          setPassword('');
+          setUserId('');
+          setQrCode('');
+          setTotpSecret('');
+        }
+      } else {
+        const errorMsg = response.data?.message || 'Verification failed';
+        setVerificationError(errorMsg);
+        showToast(errorMsg, 'error');
+      }
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Verification failed';
+      console.error('Complete Registration Error:', error);
+      setVerificationError(errorMsg);
+      showToast(errorMsg, 'error');
+    } finally {
+      setVerifying(false);
+    }
+  };
+  
+  // ==========================================================================
+  // BACKUP CODES: Acknowledge and Complete
+  // ==========================================================================
+  const handleAcknowledgeBackupCodes = async () => {
+    setVerifying(true);
+    
+    try {
+      await apiClient.post('/api/v1/register/acknowledge-backup-codes', {
+        user_id: userId,
+        acknowledged: true,
+      });
+
+      showToast('Registration complete! You can now log in.', 'success');
+      
+      // Reset form and go back to login
+      setStep('credentials');
+      setEmail('');
+      setPassword('');
+      setUserId('');
+      setQrCode('');
+      setTotpSecret('');
+      setBackupCodes([]);
+    } catch (error: unknown) {
+      const errorMsg = (error as {response?: {data?: {detail?: string}}})?.response?.data?.detail || 'Failed to complete registration';
+      showToast(errorMsg, 'error');
+    } finally {
+      setVerifying(false);
     }
   };
   
@@ -121,12 +253,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
       });
 
       if (response.data && response.data.access_token) {
-        // Store tokens
-        localStorage.setItem('authToken', response.data.access_token);
-        localStorage.setItem('userEmail', response.data.user_email);
-        localStorage.setItem('isAdmin', String(response.data.is_admin));
-        localStorage.setItem('isInternal', String(response.data.is_internal));
+        // Store tokens in sessionStorage
+        setSessionData({
+          authToken: response.data.access_token,
+          userEmail: response.data.user_email,
+          isAdmin: response.data.is_admin || false,
+          isInternal: response.data.is_internal || false,
+        });
         
+        // Store rememberMe preference in localStorage (user preference, not auth data)
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
         }
@@ -196,10 +331,16 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         
         <div className="modal-header">
           <h2 className="modal-title">
-            {step === 'credentials' ? 'Welcome Back' : 'Two-Factor Authentication'}
+            {step === 'credentials' && 'Welcome Back'}
+            {step === 'verify-totp' && 'Two-Factor Authentication'}
+            {step === 'incomplete-registration' && 'Complete Your Registration'}
+            {step === 'backup-codes' && 'Save Backup Codes'}
           </h2>
           <p className="modal-subtitle">
-            {step === 'credentials' ? 'Login to your account' : 'Step 2 of 2'}
+            {step === 'credentials' && 'Login to your account'}
+            {step === 'verify-totp' && 'Step 2 of 2'}
+            {step === 'incomplete-registration' && 'Set up Two-Factor Authentication'}
+            {step === 'backup-codes' && 'Step 4 - Save for account recovery'}
           </p>
         </div>
 
@@ -340,6 +481,105 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
             >
               ← Back to Login
             </button>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* STEP 3: INCOMPLETE REGISTRATION - COMPLETE TOTP SETUP */}
+        {/* =================================================================== */}
+        {step === 'incomplete-registration' && (
+          <div className="incomplete-registration-step">
+            <div className="totp-info-box">
+              <p className="totp-info-text">
+                <span>⚠️</span>
+                <span>Your account setup is incomplete</span>
+              </p>
+              <p className="totp-info-subtext">
+                You need to complete the two-factor authentication (TOTP) setup before you can log in.
+              </p>
+            </div>
+
+            {!qrCode ? (
+              <div style={{ marginTop: '24px' }}>
+                <p className="verification-instruction">
+                  Click the button below to retrieve your TOTP setup QR code.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendTotpSetup}
+                  className="get-totp-setup-button"
+                  disabled={resendingSetup}
+                >
+                  {resendingSetup ? (
+                    <>
+                      <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite', marginRight: '8px' }}>⏳</span>
+                      Loading...
+                    </>
+                  ) : (
+                    '🔐 Get TOTP Setup'
+                  )}
+                </button>
+                {verificationError && (
+                  <p style={{ color: '#ff6b6b', marginTop: '12px', textAlign: 'center', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+                    {verificationError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: '24px' }}>
+                <div className="qr-code-container">
+                  <span className="qr-code-label">Scan this QR code with your authenticator app</span>
+                  <img 
+                    src={qrCode} 
+                    alt="TOTP QR Code"
+                  />
+                  <details className="manual-entry-details">
+                    <summary>Can't scan? Enter manually</summary>
+                    <div className="manual-entry-code">
+                      {totpSecret}
+                    </div>
+                  </details>
+                </div>
+
+                <p className="verification-instruction">
+                  After scanning, enter the 6-digit code from your app:
+                </p>
+
+                <TOTPVerificationInput
+                  onCodeComplete={handleCompleteRegistration}
+                  loading={verifying}
+                  error={verificationError}
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setStep('credentials');
+                setQrCode('');
+                setTotpSecret('');
+                setUserId('');
+                setVerificationError('');
+              }}
+              className="back-to-login-button"
+              disabled={verifying || resendingSetup}
+            >
+              ← Back to Login
+            </button>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* STEP 4: BACKUP CODES */}
+        {/* =================================================================== */}
+        {step === 'backup-codes' && (
+          <div className="backup-codes-step">
+            <BackupCodesDisplay
+              backupCodes={backupCodes}
+              onAcknowledge={handleAcknowledgeBackupCodes}
+              loading={verifying}
+            />
           </div>
         )}
       </div>
