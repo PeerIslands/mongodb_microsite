@@ -127,6 +127,28 @@
   box-shadow: 0 8px 32px rgba(91, 108, 255, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
+/* Highlighted state - when navigating from capabilities */
+.offering-card.highlighted {
+  animation: highlightPulse 2s ease-in-out;
+  border-color: rgba(91, 108, 255, 0.6);
+  box-shadow: 0 0 0 4px rgba(91, 108, 255, 0.2), 
+              0 8px 32px rgba(91, 108, 255, 0.3), 
+              0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(91, 108, 255, 0.2), 
+                0 8px 32px rgba(91, 108, 255, 0.3), 
+                0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(91, 108, 255, 0.3), 
+                0 12px 40px rgba(91, 108, 255, 0.4), 
+                0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
 /* Stacking effect - ONLY when ALL cards are expanded */
 /* Card 2 stacks OVER Card 1, Card 3 OVER Card 2, etc. */
 /* Flexible sticking with larger gaps for content visibility */

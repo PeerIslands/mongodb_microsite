@@ -7,6 +7,7 @@ CRUD operations and file management.
 Note: Blob paths are stored in MongoDB, full Azure URLs are constructed on GET.
 """
 
+import re
 from typing import List, Optional, Dict
 from datetime import datetime, timezone
 
@@ -31,11 +32,53 @@ class AcceleratorService:
         """Initialize service with repository."""
         self._repository = repository
 
+    # =========================================================================
+    # SLUG HELPERS
+    # =========================================================================
+
+    def _slugify(self, text: str) -> str:
+        """Convert text to URL-friendly slug."""
+        text = text.lower().strip()
+        text = re.sub(r'[^\w\s-]', '', text)
+        text = re.sub(r'[-\s]+', '-', text)
+        return text.strip('-')
+
+    async def _generate_unique_slug(self, title: str, exclude_id: Optional[str] = None) -> str:
+        """
+        Generate a unique slug from title.
+        If slug exists, append a counter to make it unique.
+        
+        Args:
+            title: Accelerator title
+            exclude_id: Optional ID to exclude (for updates)
+            
+        Returns:
+            Unique slug string
+        """
+        base_slug = self._slugify(title)
+        slug = base_slug
+
+        # Ensure slug is not empty
+        if not slug:
+            slug = "accelerator"
+
+        counter = 1
+        while await self._repository.slug_exists(slug, exclude_id):
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return slug
+
+    # =========================================================================
+    # RESPONSE HELPERS
+    # =========================================================================
+
     def _to_response(self, doc: dict) -> AcceleratorResponse:
         """Convert MongoDB document to AcceleratorResponse."""
         return AcceleratorResponse(
             id=str(doc.get("id", doc.get("_id", ""))),
             title=doc.get("title", ""),
+            slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
             description=doc.get("description", ""),
             status=doc.get("status", "draft"),
@@ -92,6 +135,7 @@ class AcceleratorService:
         return AcceleratorDetailResponse(
             id=accelerator_id,
             title=doc.get("title", ""),
+            slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
             description=doc.get("description", ""),
             status=doc.get("status", "draft"),
@@ -122,6 +166,9 @@ class AcceleratorService:
         accelerator_data["metrics"] = [
             {"label": m.label, "value": m.value} for m in request.metrics
         ]
+        
+        # Generate unique slug from title
+        accelerator_data["slug"] = await self._generate_unique_slug(accelerator_data["title"])
         
         created = await self._repository.create(accelerator_data)
         return CreateAcceleratorResponse(
@@ -195,6 +242,12 @@ class AcceleratorService:
             update_data["metrics"] = [
                 {"label": m.label, "value": m.value} for m in request.metrics
             ]
+
+        # If title is updated, regenerate slug
+        if "title" in update_data:
+            update_data["slug"] = await self._generate_unique_slug(
+                update_data["title"], exclude_id=accelerator_id
+            )
 
         updated = await self._repository.update(accelerator_id, update_data)
         if not updated:

@@ -126,7 +126,7 @@ const AcceleratorsPage = () => {
           {activeAccelerator.pdf_url && (
             <DownloadSection
               title={activeAccelerator.title}
-              pdfUrl={getFileUrl(activeAccelerator.pdf_url, true)}
+              pdfUrl={getFileUrl(activeAccelerator.pdf_url)}
               acceleratorId={activeAccelerator.id}
             />
           )}

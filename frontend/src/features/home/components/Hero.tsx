@@ -9,6 +9,7 @@ import arrowIcon from '@/assets/9676e79a76f01cf2ed247a83e933b0c8e983525f.svg';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   const heroImages = [
     { src: heroCard1, alt: "Powering Data Modernization with PeerAI & MongoDB" },
@@ -17,12 +18,14 @@ const Hero = () => {
   ];
 
   useEffect(() => {
+    if (isHovered) return; // Don't start interval if hovered
+    
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
     }, 5000); // 5 seconds per slide
 
     return () => clearInterval(interval);
-  }, [heroImages.length]);
+  }, [heroImages.length, isHovered]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -36,10 +39,22 @@ const Hero = () => {
     setCurrentSlide((prev) => (prev + 1) % heroImages.length);
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
     <section className="hero">
       {/* Image Carousel */}
-      <div className="hero-carousel">
+      <div 
+        className="hero-carousel"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="hero-carousel-container">
           {heroImages.map((image, index) => (
             <div 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@/styles/features/admin/AcceleratorForm.css';
 import FileUpload, { FileUploadResult } from './FileUpload';
+import RichTextEditor from './RichTextEditor';
 import { acceleratorsService } from '@/api/services/accelerators.service';
 import type { MetricItem, AcceleratorStatus, CreateAcceleratorDto, UpdateAcceleratorDto } from '@/types/models/accelerator';
 
@@ -333,12 +334,11 @@ const AcceleratorForm = ({ editingId, onCancel, onSuccess }: AcceleratorFormProp
 
             <div className="form-field full-width">
               <label>Description *</label>
-              <textarea
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(markdown) => handleInputChange('description', markdown)}
                 placeholder="Enter accelerator description"
-                rows={4}
-                required
+                height="240px"
               />
             </div>
 

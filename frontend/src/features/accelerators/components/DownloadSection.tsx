@@ -16,33 +16,33 @@ const DownloadSection = ({ title, pdfUrl, acceleratorId }: DownloadSectionProps)
     return isAuthenticated();
   };
 
-  const downloadPdf = async () => {
+  const openPdf = async () => {
     if (pdfUrl) {
       try {
-        // Track as CTA click and download - wait for both to complete
+        // Track as CTA click and view - wait for both to complete
         await Promise.all([
-          analytics.trackCTAClick('Download PDF Button', `Accelerator: ${title}`),
+          analytics.trackCTAClick('View PDF Button', `Accelerator: ${title}`),
           analytics.trackDownload(title, 'pdf', pdfUrl)
         ]);
       } catch (error) {
         console.error('Tracking failed:', error);
       }
       
-      // Open PDF after tracking completes
+      // Open PDF in new window after tracking completes
       globalThis.open(pdfUrl, '_blank');
     }
   };
 
-  const handleDownloadPdf = async () => {
+  const handleOpenPdf = async () => {
     if (isLoggedIn()) {
-      await downloadPdf();
+      await openPdf();
     } else {
-      // Open PDF download lead capture modal
+      // Open PDF lead capture modal
       openPDFDownloadModal({
         resourceType: 'accelerator',
         resourceId: acceleratorId,
         resourceTitle: title,
-        onSuccess: () => { downloadPdf(); },
+        onSuccess: () => { openPdf(); },
       });
     }
   };
@@ -55,30 +55,30 @@ const DownloadSection = ({ title, pdfUrl, acceleratorId }: DownloadSectionProps)
             Ready to get started with {title}?
           </h2>
           <p className="download-section-subtitle">
-            Download the technical specifications and documentation
+            View the technical specifications and documentation
           </p>
           <button
             type="button"
             className="download-section-button"
-            onClick={handleDownloadPdf}
+            onClick={handleOpenPdf}
           >
             <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Download PDF
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M11 3H17V9M17 3L9 11M8 3H4C3.44772 3 3 3.44772 3 4V16C3 16.5523 3.44772 17 4 17H16C16.5523 17 17 16.5523 17 16V12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            View PDF
           </button>
         </div>
       </div>

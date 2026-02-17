@@ -223,6 +223,7 @@ class BlogRepository:
     async def create_indexes(self) -> None:
         """Create indexes for better query performance."""
         await self._collection.create_index("url", unique=True)
+        await self._collection.create_index("slug", unique=True)
         await self._collection.create_index("status")
         await self._collection.create_index("category")
         await self._collection.create_index("created_at")

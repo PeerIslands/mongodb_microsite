@@ -1,4 +1,5 @@
 // Barrel export for admin components
+export { AccessRequestsPanel } from './AccessRequestsPanel';
 export { default as AcceleratorForm } from './AcceleratorForm';
 export { default as AcceleratorList } from './AcceleratorList';
 export { default as AnalyticsDashboard } from './AnalyticsDashboard';
