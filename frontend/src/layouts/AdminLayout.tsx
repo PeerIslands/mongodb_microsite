@@ -80,32 +80,38 @@ const AdminLayout = () => {
     };
 
     checkAuthAndAdmin();
-  }, [navigate, location.pathname, showToast, openLoginModal]);
-
-  // Don't render content if not authorized (safety check - AdminRoute should have handled redirect)
-  if (!isAuthorized) {
-    return null;
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // Fetch pending requests count for admin users
   useEffect(() => {
-    // Get user email from localStorage
-    const email = localStorage.getItem('userEmail');
-    setUserEmail(email);
-    
-    // Check if user is admin
-    const adminStatus = localStorage.getItem('isAdmin') === 'true';
+    // Check if user is admin from state (already set by first useEffect)
+    const adminStatus = checkIsAdmin();
     setIsAdmin(adminStatus);
     
     // Fetch pending requests count if admin
     if (adminStatus) {
+      const fetchPendingCount = async () => {
+        try {
+          const count = await newsletterAccessService.getPendingCount();
+          setPendingRequestsCount(count);
+        } catch (error) {
+          console.error('Failed to fetch pending requests count:', error);
+        }
+      };
+
       fetchPendingCount();
       
       // Poll for updates every 30 seconds
       const interval = setInterval(fetchPendingCount, 30000);
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [isAuthorized]);
+
+  // Don't render content if not authorized (safety check - AdminRoute should have handled redirect)
+  if (!isAuthorized) {
+    return null;
+  }
 
   const fetchPendingCount = async () => {
     try {
