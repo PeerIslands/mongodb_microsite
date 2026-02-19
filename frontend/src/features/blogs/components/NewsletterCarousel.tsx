@@ -13,6 +13,7 @@ import { newsletterService } from '@/api/services/newsletter.service';
 import { newsletterAccessService } from '@/api/services/newsletter-access.service';
 import { Newsletter } from '@/types/newsletter';
 import { useAuthModal } from '@/contexts/AuthModalContext';
+import { getUserEmail } from '@/utils/sessionStorage';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -31,8 +32,8 @@ const NewsletterCarousel = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
-    // Get user email from localStorage (if logged in)
-    const email = localStorage.getItem('userEmail');
+    // Get user email from sessionStorage (if logged in)
+    const email = getUserEmail();
     setUserEmail(email);
     fetchNewsletters(email);
   }, []);
@@ -72,10 +73,13 @@ const NewsletterCarousel = () => {
 
   const handleCardClick = (newsletter: Newsletter) => {
     setSelectedNewsletter(newsletter);
+    // If user is not logged in, show login prompt
+    setShowLoginPrompt(!userEmail);
   };
 
   const handleCloseModal = () => {
     setSelectedNewsletter(null);
+    setShowLoginPrompt(false);
   };
 
   const handleRequestAccess = async () => {
@@ -206,7 +210,7 @@ const NewsletterCarousel = () => {
         title={selectedNewsletter?.subject || 'Newsletter'}
         htmlContent={selectedNewsletter?.html_content || null}
         className="newsletter-insights-modal"
-        hasAccess={selectedNewsletter?.has_access !== false}
+        hasAccess={selectedNewsletter?.has_access === true}
         onRequestAccess={handleRequestAccess}
         requestPending={requestPending}
         showLoginPrompt={showLoginPrompt}

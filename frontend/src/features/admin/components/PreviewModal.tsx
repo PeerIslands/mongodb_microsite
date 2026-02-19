@@ -54,7 +54,7 @@ export const PreviewModal = ({
     }
   };
 
-  const showAccessRequest = !hasAccess && !htmlContent;
+  const showAccessRequest = !hasAccess;
 
   return (
     <div className={`preview-modal-overlay ${className}`} onClick={onClose}>
@@ -73,7 +73,7 @@ export const PreviewModal = ({
           </button>
         </div>
         <div className="preview-modal-body">
-          {htmlContent ? (
+          {htmlContent && hasAccess ? (
             <iframe
               srcDoc={htmlContent}
               title="Newsletter Preview"
