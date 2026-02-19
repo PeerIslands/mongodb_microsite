@@ -89,5 +89,16 @@ export const caseStudiesService = {
     const response = await apiClient.get<TestimonialData[]>('/api/v1/case-studies/testimonials');
     return response.data;
   },
+
+  // Generate AI-powered PDF for case study (Gamma AI)
+  generatePDF: async (caseStudyData: any) => {
+    const response = await apiClient.post('/api/v1/case-studies/generate-pdf', caseStudyData, {
+      timeout: 120000, // 2 minutes for Gamma generation and polling
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data; // Returns JSON with presentation_url and pdf_url
+  },
 };
 

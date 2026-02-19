@@ -102,6 +102,9 @@ class Settings(BaseSettings):
     AZURE_OPENAI_ENDPOINT: str = ""
     AZURE_OPENAI_DEPLOYMENT_NAME: str = "gpt-4-turbo"
     AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
+    
+    # Gamma AI Configuration
+    GAMMA_API_KEY: str = "sk-gamma-LkvEHmFXqAkB01fftQnJfqrXrnRebw51CafY4B4WkLg"  # API key for Gamma presentation generation
 
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),

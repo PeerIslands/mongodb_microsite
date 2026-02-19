@@ -17,6 +17,7 @@ File Storage:
 - MongoDB stores the blob path, files are served via secure proxy endpoints
 """
 
+import io
 import json
 import mimetypes
 from typing import List, Optional, Dict, Any
@@ -33,6 +34,7 @@ from app.api.v1.models.case_study import (
     DeleteCaseStudyResponse,
     MetricItem,
 )
+from app.api.v1.endpoints.ai_extract import ExtractResponse
 from app.api.v1.services.case_study_service import CaseStudyService
 from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService, AzureBlobServiceError
 from app.api.v1.dependencies.services import get_case_study_service
@@ -525,6 +527,99 @@ async def delete_case_study(
     return await service.delete_case_study(case_id)
 
 
+@router.post(
+    "/generate-pdf",
+    summary="Generate AI-Powered Case Study Presentation (PDF)",
+    description="""
+    Generate a professional case study presentation using Gamma AI, with PDF export.
+    
+    **Features:**
+    - Beautiful AI-generated presentation with 8-10 professional slides
+    - AI-generated images for each slide 
+    - Professional layouts and design
+    - Includes PeerIslands branding and logo
+    - Metrics visualizations
+    - Automatic PDF export
+    
+    **Process:**
+    1. Takes case study data (enhanced or basic)
+    2. Generates presentation via Gamma AI
+    3. Returns PDF download URL
+    
+    **Request Body:**
+    Send case study data as JSON with the following fields:
+    - title (required)
+    - companyName
+    - description
+    - industry
+    - techStack (array)
+    - challenges
+    - approach
+    - metrics (array of {label, value})
+    - businessOutcomes
+    - testimonialQuote
+    - testimonialAuthor
+    - testimonialPosition
+    
+    **Response:**
+    Returns a JSON with presentation URL and PDF download link.
+    
+    **Note:** Requires GAMMA_API_KEY to be configured in environment variables.
+    """,
+    responses={
+        200: {"description": "Presentation generated successfully"},
+        400: {"description": "Invalid request data or Gamma API not configured"},
+        500: {"description": "Presentation generation failed"},
+    },
+)
+async def generate_ai_pdf(
+    case_study_data: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Generate a case study presentation using Gamma AI with automatic PDF export.
+    
+    This endpoint creates a professional presentation that includes:
+    - Title slide with company branding
+    - Company overview
+    - Technology stack
+    - Challenges with imagery
+    - Solution approach
+    - Key metrics with visualizations
+    - Business outcomes
+    - Testimonial (if provided)
+    - Call to action
+    
+    All slides include AI-generated images and professional layouts.
+    """
+    try:
+        from app.api.v1.services.gamma_service import get_gamma_service
+        
+        gamma_service = get_gamma_service()
+        result = await gamma_service.generate_case_study_presentation(case_study_data)
+        
+        return {
+            "success": True,
+            "presentation_url": result.get("presentation_url"),
+            "pdf_url": result.get("pdf_url"),
+            "presentation_id": result.get("presentation_id"),
+            "message": "Professional presentation generated with Gamma AI. Use pdf_url to download the PDF.",
+            "instructions": "Click pdf_url to download the PDF, or visit presentation_url to view/edit online."
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating presentation: {str(e)}"
+        )
+
+
 # =============================================================================
 # FILE PROXY ENDPOINTS - Secure file serving without exposing Azure URLs
 # =============================================================================
@@ -621,3 +716,57 @@ async def get_case_study_file(
         )
     except AzureBlobServiceError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/enhance",
+    response_model=ExtractResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Enhance Case Study Content with AI",
+    description="""
+    Enhance prefilled case study data into a full-fledged, professionally written case study.
+    
+    Takes basic case study information and uses AI to:
+    - Expand descriptions with professional writing
+    - Enhance challenges and approaches with detailed bullet points
+    - Generate or improve metrics with realistic, impressive numbers
+    - Create compelling business outcomes
+    - Generate professional testimonials if missing
+    
+    The enhanced content is optimized for PDF generation with:
+    - Logo placement instructions
+    - AI-generated image placement instructions
+    - Professional formatting and structure
+    """,
+)
+async def enhance_case_study_content(
+    case_study_data: Dict[str, Any],
+) -> ExtractResponse:
+    """
+    Enhance case study content using AI to create a professional, comprehensive document.
+    
+    This endpoint transforms basic case study information into polished content ready for PDF generation.
+    """
+    try:
+        from app.api.v1.services.llm_service import LLMService
+        
+        llm_service = LLMService()
+        enhanced_data = await llm_service.enhance_case_study_content(case_study_data)
+        
+        return ExtractResponse(
+            success=True,
+            data=enhanced_data,
+            message="Case study content enhanced successfully"
+        )
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error enhancing case study: {str(e)}"
+        )
+
