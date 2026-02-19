@@ -98,6 +98,13 @@ const CaseStudyForm = ({
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   const [pendingAIFile, setPendingAIFile] = useState<File | null>(null);
 
+  // AI PDF Generation states
+  const [pdfGenerationMode, setPdfGenerationMode] = useState<'upload' | 'ai'>('upload');
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfGenerationError, setPdfGenerationError] = useState<string | null>(null);
+  const [presentationUrl, setPresentationUrl] = useState<string | null>(null);
+  const [showPresentationModal, setShowPresentationModal] = useState(false);
+
   const [customTech, setCustomTech] = useState('');
   const [customIndustry, setCustomIndustry] = useState('');
   const [showCustomIndustryInput, setShowCustomIndustryInput] = useState(false);
@@ -349,6 +356,47 @@ const CaseStudyForm = ({
   const handleCancelOverwrite = () => {
     setShowOverwriteConfirm(false);
     setPendingAIFile(null);
+  };
+
+  // AI PDF Generation handlers
+  const handleGenerateAIPDF = async () => {
+    setPdfGenerationError(null);
+    setIsGeneratingPDF(true);
+
+    try {
+      // Prepare case study data for PDF generation
+      const pdfData = {
+        title: formData.title,
+        companyName: formData.companyName,
+        description: formData.description,
+        industry: formData.industry,
+        techStack: formData.techStack,
+        migrationType: formData.migrationType,
+        challenges: formData.challenges,
+        approach: formData.approach,
+        metrics: formData.metrics.filter(m => m.label.trim() && m.value.trim()),
+        businessOutcomes: formData.businessOutcomes,
+        testimonialQuote: formData.testimonialQuote,
+        testimonialAuthor: formData.testimonialAuthor,
+        testimonialPosition: formData.testimonialPosition,
+      };
+
+      // Call the API to generate PDF (now returns JSON with URLs)
+      const result = await caseStudiesService.generatePDF(pdfData);
+      
+      // Store the presentation URL and show the preview modal
+      if (result.presentation_url) {
+        setPresentationUrl(result.presentation_url);
+        setShowPresentationModal(true);
+      }
+
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      const message = error?.response?.data?.detail || error?.message || 'Failed to generate PDF. Make sure GAMMA_API_KEY is configured.';
+      setPdfGenerationError(message);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -791,15 +839,78 @@ const CaseStudyForm = ({
           
           <div className="form-grid">
             <div className="form-field full-width">
-              <label>Case Study PDF</label>
-              <FileUpload
-                accept="application/pdf"
-                maxSize={20}
-                onUpload={(result) => handleFileChange('pdfFile', result)}
-                currentFile={fileData.pdfFile.previewUrl}
-                hint="PDF only (Max 20MB)"
-              />
+              <label>Choose PDF Source</label>
+              <div className="pdf-mode-selector">
+                <button
+                  type="button"
+                  className={`mode-button ${pdfGenerationMode === 'upload' ? 'active' : ''}`}
+                  onClick={() => setPdfGenerationMode('upload')}
+                >
+                  Manual Upload
+                </button>
+                <button
+                  type="button"
+                  className={`mode-button ${pdfGenerationMode === 'ai' ? 'active' : ''}`}
+                  onClick={() => setPdfGenerationMode('ai')}
+                >
+                  Generate with AI
+                </button>
+              </div>
             </div>
+
+            {pdfGenerationMode === 'upload' ? (
+              <div className="form-field full-width">
+                <label>Upload PDF</label>
+                <FileUpload
+                  accept="application/pdf"
+                  maxSize={20}
+                  onUpload={(result) => handleFileChange('pdfFile', result)}
+                  currentFile={fileData.pdfFile.previewUrl}
+                  hint="PDF only (Max 20MB)"
+                />
+              </div>
+            ) : (
+              <div className="form-field full-width">
+                <div className="ai-pdf-generation">
+                  <div className="ai-pdf-glow"></div>
+                  
+                  <p className="ai-pdf-description">
+                    Generate a professional PDF with AI-generated images related to your case study. 
+                    The PDF will be generated using Gamma AI with professional layouts and AI-generated images.
+                  </p>
+                  
+                  <div className="ai-pdf-actions">
+                    <button
+                      type="button"
+                      className={`generate-pdf-button ${isGeneratingPDF ? 'disabled' : ''}`}
+                      onClick={handleGenerateAIPDF}
+                      disabled={isGeneratingPDF || !formData.title}
+                    >
+                      {isGeneratingPDF ? (
+                        <>
+                          <span className="spinner"></span>
+                          Generating Presentation with Gamma AI...
+                        </>
+                      ) : (
+                        <>
+                          ✨ Generate AI Presentation (PDF)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {pdfGenerationError && (
+                    <div className="pdf-generation-error">
+                      ⚠️ {pdfGenerationError}
+                    </div>
+                  )}
+                  
+                  <p className="ai-pdf-hint">
+                    Note: Please fill in at least the title before generating. The AI will create a professional presentation with images based on your case study content.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -840,6 +951,42 @@ const CaseStudyForm = ({
         cancelText="Cancel"
         confirmButtonStyle="warning"
       />
+
+      {/* Gamma Presentation Success Modal */}
+      {showPresentationModal && presentationUrl && (
+        <div className="presentation-modal-overlay" onClick={() => setShowPresentationModal(false)}>
+          <div className="presentation-success-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="presentation-success-close"
+              onClick={() => setShowPresentationModal(false)}
+            >
+              ✕
+            </button>
+            <div className="presentation-success-icon">✓</div>
+            <h3 className="presentation-success-title">Presentation Ready</h3>
+            <p className="presentation-success-text">
+              Your AI-generated case study presentation has been created with Gamma.
+              Click below to view, edit, and download it.
+            </p>
+            <a
+              href={presentationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="presentation-success-btn primary"
+            >
+              View Presentation ↗
+            </a>
+            <button
+              className="presentation-success-btn secondary"
+              onClick={() => {
+                navigator.clipboard.writeText(presentationUrl);
+              }}
+            >
+              Copy Link
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

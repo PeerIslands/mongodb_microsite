@@ -188,23 +188,26 @@
 }
 
 .btn-login {
-  flex: 1;
-  background: linear-gradient(135deg, #00c853 0%, #00a843 100%);
+  flex: 1.5;
+  min-width: 180px;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #00684A 0%, #00523A 100%);
   border: none;
   border-radius: 12px;
-  padding: 1rem 2rem;
+  padding: 1rem 0rem;
   font-family: 'Inter', sans-serif;
   font-size: 1.125rem;
   font-weight: 600;
   color: #ffffff;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 104, 74, 0.35);
 }
 
 .btn-login:hover {
+  background: linear-gradient(135deg, #00523A 0%, #003D2B 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 104, 74, 0.45);
 }
 
 .btn-login:active {
