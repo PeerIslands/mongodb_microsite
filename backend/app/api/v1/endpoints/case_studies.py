@@ -17,7 +17,6 @@ File Storage:
 - MongoDB stores the blob path, files are served via secure proxy endpoints
 """
 
-import io
 import json
 import mimetypes
 from typing import List, Optional, Dict, Any
