@@ -41,6 +41,17 @@ const DEFAULT_CATEGORIES = [
   'Tech Talk',
 ];
 
+// URL validation helper to prevent XSS
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    const url = new URL(urlString);
+    // Only allow http, https, and blob protocols
+    return ['http:', 'https:', 'blob:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
+};
+
 interface EventFormProps {
   editingId: string | null;
   onCancel: () => void;
@@ -150,10 +161,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       });
 
       // Load existing file URLs (for past events)
-      if (data.thumbnail_url) {
+      // Validate URLs before setting to prevent XSS
+      if (data.thumbnail_url && isValidUrl(data.thumbnail_url)) {
         setThumbnailPreview(data.thumbnail_url);
       }
-      if (data.video_url) {
+      if (data.video_url && isValidUrl(data.video_url)) {
         setVideoPreview(data.video_url);
       }
 
