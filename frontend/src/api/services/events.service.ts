@@ -56,6 +56,16 @@ export const eventsService = {
     return response.data;
   },
 
+  // Update event with file uploads (using FormData)
+  updateWithFiles: async (id: string, formData: FormData) => {
+    const response = await apiClient.put<EventMutationResponse>(`/api/v1/events/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   // Delete event by ID
   delete: async (id: string) => {
     const response = await apiClient.delete<EventMutationResponse>(`/api/v1/events/${id}`);

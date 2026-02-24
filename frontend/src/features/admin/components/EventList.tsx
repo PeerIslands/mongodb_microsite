@@ -212,6 +212,7 @@ const EventList = ({ onAddNew, onEdit, onLoadComplete }: EventListProps) => {
               <th>Date & Time</th>
               <th>Duration</th>
               <th>Timezone</th>
+              <th>Past Event</th>
               <th>Status</th>
               <th>Registrations</th>
               <th>Actions</th>
@@ -220,7 +221,7 @@ const EventList = ({ onAddNew, onEdit, onLoadComplete }: EventListProps) => {
           <tbody>
             {events.length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-state">
+                <td colSpan={9} className="empty-state">
                   No events found. Click "Add New Event" to create one.
                 </td>
               </tr>
@@ -247,6 +248,16 @@ const EventList = ({ onAddNew, onEdit, onLoadComplete }: EventListProps) => {
                     <span className="timezone-cell" title={event.timezone}>
                       {event.timezone.split('/').pop()?.replace(/_/g, ' ') || event.timezone}
                     </span>
+                  </td>
+                  <td>
+                    <div className="checkbox-cell">
+                      <input 
+                        type="checkbox" 
+                        checked={event.is_past} 
+                        readOnly 
+                        className="past-event-checkbox"
+                      />
+                    </div>
                   </td>
                   <td>
                     <button

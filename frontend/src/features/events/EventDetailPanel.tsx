@@ -355,40 +355,59 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
               />
             </section>
           )}
+
+          {/* Video Recording Section (for past events) */}
+          {event.is_past && event.video_url && (
+            <section className="event-detail-panel__section">
+              <h3 className="event-detail-panel__section-title">Event Recording</h3>
+              <div className="event-detail-panel__video-container">
+                <video
+                  src={event.video_url}
+                  controls
+                  className="event-detail-panel__video"
+                  poster={event.thumbnail_url}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </section>
+          )}
         </div>
 
-        {/* Footer with Register Button or Cancel Registration Button */}
-        <footer className="event-detail-panel__footer">
-          {isRegistered ? (
-            <button 
-              className="event-detail-panel__cancel-btn"
-              onClick={handleCancelRegistrationClick}
-            >
-              Cancel Registration
-            </button>
-          ) : (
-            <button 
-              className="event-detail-panel__register-btn"
-              onClick={handleRegisterClick}
-            >
-              Register Now
-              <svg 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                fill="none"
+        {/* Footer with Register Button or Cancel Registration Button (only for upcoming events) */}
+        {!event.is_past && (
+          <footer className="event-detail-panel__footer">
+            {isRegistered ? (
+              <button 
+                className="event-detail-panel__cancel-btn"
+                onClick={handleCancelRegistrationClick}
               >
-                <path 
-                  d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-                  stroke="currentColor" 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          )}
-        </footer>
+                Cancel Registration
+              </button>
+            ) : (
+              <button 
+                className="event-detail-panel__register-btn"
+                onClick={handleRegisterClick}
+              >
+                Register Now
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 16 16" 
+                  fill="none"
+                >
+                  <path 
+                    d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
+          </footer>
+        )}
       </aside>
 
       {/* Registration Confirmation Modal */}

@@ -77,6 +77,14 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // File upload states (only for editing past events)
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [videoPreview, setVideoPreview] = useState<string>('');
+  const [deleteThumbnail, setDeleteThumbnail] = useState(false);
+  const [deleteVideo, setDeleteVideo] = useState(false);
+
   // Check if selected date is in the past
   const isDateInPast = useMemo(() => {
     if (!selectedDate) return false;
@@ -140,6 +148,14 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         eventType: data.event_type || 'online',
         location: data.location || '',
       });
+
+      // Load existing file URLs (for past events)
+      if (data.thumbnail_url) {
+        setThumbnailPreview(data.thumbnail_url);
+      }
+      if (data.video_url) {
+        setVideoPreview(data.video_url);
+      }
 
       // Check if category is custom
       const category = data.category || '';
@@ -216,6 +232,59 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // File upload handlers (for editing past events)
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Thumbnail must be an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage('Thumbnail file size must be less than 5MB');
+        return;
+      }
+      setThumbnailFile(file);
+      setDeleteThumbnail(false);
+      setThumbnailPreview(URL.createObjectURL(file));
+      setErrorMessage(null);
+    }
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        setErrorMessage('Video must be a video file');
+        return;
+      }
+      if (file.size > 100 * 1024 * 1024) {
+        setErrorMessage('Video file size must be less than 100MB');
+        return;
+      }
+      setVideoFile(file);
+      setDeleteVideo(false);
+      setVideoPreview(URL.createObjectURL(file));
+      setErrorMessage(null);
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview('');
+    if (editingId && thumbnailPreview) {
+      setDeleteThumbnail(true);
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setVideoFile(null);
+    setVideoPreview('');
+    if (editingId && videoPreview) {
+      setDeleteVideo(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -227,10 +296,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     }
     if (!formData.date) {
       setErrorMessage('Please select a date.');
-      return;
-    }
-    if (isDateInPast) {
-      setErrorMessage('Please select a future date. Past dates are not allowed.');
       return;
     }
     if (!formData.time) {
@@ -265,26 +330,63 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setIsSubmitting(true);
 
     try {
-      const submitData: CreateEventDto = {
-        title: formData.title,
-        subtitle: formData.subtitle,
-        date: formData.date,
-        time: formData.time,
-        timezone: formData.timezone,
-        duration_minutes: formData.durationMinutes,
-        description: formData.description,
-        attendee_value: formData.attendeeValue,
-        category: formData.category,
-        featured: formData.featured,
-        status: formData.status,
-        event_type: formData.eventType,
-        location: formData.location,
-      };
+      // Check if we need to use FormData (for file uploads in edit mode)
+      const hasFiles = editingId && (thumbnailFile || videoFile || deleteThumbnail || deleteVideo);
+      
+      if (hasFiles) {
+        // Use FormData for file uploads (edit mode only)
+        const formDataToSend = new FormData();
+        
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('subtitle', formData.subtitle);
+        formDataToSend.append('date', formData.date);
+        formDataToSend.append('time', formData.time);
+        formDataToSend.append('timezone', formData.timezone);
+        formDataToSend.append('duration_minutes', String(formData.durationMinutes));
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('attendee_value', formData.attendeeValue);
+        formDataToSend.append('category', formData.category);
+        formDataToSend.append('featured', String(formData.featured));
+        formDataToSend.append('status', formData.status);
+        formDataToSend.append('event_type', formData.eventType);
+        formDataToSend.append('location', formData.location);
+        
+        // Add file uploads
+        if (thumbnailFile) {
+          formDataToSend.append('thumbnail', thumbnailFile);
+        }
+        if (videoFile) {
+          formDataToSend.append('video', videoFile);
+        }
+        
+        // Add delete flags
+        formDataToSend.append('delete_thumbnail', String(deleteThumbnail));
+        formDataToSend.append('delete_video', String(deleteVideo));
 
-      if (editingId) {
-        await eventsService.update(editingId, submitData);
+        await eventsService.updateWithFiles(editingId, formDataToSend);
       } else {
-        await eventsService.create(submitData);
+        // Use regular JSON for create or edit without files
+        const submitData: CreateEventDto = {
+          title: formData.title,
+          subtitle: formData.subtitle,
+          date: formData.date,
+          time: formData.time,
+          timezone: formData.timezone,
+          duration_minutes: formData.durationMinutes,
+          description: formData.description,
+          attendee_value: formData.attendeeValue,
+          category: formData.category,
+          featured: formData.featured,
+          status: formData.status,
+          event_type: formData.eventType,
+          location: formData.location,
+        };
+
+        if (editingId) {
+          await eventsService.update(editingId, submitData);
+        } else {
+          await eventsService.create(submitData);
+        }
       }
 
       onSuccess();
@@ -521,6 +623,94 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
             </div>
           </div>
         </div>
+
+        {/* Section 4: Media Uploads (Only for Editing Past Events) */}
+        {editingId && isDateInPast && (
+          <div className="form-section">
+            <h3 className="section-title">
+              <span className="section-number">4</span>
+              Media Uploads
+              <span className="section-subtitle">(Optional)</span>
+            </h3>
+
+            <div className="info-banner">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
+              </svg>
+              <span>This is a past event. You can optionally upload a thumbnail and video recording.</span>
+            </div>
+
+            <div className="form-grid">
+              {/* Thumbnail Upload */}
+              <div className="form-field full-width">
+                <label>Thumbnail Image (Optional)</label>
+                <div className="file-upload-container">
+                  <input
+                    type="file"
+                    id="thumbnail-upload"
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                    style={{ display: 'none' }}
+                  />
+                  {thumbnailPreview ? (
+                    <div className="file-preview">
+                      <img src={thumbnailPreview} alt="Thumbnail preview" className="thumbnail-preview" />
+                      <button
+                        type="button"
+                        className="remove-file-btn"
+                        onClick={handleRemoveThumbnail}
+                      >
+                        Remove Thumbnail
+                      </button>
+                    </div>
+                  ) : (
+                    <label htmlFor="thumbnail-upload" className="file-upload-label">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Click to upload thumbnail</span>
+                      <span className="file-upload-hint">PNG, JPG up to 5MB</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Video Upload */}
+              <div className="form-field full-width">
+                <label>Video Recording (Optional)</label>
+                <div className="file-upload-container">
+                  <input
+                    type="file"
+                    id="video-upload"
+                    accept="video/*"
+                    onChange={handleVideoChange}
+                    style={{ display: 'none' }}
+                  />
+                  {videoPreview ? (
+                    <div className="file-preview">
+                      <video src={videoPreview} controls className="video-preview" />
+                      <button
+                        type="button"
+                        className="remove-file-btn"
+                        onClick={handleRemoveVideo}
+                      >
+                        Remove Video
+                      </button>
+                    </div>
+                  ) : (
+                    <label htmlFor="video-upload" className="file-upload-label">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Click to upload video</span>
+                      <span className="file-upload-hint">MP4, WebM up to 100MB</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {errorMessage && (

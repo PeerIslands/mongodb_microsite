@@ -40,6 +40,9 @@ const transformToEventCardData = (event: Event): EventCardData => ({
   duration_minutes: event.duration_minutes,
   attendee_value: event.attendee_value,
   status: event.status,
+  thumbnail_url: event.thumbnail_url,
+  video_url: event.video_url,
+  is_past: event.is_past,
   created_at: event.created_at,
   updated_at: event.updated_at,
 });

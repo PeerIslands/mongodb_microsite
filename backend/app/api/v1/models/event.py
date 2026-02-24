@@ -46,19 +46,18 @@ class CreateEventRequest(BaseModel):
     # Location fields
     event_type: str = Field(default="online", description="Event type: 'online', 'in-person', or 'hybrid'")
     location: str = Field(..., min_length=1, description="Meeting link for online, physical address for in-person, or both for hybrid events")
+    # Media fields (for past events)
+    thumbnail_url: str = Field(default="", description="Thumbnail image path in Azure Blob")
+    video_url: str = Field(default="", description="Video recording path in Azure Blob")
 
     @field_validator("date")
     @classmethod
-    def validate_date_format_and_future(cls, v: str) -> str:
-        """Validate date format (YYYY-MM-DD) and ensure it's in the future."""
+    def validate_date_format(cls, v: str) -> str:
+        """Validate date format (YYYY-MM-DD) - allow past dates for recordings."""
         try:
-            event_date = datetime.strptime(v, "%Y-%m-%d").date()
+            datetime.strptime(v, "%Y-%m-%d").date()
         except ValueError:
             raise ValueError("Date must be in YYYY-MM-DD format")
-        
-        if event_date < date.today():
-            raise ValueError("Event date must be in the future")
-        
         return v
 
     @field_validator("time")
@@ -90,21 +89,20 @@ class UpdateEventRequest(BaseModel):
     # Location fields
     event_type: Optional[str] = Field(None, description="Event type: 'online', 'in-person', or 'hybrid'")
     location: Optional[str] = Field(None, description="Meeting link for online, physical address for in-person, or both for hybrid events")
+    # Media fields (for past events)
+    thumbnail_url: Optional[str] = Field(None, description="Thumbnail image path in Azure Blob")
+    video_url: Optional[str] = Field(None, description="Video recording path in Azure Blob")
 
     @field_validator("date")
     @classmethod
-    def validate_date_format_and_future(cls, v: Optional[str]) -> Optional[str]:
-        """Validate date format (YYYY-MM-DD) and ensure it's in the future."""
+    def validate_date_format(cls, v: Optional[str]) -> Optional[str]:
+        """Validate date format (YYYY-MM-DD) - allow past dates for recordings."""
         if v is None:
             return None
         try:
-            event_date = datetime.strptime(v, "%Y-%m-%d").date()
+            datetime.strptime(v, "%Y-%m-%d").date()
         except ValueError:
             raise ValueError("Date must be in YYYY-MM-DD format")
-        
-        if event_date < date.today():
-            raise ValueError("Event date must be in the future")
-        
         return v
 
     @field_validator("time")
@@ -142,6 +140,9 @@ class EventResponse(BaseModel):
     status: str = Field(..., description="Event status")
     event_type: str = Field(default="online", description="Event type: 'online', 'in-person', or 'hybrid'")
     location: str = Field(..., description="Meeting link or physical address")
+    thumbnail_url: str = Field(default="", description="Thumbnail image URL")
+    video_url: str = Field(default="", description="Video recording URL")
+    is_past: bool = Field(default=False, description="Whether event is in the past")
     created_at: str = Field(..., description="Creation timestamp")
     updated_at: str = Field(..., description="Last update timestamp")
 

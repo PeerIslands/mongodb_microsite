@@ -18,12 +18,17 @@ const EventsPage = () => {
   // Filter to show only published events
   const events = allEvents.filter(event => event.status === 'published');
 
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventCardData | null>(null);
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+
+  // Separate events into upcoming and past
+  const upcomingEvents = events.filter(event => !event.is_past);
+  const pastEvents = events.filter(event => event.is_past);
 
   // Handle URL query parameter for opening specific event
   useEffect(() => {
@@ -41,11 +46,12 @@ const EventsPage = () => {
     }
   }, [searchParams, events, isLoading]);
 
-  // Get unique categories from events
-  const categories = Array.from(new Set(events.map(event => event.category)));
+  // Get unique categories from events based on active tab
+  const tabEvents = activeTab === 'upcoming' ? upcomingEvents : pastEvents;
+  const categories = Array.from(new Set(tabEvents.map(event => event.category)));
 
-  // Filter events based on search and category
-  const filteredEvents = events.filter(event => {
+  // Filter events based on search, category, and active tab
+  const filteredEvents = tabEvents.filter(event => {
     const matchesSearch = searchTerm === '' || 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -65,10 +71,10 @@ const EventsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Reset showAll when filters change
+  // Reset showAll when filters or tab change
   useEffect(() => {
     setShowAll(false);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, activeTab]);
 
   // Handle event card click - open detail panel
   const handleEventClick = (eventData: EventCardData) => {
@@ -104,6 +110,24 @@ const EventsPage = () => {
       {/* Content Section */}
       <section className="events-content">
         <div className="events-content__container">
+          {/* Tabs for Upcoming/Past Events */}
+          <div className="events-tabs">
+            <button
+              className={`events-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upcoming')}
+            >
+              Upcoming Events
+              <span className="events-tab-count">{upcomingEvents.length}</span>
+            </button>
+            <button
+              className={`events-tab ${activeTab === 'past' ? 'active' : ''}`}
+              onClick={() => setActiveTab('past')}
+            >
+              Past Events
+              <span className="events-tab-count">{pastEvents.length}</span>
+            </button>
+          </div>
+
           {/* Inline Search Bar */}
           <div className={`events-search-bar ${isSearchExpanded ? 'expanded' : ''}`}>
             {/* Search Input */}

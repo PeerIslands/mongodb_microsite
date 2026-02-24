@@ -206,6 +206,27 @@ class EventRepository:
         categories = await self._collection.distinct("category")
         return sorted(categories)
 
+    async def get_blob_paths(self, event_id: str) -> Dict[str, str]:
+        """
+        Get blob paths for an event's files.
+        
+        Args:
+            event_id: Event ID
+            
+        Returns:
+            Dictionary with thumbnail_url and video_url blob paths
+        """
+        doc = await self._collection.find_one(
+            {"_id": event_id},
+            {"thumbnail_url": 1, "video_url": 1}
+        )
+        if doc:
+            return {
+                "thumbnail_url": doc.get("thumbnail_url", ""),
+                "video_url": doc.get("video_url", ""),
+            }
+        return {"thumbnail_url": "", "video_url": ""}
+
     async def create_indexes(self) -> None:
         """Create indexes for better query performance."""
         await self._collection.create_index("slug", unique=True)

@@ -12,8 +12,9 @@ Endpoints:
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status, HTTPException
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
+from fastapi.responses import Response, StreamingResponse
+import mimetypes
 
 from app.api.v1.models.event import (
     CreateEventRequest,
@@ -27,8 +28,64 @@ from app.api.v1.models.event import (
 from app.api.v1.services.event_service import EventService
 from app.api.v1.dependencies.services import get_event_service
 from app.api.v1.exceptions.event_exceptions import EventNotFoundError
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobServiceError
 
 router = APIRouter(prefix="/events")
+
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+def is_valid_file(file: Optional[UploadFile]) -> bool:
+    """Check if a file is valid (not None and has content)."""
+    return file is not None and file.filename not in [None, ""]
+
+
+async def upload_image_to_blob(
+    file: UploadFile,
+    event_id: str,
+    field_name: str,
+    blob_service,
+) -> str:
+    """Upload an image file to Azure Blob Storage."""
+    content = await file.read()
+    mime_type = file.content_type
+    if not mime_type or mime_type == "application/octet-stream":
+        mime_type = mimetypes.guess_type(file.filename or "")[0] or "image/jpeg"
+    
+    blob_path = await blob_service.upload_image(
+        file_content=content,
+        category="events",
+        item_id=event_id,
+        field_name=field_name,
+        original_filename=file.filename or "thumbnail.jpg",
+        content_type=mime_type,
+    )
+    return blob_path
+
+
+async def upload_video_to_blob(
+    file: UploadFile,
+    event_id: str,
+    field_name: str,
+    blob_service,
+) -> str:
+    """Upload a video file to Azure Blob Storage."""
+    content = await file.read()
+    mime_type = file.content_type
+    if not mime_type or mime_type == "application/octet-stream":
+        mime_type = "video/mp4"
+    
+    blob_path = await blob_service.upload_video(
+        file_content=content,
+        category="events",
+        item_id=event_id,
+        field_name=field_name,
+        original_filename=file.filename or "recording.mp4",
+        content_type=mime_type,
+    )
+    return blob_path
 
 
 # =============================================================================
@@ -46,13 +103,15 @@ router = APIRouter(prefix="/events")
     **Required fields:**
     - `title`: Event title
     - `subtitle`: Event subtitle
-    - `date`: Event date (YYYY-MM-DD, must be in the future)
+    - `date`: Event date (YYYY-MM-DD)
     - `time`: Event time (HH:mm, 24-hour format)
     - `timezone`: IANA timezone (e.g., Asia/Kolkata)
     - `duration_minutes`: Event duration in minutes
     - `description`: Event description
     - `attendee_value`: Value for attendees
     - `category`: Event category
+    - `event_type`: Event type ('online', 'in-person', or 'hybrid')
+    - `location`: Meeting link or physical address
     
     **Optional fields:**
     - `featured`: Whether event is featured (default: false)
@@ -176,11 +235,16 @@ async def download_event_calendar(
     response_model=UpdateEventResponse,
     summary="Update Event",
     description="""
-    Update an existing event.
+    Update an existing event with optional file uploads.
     
     **All fields are optional** - only provided fields will be updated.
     
-    **Note:** Date must be in YYYY-MM-DD format and must be in the future.
+    **File handling:**
+    - Set `delete_thumbnail=true` to remove existing thumbnail
+    - Set `delete_video=true` to remove existing video
+    - Upload new files to replace existing ones
+    
+    **Note:** Date must be in YYYY-MM-DD format.
     Time must be in HH:mm format (24-hour).
     """,
     responses={
@@ -191,12 +255,92 @@ async def download_event_calendar(
 )
 async def update_event(
     event_id: str,
-    request: UpdateEventRequest,
+    title: Optional[str] = Form(None),
+    subtitle: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    time: Optional[str] = Form(None),
+    timezone: Optional[str] = Form(None),
+    duration_minutes: Optional[int] = Form(None),
+    description: Optional[str] = Form(None),
+    attendee_value: Optional[str] = Form(None),
+    category: Optional[str] = Form(None),
+    event_type: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    featured: Optional[bool] = Form(None),
+    status: Optional[str] = Form(None),
+    delete_thumbnail: str = Form("false"),
+    delete_video: str = Form("false"),
+    thumbnail: Optional[UploadFile] = File(None),
+    video: Optional[UploadFile] = File(None),
     service: EventService = Depends(get_event_service),
 ) -> UpdateEventResponse:
-    """Update an existing event."""
+    """Update an existing event with optional file uploads."""
     try:
-        return await service.update_event(event_id, request)
+        blob_service = get_azure_blob_service()
+        
+        # Get existing blob paths
+        existing_blob_paths = await service.get_blob_paths(event_id)
+        
+        # Build update data
+        update_data = {}
+        if title is not None:
+            update_data["title"] = title
+        if subtitle is not None:
+            update_data["subtitle"] = subtitle
+        if date is not None:
+            update_data["date"] = date
+        if time is not None:
+            update_data["time"] = time
+        if timezone is not None:
+            update_data["timezone"] = timezone
+        if duration_minutes is not None:
+            update_data["duration_minutes"] = duration_minutes
+        if description is not None:
+            update_data["description"] = description
+        if attendee_value is not None:
+            update_data["attendee_value"] = attendee_value
+        if category is not None:
+            update_data["category"] = category
+        if event_type is not None:
+            update_data["event_type"] = event_type
+        if location is not None:
+            update_data["location"] = location
+        if featured is not None:
+            update_data["featured"] = featured
+        if status is not None:
+            update_data["status"] = status
+        
+        # Handle thumbnail file operations
+        if delete_thumbnail.lower() == "true":
+            if existing_blob_paths.get("thumbnail_url"):
+                await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
+            update_data["thumbnail_url"] = ""
+        elif is_valid_file(thumbnail):
+            if existing_blob_paths.get("thumbnail_url"):
+                await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
+            thumbnail_blob_path = await upload_image_to_blob(
+                thumbnail, event_id, "thumbnail_url", blob_service
+            )
+            update_data["thumbnail_url"] = thumbnail_blob_path
+        
+        # Handle video file operations
+        if delete_video.lower() == "true":
+            if existing_blob_paths.get("video_url"):
+                await blob_service.delete_file(existing_blob_paths["video_url"])
+            update_data["video_url"] = ""
+        elif is_valid_file(video):
+            if existing_blob_paths.get("video_url"):
+                await blob_service.delete_file(existing_blob_paths["video_url"])
+            video_blob_path = await upload_video_to_blob(
+                video, event_id, "video_url", blob_service
+            )
+            update_data["video_url"] = video_blob_path
+        
+        # Update event
+        update_request = UpdateEventRequest(**update_data)
+        result = await service.update_event(event_id, update_request)
+        return result
+        
     except EventNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -208,7 +352,7 @@ async def update_event(
     "/{event_id}",
     response_model=DeleteEventResponse,
     summary="Delete Event",
-    description="Delete an event by its unique ID.",
+    description="Delete an event by its unique ID and cleanup associated files.",
     responses={
         200: {"description": "Event deleted successfully"},
         404: {"description": "Event not found"},
@@ -218,11 +362,104 @@ async def delete_event(
     event_id: str,
     service: EventService = Depends(get_event_service),
 ) -> DeleteEventResponse:
-    """Delete an event by its unique ID."""
+    """Delete an event by its unique ID and cleanup files."""
     try:
-        return await service.delete_event(event_id)
+        blob_service = get_azure_blob_service()
+        
+        # Get blob paths before deletion
+        blob_paths = await service.get_blob_paths(event_id)
+        
+        # Delete the event
+        result = await service.delete_event(event_id)
+        
+        # Delete associated files from Azure Blob
+        if blob_paths.get("thumbnail_url"):
+            await blob_service.delete_file(blob_paths["thumbnail_url"])
+        if blob_paths.get("video_url"):
+            await blob_service.delete_file(blob_paths["video_url"])
+        
+        return result
+        
     except EventNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.message,
+        )
+
+
+# =============================================================================
+# FILE PROXY ENDPOINTS
+# =============================================================================
+
+# Mapping of file types to their field names
+FILE_TYPE_CONFIG = {
+    "thumbnail": {"field": "thumbnail_url", "default_content_type": "image/jpeg"},
+    "video": {"field": "video_url", "default_content_type": "video/mp4"},
+}
+
+
+@router.get(
+    "/{event_id}/files/{file_type}",
+    summary="Get Event File",
+    description="Secure proxy endpoint to serve event files (thumbnail, video) from Azure Blob Storage.",
+    responses={
+        200: {"description": "File content"},
+        404: {"description": "Event or file not found"},
+    },
+)
+async def get_event_file(
+    event_id: str,
+    file_type: str,
+    service: EventService = Depends(get_event_service),
+) -> StreamingResponse:
+    """Serve event files securely through proxy endpoint."""
+    # Validate file type
+    if file_type not in FILE_TYPE_CONFIG:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type. Must be one of: {', '.join(FILE_TYPE_CONFIG.keys())}"
+        )
+    
+    try:
+        # Get blob paths directly from MongoDB (not the proxy URLs)
+        blob_paths = await service.get_blob_paths(event_id)
+        
+        # Get the blob path for the requested file
+        config = FILE_TYPE_CONFIG[file_type]
+        field_name = config["field"]
+        blob_path = blob_paths.get(field_name, "")
+        
+        if not blob_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No {file_type} file found for this event"
+            )
+        
+        # Download file from Azure Blob
+        blob_service = get_azure_blob_service()
+        file_content, content_type, content_length = await blob_service.download_file(blob_path)
+        
+        # Use default content type if not available
+        if not content_type:
+            content_type = config["default_content_type"]
+        
+        # Return file as streaming response
+        return StreamingResponse(
+            iter([file_content]),
+            media_type=content_type,
+            headers={
+                "Content-Length": str(content_length),
+                "Cache-Control": "public, max-age=31536000",  # Cache for 1 year
+            }
+        )
+        
+    except EventNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except AzureBlobServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found: {str(e)}"
         )

@@ -24,8 +24,8 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 100%;
-  max-width: 600px;
+  width: 75%;
+  max-width: 1400px;
   height: 100vh;
   background: #0d1321;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
@@ -451,7 +451,8 @@
 /* Tablet */
 @media (max-width: 1023px) {
   .event-detail-panel {
-    max-width: 500px;
+    width: 70%;
+    max-width: 800px;
   }
 
   .event-detail-panel__content {
@@ -513,6 +514,23 @@
   .event-detail-panel__section {
     margin-bottom: 1.5rem;
   }
+}
+
+/* Video Section */
+.event-detail-panel__video-container {
+  width: 100%;
+  margin-top: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000000;
+  border: 1px solid rgba(91, 108, 255, 0.2);
+}
+
+.event-detail-panel__video {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 500px;
 }
 
 /* Error Toast */

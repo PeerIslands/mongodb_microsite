@@ -163,6 +163,8 @@ class ChatbotService:
         if context_data.get("case_studies"):
             context_parts.append("=== SUCCESS STORIES / CASE STUDIES ===")
             for cs in context_data["case_studies"]:
+                case_id = str(cs.get('_id', ''))
+                case_url = f"/success-stories?id={case_id}" if case_id else "/success-stories"
                 context_parts.append(f"""
 Title: {cs.get('title', 'N/A')}
 Company: {cs.get('company_name', 'N/A')}
@@ -172,6 +174,7 @@ Tech Stack: {', '.join(cs.get('tech_stack', []))}
 Challenges: {cs.get('challenges', 'N/A')}
 Approach: {cs.get('approach', 'N/A')}
 Business Outcomes: {cs.get('business_outcomes', 'N/A')}
+Page URL: {case_url}
 ---""")
         
         # Add accelerators
@@ -185,6 +188,9 @@ Business Outcomes: {cs.get('business_outcomes', 'N/A')}
                 else:
                     metrics_str = 'N/A'
                 
+                acc_id = str(acc.get('_id', ''))
+                acc_url = "/accelerators"  # Accelerators page uses tabs, no direct link per item
+                
                 context_parts.append(f"""
 Title: {acc.get('title', 'N/A')}
 Subtitle: {acc.get('subtitle', 'N/A')}
@@ -192,12 +198,15 @@ Description: {acc.get('description', 'N/A')}
 Key Metrics: {metrics_str}
 Status: {acc.get('status', 'N/A')}
 Featured: {'Yes' if acc.get('feature_on_homepage') else 'No'}
+Page URL: {acc_url}
 ---""")
         
         # Add events
         if context_data.get("events"):
             context_parts.append("\n=== EVENTS ===")
             for event in context_data["events"]:
+                event_url = "/events"  # Events page shows all events
+                
                 context_parts.append(f"""
 Title: {event.get('title', 'N/A')}
 Subtitle: {event.get('subtitle', 'N/A')}
@@ -208,6 +217,7 @@ Category: {event.get('category', 'N/A')}
 Description: {event.get('description', 'N/A')}
 Attendee Value: {event.get('attendee_value', 'N/A')}
 Featured: {'Yes' if event.get('featured') else 'No'}
+Page URL: {event_url}
 ---""")
         
         # Add blogs
@@ -216,6 +226,10 @@ Featured: {'Yes' if event.get('featured') else 'No'}
             for blog in context_data["blogs"]:
                 tags = blog.get('tags', [])
                 tags_str = ', '.join(tags) if isinstance(tags, list) else str(tags)
+                
+                # Use the blog's external URL if available, otherwise link to insights page
+                blog_url = blog.get('url') if blog.get('url') else "/insights"
+                
                 context_parts.append(f"""
 Title: {blog.get('title', 'N/A')}
 Category: {blog.get('category', 'N/A')}
@@ -223,13 +237,15 @@ Author: {blog.get('author', 'N/A')}
 Description: {blog.get('description', 'N/A')}
 Tags: {tags_str}
 Published Date: {blog.get('published_date', 'N/A')}
-URL: {blog.get('url', 'N/A')}
+Page URL: {blog_url}
 ---""")
         
         # Add newsletters
         if context_data.get("newsletters"):
             context_parts.append("\n=== NEWSLETTERS / EMAIL TEMPLATES ===")
             for newsletter in context_data["newsletters"]:
+                newsletter_url = "/insights"  # Newsletters are shown on insights page
+                
                 context_parts.append(f"""
 Name: {newsletter.get('name', 'N/A')}
 Slug: {newsletter.get('slug', 'N/A')}
@@ -239,6 +255,7 @@ Subject: {newsletter.get('subject', 'N/A')}
 Status: {newsletter.get('status', 'N/A')}
 Send Count: {newsletter.get('send_count', 0)}
 Last Sent: {newsletter.get('last_sent_at', 'Never')}
+Page URL: {newsletter_url}
 ---""")
         
         return "\n".join(context_parts)
@@ -312,8 +329,31 @@ IMPORTANT INSTRUCTIONS:
 - If the context doesn't contain the answer, say "I don't have specific information about that in my current data"
 - Be conversational, helpful, and concise
 - Use bullet points and formatting for readability
-- If you mention specific items (case studies, accelerators), include their names
+- **CRITICAL: Format responses with clickable links at the END for each item**
+  - First, provide the information about each item (title, company, description, outcomes, etc.)
+  - Then, at the very END of your response, add a "Learn More" section with individual links for each item
+  - Use the specific Page URL provided in the context for each item
+  - Example response structure:
+    ```
+    Here are our success stories:
+    
+    1. Healthcare Data Migration
+    - Company: ABC Corp
+    - Industry: Healthcare
+    - Description: ...
+    
+    2. Financial Services Modernization
+    - Company: XYZ Bank
+    - Industry: Finance
+    - Description: ...
+    
+    **Learn More:**
+    - [Healthcare Data Migration](/success-stories?id=abc123)
+    - [Financial Services Modernization](/success-stories?id=def456)
+    ```
+- Each link should use the exact title and Page URL from the context
 - Don't make up information or hallucinate details
+- If a Page URL is missing or "N/A", don't include that link
 
 CONTEXT DATA:
 {context_string}
