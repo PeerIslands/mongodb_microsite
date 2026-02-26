@@ -36,17 +36,21 @@ const FileUpload = ({
   useEffect(() => {
     if (currentFile && typeof currentFile === 'string' && currentFile.length > 0) {
       setPreview(currentFile);
-      // Determine file type from URL
       const lowerUrl = currentFile.toLowerCase();
+      // By file extension
       if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/)) {
         setFileType('image');
       } else if (lowerUrl.match(/\.(mp4|mov|webm|avi)(\?|$)/)) {
         setFileType('video');
       } else if (lowerUrl.match(/\.pdf(\?|$)/)) {
         setFileType('pdf');
-        // Extract filename from URL
         const urlParts = currentFile.split('/');
         setFileName(urlParts[urlParts.length - 1].split('?')[0]);
+      } else if (lowerUrl.includes('/thumbnail') || lowerUrl.includes('/image')) {
+        // Proxy URLs e.g. /api/v1/events/.../files/thumbnail
+        setFileType('image');
+      } else if (lowerUrl.includes('/video')) {
+        setFileType('video');
       } else {
         setFileType('other');
       }
@@ -247,7 +251,12 @@ const FileUpload = ({
             <button
               type="button"
               className="change-button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                  fileInputRef.current.click();
+                }
+              }}
             >
               Change
             </button>

@@ -35,6 +35,13 @@ class AcceleratorRepository:
         doc = await self._collection.find_one(query)
         return doc is not None
 
+    async def get_next_display_order(self) -> int:
+        """Get the next display_order value (max + 1)."""
+        last = await self._collection.find_one(
+            {}, sort=[("display_order", -1)], projection={"display_order": 1}
+        )
+        return (last.get("display_order", 0) + 1) if last else 1
+
     async def slug_exists(self, slug: str, exclude_id: Optional[str] = None) -> bool:
         """
         Check if a slug already exists.
@@ -73,6 +80,8 @@ class AcceleratorRepository:
         accelerator_data["id"] = accelerator_data["_id"]
         accelerator_data["created_at"] = now
         accelerator_data["updated_at"] = now
+        if accelerator_data.get("display_order") is None:
+            accelerator_data["display_order"] = await self.get_next_display_order()
 
         await self._collection.insert_one(accelerator_data)
         return accelerator_data
@@ -102,7 +111,7 @@ class AcceleratorRepository:
         if feature_on_homepage is not None:
             query["feature_on_homepage"] = feature_on_homepage
 
-        cursor = self._collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        cursor = self._collection.find(query).sort("display_order", 1).skip(skip).limit(limit)
         results = []
         async for doc in cursor:
             doc["id"] = str(doc["_id"])
@@ -187,12 +196,25 @@ class AcceleratorRepository:
             }
         return {"thumbnail_url": "", "video_url": "", "pdf_url": ""}
 
+    async def reorder(self, items: List[Dict[str, Any]]) -> None:
+        """
+        Update display_order for multiple accelerators.
+        Each item must have 'id' and 'display_order'.
+        """
+        now = datetime.now(timezone.utc)
+        for item in items:
+            await self._collection.update_one(
+                {"_id": item["id"]},
+                {"$set": {"display_order": item["display_order"], "updated_at": now}},
+            )
+
     async def create_indexes(self) -> None:
         """Create database indexes for optimal query performance."""
         await self._collection.create_index("title", unique=True)
         await self._collection.create_index("slug", unique=True)
         await self._collection.create_index("status")
         await self._collection.create_index("feature_on_homepage")
+        await self._collection.create_index("display_order")
         await self._collection.create_index("created_at")
         print("✅ Accelerator indexes created")
 

@@ -99,15 +99,16 @@ export const formatMarkdown = (text: string): JSX.Element => {
 };
 
 /**
- * Format inline markdown (bold, code, etc.)
+ * Format inline markdown (bold, code, links, etc.)
  */
 const formatInlineMarkdown = (text: string): React.ReactNode => {
   const parts: React.ReactNode[] = [];
   let key = 0;
   let lastIndex = 0;
 
-  // Combined regex to match both bold (**text**) and inline code (`code`)
-  const combinedRegex = /(\*\*(.*?)\*\*)|(`(.*?)`)/g;
+  // Combined regex to match bold (**text**), inline code (`code`), and links ([text](url))
+  // Allow optional spaces around the URL: [text]( url ) or [text](url)
+  const combinedRegex = /(\*\*(.*?)\*\*)|(`(.*?)`)|(\[(.*?)\]\(\s*(.*?)\s*\))/g;
   let match;
 
   while ((match = combinedRegex.exec(text)) !== null) {
@@ -116,7 +117,7 @@ const formatInlineMarkdown = (text: string): React.ReactNode => {
       parts.push(text.substring(lastIndex, match.index));
     }
 
-    // Check if it's bold or code
+    // Check if it's bold, code, or link
     if (match[1]) {
       // Bold text (**text**)
       parts.push(
@@ -140,6 +141,34 @@ const formatInlineMarkdown = (text: string): React.ReactNode => {
         >
           {match[4]}
         </code>
+      );
+    } else if (match[5]) {
+      // Markdown link ([text](url))
+      const linkText = match[6];
+      const linkUrl = match[7].trim(); // Trim any whitespace from URL
+      parts.push(
+        <a 
+          key={`link-${key++}`}
+          href={linkUrl}
+          style={{
+            color: '#00ED64',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+          onClick={(e) => {
+            // Handle internal links with client-side routing
+            if (linkUrl.startsWith('/')) {
+              e.preventDefault();
+              window.location.href = linkUrl;
+            }
+            // External links open normally
+          }}
+          target={linkUrl.startsWith('http') ? '_blank' : undefined}
+          rel={linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+        >
+          {linkText}
+        </a>
       );
     }
 

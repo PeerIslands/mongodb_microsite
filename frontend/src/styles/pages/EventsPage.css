@@ -102,6 +102,62 @@
   z-index: 1;
 }
 
+/* Tabs */
+.events-tabs {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(136, 147, 151, 0.2);
+  justify-content: center;
+}
+
+.events-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #889397;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.events-tab:hover {
+  color: #ffffff;
+  border-bottom-color: rgba(91, 108, 255, 0.5);
+}
+
+.events-tab.active {
+  color: #5b6cff;
+  border-bottom-color: #5b6cff;
+}
+
+.events-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: rgba(136, 147, 151, 0.2);
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #889397;
+}
+
+.events-tab.active .events-tab-count {
+  background: rgba(91, 108, 255, 0.15);
+  color: #5b6cff;
+}
+
 /* Inline Search Bar Container */
 .events-search-bar {
   position: absolute;
@@ -398,6 +454,23 @@
   .events-hero {
     padding: 5rem 2rem 2rem;
   }
+
+  /* iPad/Tablet: Slightly smaller tabs */
+  .events-tabs {
+    gap: 1.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .events-tab {
+    font-size: 0.95rem;
+  }
+
+  .events-tab-count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.65rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -424,6 +497,23 @@
 
   .events-content {
     padding: 2rem 1.5rem 3rem;
+  }
+
+  /* Tablet: Reduce tab gap and font size */
+  .events-tabs {
+    gap: 1.5rem;
+  }
+
+  .events-tab {
+    font-size: 0.9rem;
+    padding: 0.65rem 0;
+  }
+
+  .events-tab-count {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.65rem;
   }
 }
 
@@ -462,5 +552,24 @@
     width: 100%;
     padding: 0.875rem 2rem;
     font-size: 0.9375rem;
+  }
+
+  /* Phone: Smaller tabs with tighter spacing */
+  .events-tabs {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .events-tab {
+    font-size: 0.85rem;
+    padding: 0.6rem 0;
+    gap: 0.35rem;
+  }
+
+  .events-tab-count {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 0.6rem;
   }
 }

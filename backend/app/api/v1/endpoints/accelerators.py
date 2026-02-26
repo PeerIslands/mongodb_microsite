@@ -29,6 +29,7 @@ from app.api.v1.models.accelerator import (
     AcceleratorDetailResponse,
     DeleteAcceleratorResponse,
     MetricItem,
+    ReorderAcceleratorsRequest,
 )
 from app.api.v1.services.accelerator_service import AcceleratorService
 from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobService, AzureBlobServiceError
@@ -337,6 +338,20 @@ async def get_all_accelerators(
         status=status,
         feature_on_homepage=feature_on_homepage,
     )
+
+
+@router.patch(
+    "/reorder",
+    summary="Reorder Accelerators",
+    description="Update display order for multiple accelerators. Used by admin to control order on the site.",
+)
+async def reorder_accelerators(
+    request: ReorderAcceleratorsRequest,
+    service: AcceleratorService = Depends(get_accelerator_service),
+) -> Dict[str, str]:
+    """Reorder accelerators by display_order."""
+    await service.reorder_accelerators(request.items)
+    return {"message": "Order updated successfully"}
 
 
 @router.get(

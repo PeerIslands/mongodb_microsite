@@ -48,6 +48,7 @@ import type {
   UpdateAcceleratorResponse,
   DeleteAcceleratorResponse,
   AcceleratorQueryParams,
+  ReorderItem,
 } from '@/types/models/accelerator';
 
 /**
@@ -191,5 +192,14 @@ export const acceleratorsService = {
       `/api/v1/accelerators/${id}`
     );
     return response.data;
+  },
+
+  /**
+   * Reorder accelerators (update display_order for multiple items).
+   *
+   * @param items - List of { id, display_order }
+   */
+  reorder: async (items: ReorderItem[]): Promise<void> => {
+    await apiClient.patch('/api/v1/accelerators/reorder', { items });
   },
 };

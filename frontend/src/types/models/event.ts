@@ -20,6 +20,9 @@ export interface Event {
   status: EventStatus;
   event_type: EventType;
   location: string;
+  thumbnail_url: string;
+  video_url: string;
+  is_past: boolean;
   created_at: string;
   updated_at: string;
 }

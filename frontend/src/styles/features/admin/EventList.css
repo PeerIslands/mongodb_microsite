@@ -383,6 +383,24 @@
   transform: translateY(-2px);
 }
 
+/* Checkbox Cell */
+.checkbox-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.past-event-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: default;
+  accent-color: #5b6cff;
+}
+
+.past-event-checkbox:disabled {
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .event-list {
@@ -398,7 +416,7 @@
   }
 
   .event-table {
-    min-width: 1000px;
+    min-width: 1100px;
   }
 }
 

@@ -5,8 +5,8 @@ Handles validation, data transformation, and orchestrates repository calls.
 
 import re
 import uuid
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime, timedelta, date
+from typing import List, Optional, Dict, Any
 
 from app.api.v1.models.event import (
     CreateEventRequest,
@@ -19,6 +19,7 @@ from app.api.v1.models.event import (
 )
 from app.api.v1.repositories.event_repository import EventRepository
 from app.api.v1.exceptions.event_exceptions import EventNotFoundError
+from app.core.config import settings
 
 
 class EventService:
@@ -76,14 +77,40 @@ class EventService:
     # RESPONSE HELPERS
     # =========================================================================
 
+    def _is_past_event(self, event_date: str) -> bool:
+        """Check if event is in the past."""
+        try:
+            event_date_obj = datetime.strptime(event_date, "%Y-%m-%d").date()
+            return event_date_obj < date.today()
+        except ValueError:
+            return False
+    
+    def _build_proxy_url(self, event_id: str, file_type: str, blob_path: str) -> str:
+        """Build secure proxy URL for files."""
+        if not blob_path:
+            return ""
+        base_url = settings.API_BASE_URL or "http://localhost:8000"
+        return f"{base_url}/api/v1/events/{event_id}/files/{file_type}"
+    
     def _to_response(self, doc: dict) -> EventResponse:
         """Convert document to EventResponse."""
+        event_id = str(doc.get("id", doc.get("_id", "")))
+        event_date = doc.get("date", "")
+        
+        # Get blob paths
+        thumbnail_blob_path = doc.get("thumbnail_url", "")
+        video_blob_path = doc.get("video_url", "")
+        
+        # Build secure proxy URLs
+        thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
+        video_url = self._build_proxy_url(event_id, "video", video_blob_path)
+        
         return EventResponse(
-            id=str(doc.get("id", doc.get("_id", ""))),
+            id=event_id,
             title=doc.get("title", ""),
             slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
-            date=doc.get("date", ""),
+            date=event_date,
             time=doc.get("time", ""),
             timezone=doc.get("timezone", ""),
             duration_minutes=doc.get("duration_minutes", 0),
@@ -94,18 +121,32 @@ class EventService:
             status=doc.get("status", "draft"),
             event_type=doc.get("event_type", "online"),
             location=doc.get("location", ""),
+            thumbnail_url=thumbnail_url,
+            video_url=video_url,
+            is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
         )
 
     def _to_detail_response(self, doc: dict) -> EventDetailResponse:
         """Convert document to EventDetailResponse."""
+        event_id = str(doc.get("id", doc.get("_id", "")))
+        event_date = doc.get("date", "")
+        
+        # Get blob paths
+        thumbnail_blob_path = doc.get("thumbnail_url", "")
+        video_blob_path = doc.get("video_url", "")
+        
+        # Build secure proxy URLs
+        thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
+        video_url = self._build_proxy_url(event_id, "video", video_blob_path)
+        
         return EventDetailResponse(
-            id=str(doc.get("id", doc.get("_id", ""))),
+            id=event_id,
             title=doc.get("title", ""),
             slug=doc.get("slug", ""),
             subtitle=doc.get("subtitle", ""),
-            date=doc.get("date", ""),
+            date=event_date,
             time=doc.get("time", ""),
             timezone=doc.get("timezone", ""),
             duration_minutes=doc.get("duration_minutes", 0),
@@ -116,6 +157,9 @@ class EventService:
             status=doc.get("status", "draft"),
             event_type=doc.get("event_type", "online"),
             location=doc.get("location", ""),
+            thumbnail_url=thumbnail_url,
+            video_url=video_url,
+            is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
         )
@@ -380,3 +424,15 @@ class EventService:
         
         # Join with CRLF as required by RFC 5545
         return "\r\n".join(ics_lines)
+    
+    async def get_blob_paths(self, event_id: str) -> Dict[str, str]:
+        """
+        Get blob paths for an event's files.
+        
+        Args:
+            event_id: Event ID
+            
+        Returns:
+            Dictionary with thumbnail_url and video_url blob paths
+        """
+        return await self._repository.get_blob_paths(event_id)

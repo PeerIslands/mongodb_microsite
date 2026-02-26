@@ -15,6 +15,9 @@ export interface EventCardData {
   attendee_value?: string;
   tags?: string[];
   status?: 'published' | 'draft' | 'archived';
+  thumbnail_url?: string;
+  video_url?: string;
+  is_past?: boolean;
   created_at?: string;
   updated_at?: string;
 }

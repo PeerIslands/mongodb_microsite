@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Get the backend directory (parent of app directory)
@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # Frontend Base URL (for generating calendar download links in emails)
     # This should be the publicly accessible frontend URL
     FRONTEND_BASE_URL: str = "https://mongodb.peerislands.io"
+    
+    # Backend API Base URL (for generating file proxy URLs)
+    # This should be the publicly accessible backend API URL
+    # Example: https://api.yourdomain.com or http://localhost:8000 for local dev
+    API_BASE_URL: str = Field(default="http://localhost:8000")
     
     def get_contactus_cc_emails(self) -> List[str]:
         """Parse comma-separated CC email addresses into a list"""

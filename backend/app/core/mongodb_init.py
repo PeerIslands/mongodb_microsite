@@ -123,6 +123,29 @@ async def create_indexes(db) -> None:
     await accelerators.create_index([("created_at", -1)])
     print("  ✅ accelerators.created_at (descending)")
     
+    # Display order for admin-controlled ordering (lower = first on site)
+    await accelerators.create_index("display_order")
+    print("  ✅ accelerators.display_order")
+    
+    # Backfill display_order for existing documents (by created_at ascending)
+    from datetime import datetime, timezone
+    last = await accelerators.find_one(
+        {"display_order": {"$exists": True}}, sort=[("display_order", -1)], projection={"display_order": 1}
+    )
+    next_order = (last.get("display_order", 0) + 1) if last else 1
+    cursor = accelerators.find({"display_order": {"$exists": False}}).sort("created_at", 1)
+    backfill_count = 0
+    now = datetime.now(timezone.utc)
+    async for doc in cursor:
+        await accelerators.update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"display_order": next_order, "updated_at": now}},
+        )
+        next_order += 1
+        backfill_count += 1
+    if backfill_count:
+        print(f"  ✅ accelerators display_order backfilled for {backfill_count} document(s)")
+    
     # ==========================================================================
     # EVENTS COLLECTION
     # ==========================================================================

@@ -36,6 +36,7 @@ class CreateAcceleratorRequest(BaseModel):
     )
     status: str = Field(default="draft", description="Status: 'published' or 'draft'")
     feature_on_homepage: bool = Field(default=False, description="Whether to feature on homepage")
+    display_order: Optional[int] = Field(default=None, description="Display order (lower = first on site)")
     thumbnail_url: str = Field(default="", description="Thumbnail image path in Azure Blob")
     video_url: str = Field(default="", description="Video file path in Azure Blob")
     pdf_url: str = Field(default="", description="PDF file path in Azure Blob")
@@ -68,6 +69,7 @@ class UpdateAcceleratorRequest(BaseModel):
     )
     status: Optional[str] = Field(None, description="Status: 'published' or 'draft'")
     feature_on_homepage: Optional[bool] = Field(None, description="Whether to feature on homepage")
+    display_order: Optional[int] = Field(None, description="Display order (lower = first on site)")
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail image path in Azure Blob")
     video_url: Optional[str] = Field(None, description="Video file path in Azure Blob")
     pdf_url: Optional[str] = Field(None, description="PDF file path in Azure Blob")
@@ -99,8 +101,20 @@ class AcceleratorResponse(BaseModel):
     description: str = Field(..., description="Description")
     status: str = Field(..., description="Status: 'published' or 'draft'")
     feature_on_homepage: bool = Field(..., description="Featured on homepage")
+    display_order: int = Field(default=0, description="Display order (lower = first)")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
+
+
+class ReorderItem(BaseModel):
+    """Single item for bulk reorder request."""
+    id: str
+    display_order: int
+
+
+class ReorderAcceleratorsRequest(BaseModel):
+    """Request model for reordering accelerators."""
+    items: List[ReorderItem] = Field(..., min_length=1, description="List of id and display_order")
 
 
 class AcceleratorDetailResponse(AcceleratorResponse):

@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
+import FileUpload, { type FileUploadResult } from './FileUpload';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
 import type { EventStatus, EventType } from '@/types/models/event';
 
@@ -77,6 +78,14 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // File upload states (only for editing past events). Preview handled by FileUpload (no raw URLs in src).
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>('');
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string>('');
+  const [deleteThumbnail, setDeleteThumbnail] = useState(false);
+  const [deleteVideo, setDeleteVideo] = useState(false);
+
   // Check if selected date is in the past
   const isDateInPast = useMemo(() => {
     if (!selectedDate) return false;
@@ -140,6 +149,15 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         eventType: data.event_type || 'online',
         location: data.location || '',
       });
+
+      // Load existing file URLs for FileUpload (edit mode). FileUpload handles preview safely (blob/data or backend URL).
+      const thumb = data.thumbnail_url || '';
+      const vid = data.video_url || '';
+      setExistingThumbnailUrl(thumb);
+      setExistingVideoUrl(vid);
+      if (import.meta.env.DEV) {
+        console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid });
+      }
 
       // Check if category is custom
       const category = data.category || '';
@@ -216,6 +234,33 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // File upload handler: FileUpload uses blob/data URLs or backend URL for preview (no unsanitized src).
+  const handleFileUpload = (field: 'thumbnail' | 'video', result: FileUploadResult | FileUploadResult[]) => {
+    const single = Array.isArray(result) ? result[0] : result;
+    if (field === 'thumbnail') {
+      if (single?.file) {
+        setThumbnailFile(single.file);
+        setDeleteThumbnail(false);
+        setExistingThumbnailUrl('');
+      } else {
+        setThumbnailFile(null);
+        setExistingThumbnailUrl('');
+        setDeleteThumbnail(!!editingId);
+      }
+    } else {
+      if (single?.file) {
+        setVideoFile(single.file);
+        setDeleteVideo(false);
+        setExistingVideoUrl('');
+      } else {
+        setVideoFile(null);
+        setExistingVideoUrl('');
+        setDeleteVideo(!!editingId);
+      }
+    }
+    setErrorMessage(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -227,10 +272,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     }
     if (!formData.date) {
       setErrorMessage('Please select a date.');
-      return;
-    }
-    if (isDateInPast) {
-      setErrorMessage('Please select a future date. Past dates are not allowed.');
       return;
     }
     if (!formData.time) {
@@ -265,26 +306,76 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setIsSubmitting(true);
 
     try {
-      const submitData: CreateEventDto = {
-        title: formData.title,
-        subtitle: formData.subtitle,
-        date: formData.date,
-        time: formData.time,
-        timezone: formData.timezone,
-        duration_minutes: formData.durationMinutes,
-        description: formData.description,
-        attendee_value: formData.attendeeValue,
-        category: formData.category,
-        featured: formData.featured,
-        status: formData.status,
-        event_type: formData.eventType,
-        location: formData.location,
-      };
+      // Check if we need to use FormData (for file uploads in edit mode)
+      const hasFiles = editingId && (thumbnailFile || videoFile || deleteThumbnail || deleteVideo);
+      if (import.meta.env.DEV) {
+        console.log('[EventForm] Submit', {
+          editingId,
+          hasFiles,
+          thumbnailFile: !!thumbnailFile,
+          videoFile: !!videoFile,
+          deleteThumbnail,
+          deleteVideo,
+        });
+      }
 
-      if (editingId) {
-        await eventsService.update(editingId, submitData);
+      if (hasFiles) {
+        // Use FormData for file uploads (edit mode only)
+        const formDataToSend = new FormData();
+        
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('subtitle', formData.subtitle);
+        formDataToSend.append('date', formData.date);
+        formDataToSend.append('time', formData.time);
+        formDataToSend.append('timezone', formData.timezone);
+        formDataToSend.append('duration_minutes', String(formData.durationMinutes));
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('attendee_value', formData.attendeeValue);
+        formDataToSend.append('category', formData.category);
+        formDataToSend.append('featured', String(formData.featured));
+        formDataToSend.append('status', formData.status);
+        formDataToSend.append('event_type', formData.eventType);
+        formDataToSend.append('location', formData.location);
+        
+        // Add file uploads
+        if (thumbnailFile) {
+          formDataToSend.append('thumbnail', thumbnailFile);
+        }
+        if (videoFile) {
+          formDataToSend.append('video', videoFile);
+        }
+        
+        // Add delete flags
+        formDataToSend.append('delete_thumbnail', String(deleteThumbnail));
+        formDataToSend.append('delete_video', String(deleteVideo));
+
+        await eventsService.updateWithFiles(editingId, formDataToSend);
+        if (import.meta.env.DEV) {
+          console.log('[EventForm] updateWithFiles completed for', editingId);
+        }
       } else {
-        await eventsService.create(submitData);
+        // Use regular JSON for create or edit without files
+        const submitData: CreateEventDto = {
+          title: formData.title,
+          subtitle: formData.subtitle,
+          date: formData.date,
+          time: formData.time,
+          timezone: formData.timezone,
+          duration_minutes: formData.durationMinutes,
+          description: formData.description,
+          attendee_value: formData.attendeeValue,
+          category: formData.category,
+          featured: formData.featured,
+          status: formData.status,
+          event_type: formData.eventType,
+          location: formData.location,
+        };
+
+        if (editingId) {
+          await eventsService.update(editingId, submitData);
+        } else {
+          await eventsService.create(submitData);
+        }
       }
 
       onSuccess();
@@ -521,6 +612,47 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
             </div>
           </div>
         </div>
+
+        {/* Section 4: Media Uploads (Only for Editing Past Events) */}
+        {editingId && isDateInPast && (
+          <div className="form-section">
+            <h3 className="section-title">
+              <span className="section-number">4</span>
+              Media Uploads
+              <span className="section-subtitle">(Optional)</span>
+            </h3>
+
+            <div className="info-banner">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
+              </svg>
+              <span>This is a past event. You can optionally upload a thumbnail and video recording.</span>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-field full-width">
+                <label>Thumbnail Image (Optional)</label>
+                <FileUpload
+                  accept="image/*"
+                  maxSize={5}
+                  onUpload={(result) => handleFileUpload('thumbnail', result)}
+                  currentFile={existingThumbnailUrl || undefined}
+                  hint="PNG, JPG up to 5MB"
+                />
+              </div>
+              <div className="form-field full-width">
+                <label>Video Recording (Optional)</label>
+                <FileUpload
+                  accept="video/mp4,video/quicktime,video/webm"
+                  maxSize={100}
+                  onUpload={(result) => handleFileUpload('video', result)}
+                  currentFile={existingVideoUrl || undefined}
+                  hint="MP4, WebM up to 100MB"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {errorMessage && (
