@@ -18,6 +18,13 @@ interface EventDetailPanelProps {
   onCancelSuccess?: () => void;
 }
 
+/** Append cache-busting param so updated thumbnail/video are not served from cache */
+const withCacheBust = (url: string, updatedAt?: string): string => {
+  if (!url) return url;
+  const param = updatedAt ? `t=${encodeURIComponent(updatedAt)}` : `t=${Date.now()}`;
+  return url.includes('?') ? `${url}&${param}` : `${url}?${param}`;
+};
+
 /**
  * Format date to alphanumeric format (e.g., "January 15, 2026")
  */
@@ -50,6 +57,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Fetched event by ID so we always show latest thumbnail/video (list may be cached/stale)
+  const [detailEvent, setDetailEvent] = useState<EventCardData | null>(null);
 
   // Check if user is logged in
   const isLoggedIn = () => {
@@ -88,6 +97,46 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
       document.body.style.overflow = '';
     };
   }, [isOpen, handleEscapeKey]);
+
+  // Refetch event by ID when panel opens so we show latest thumbnail/video (list can be stale after admin update)
+  useEffect(() => {
+    if (!isOpen || !event?.id) {
+      setDetailEvent(null);
+      return;
+    }
+    let cancelled = false;
+    eventsService.getById(event.id).then((data) => {
+      if (cancelled) return;
+      const merged: EventCardData = { ...event, ...data, thumbnail_url: data.thumbnail_url, video_url: data.video_url, is_past: data.is_past };
+      setDetailEvent(merged);
+      if (import.meta.env.DEV) {
+        console.log('[EventDetailPanel] Fetched event for detail', {
+          eventId: event.id,
+          thumbnail_url: data.thumbnail_url,
+          video_url: data.video_url,
+          hasThumbnail: !!data.thumbnail_url,
+          hasVideo: !!data.video_url,
+        });
+      }
+    }).catch((err) => {
+      if (!cancelled && import.meta.env.DEV) {
+        console.warn('[EventDetailPanel] Failed to fetch event by ID', event.id, err);
+      }
+      if (!cancelled) setDetailEvent(null);
+    });
+    return () => { cancelled = true; };
+  }, [isOpen, event?.id]);
+
+  // Debug: log what the panel received from the list (when opening)
+  useEffect(() => {
+    if (isOpen && event && import.meta.env.DEV) {
+      console.log('[EventDetailPanel] Event from list (may be stale)', {
+        eventId: event.id,
+        thumbnail_url: event.thumbnail_url,
+        video_url: event.video_url,
+      });
+    }
+  }, [isOpen, event?.id, event?.thumbnail_url, event?.video_url]);
 
   // Show registration confirmation modal
   const showRegistrationModal = () => {
@@ -207,9 +256,12 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
 
   if (!event) return null;
 
-  const formattedDate = formatDate(event.date);
-  const descriptionHtml = markdownToHtml(event.description || '');
-  const attendeeValueHtml = markdownToHtml(event.attendee_value || '');
+  // Use refetched detail when available so thumbnail/video are up to date after admin changes
+  const displayEvent = detailEvent ?? event;
+
+  const formattedDate = formatDate(displayEvent.date);
+  const descriptionHtml = markdownToHtml(displayEvent.description || '');
+  const attendeeValueHtml = markdownToHtml(displayEvent.attendee_value || '');
 
   return (
     <>
@@ -287,12 +339,12 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
           <header className="event-detail-panel__header">
             {/* Category Badge */}
             <span className="event-detail-panel__category">
-              {event.category}
+              {displayEvent.category}
             </span>
 
             {/* Title */}
             <h2 id="event-detail-title" className="event-detail-panel__title">
-              {event.title}
+              {displayEvent.title}
             </h2>
 
             {/* Meta Info */}
@@ -314,7 +366,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
                 </div>
               )}
 
-              {event.time && (
+              {displayEvent.time && (
                 <div className="event-detail-panel__meta-item">
                   <svg 
                     width="18" 
@@ -327,7 +379,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
                       fill="currentColor"
                     />
                   </svg>
-                  <span>{event.time} {event.timezone && `${event.timezone}`}</span>
+                  <span>{displayEvent.time} {displayEvent.timezone && `${displayEvent.timezone}`}</span>
                 </div>
               )}
 
@@ -356,16 +408,16 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Video Recording Section (for past events) */}
-          {event.is_past && event.video_url && (
+          {/* Video Recording Section (for past events) - cache-bust so updated media loads */}
+          {displayEvent.is_past && displayEvent.video_url && (
             <section className="event-detail-panel__section">
               <h3 className="event-detail-panel__section-title">Event Recording</h3>
               <div className="event-detail-panel__video-container">
                 <video
-                  src={event.video_url}
+                  src={withCacheBust(displayEvent.video_url, displayEvent.updated_at)}
                   controls
                   className="event-detail-panel__video"
-                  poster={event.thumbnail_url}
+                  poster={withCacheBust(displayEvent.thumbnail_url ?? '', displayEvent.updated_at)}
                 >
                   Your browser does not support the video tag.
                 </video>
@@ -375,7 +427,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
         </div>
 
         {/* Footer with Register Button or Cancel Registration Button (only for upcoming events) */}
-        {!event.is_past && (
+        {!displayEvent.is_past && (
           <footer className="event-detail-panel__footer">
             {isRegistered ? (
               <button 

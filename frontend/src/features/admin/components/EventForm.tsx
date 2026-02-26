@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
+import FileUpload, { type FileUploadResult } from './FileUpload';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
 import type { EventStatus, EventType } from '@/types/models/event';
 
@@ -41,17 +42,6 @@ const DEFAULT_CATEGORIES = [
   'Tech Talk',
 ];
 
-// URL validation helper to prevent XSS
-const isValidUrl = (urlString: string): boolean => {
-  try {
-    const url = new URL(urlString);
-    // Only allow http, https, and blob protocols
-    return ['http:', 'https:', 'blob:'].includes(url.protocol);
-  } catch {
-    return false;
-  }
-};
-
 interface EventFormProps {
   editingId: string | null;
   onCancel: () => void;
@@ -88,11 +78,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // File upload states (only for editing past events)
+  // File upload states (only for editing past events). Preview handled by FileUpload (no raw URLs in src).
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
-  const [videoPreview, setVideoPreview] = useState<string>('');
+  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>('');
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string>('');
   const [deleteThumbnail, setDeleteThumbnail] = useState(false);
   const [deleteVideo, setDeleteVideo] = useState(false);
 
@@ -160,13 +150,13 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         location: data.location || '',
       });
 
-      // Load existing file URLs (for past events)
-      // Validate URLs before setting to prevent XSS
-      if (data.thumbnail_url && isValidUrl(data.thumbnail_url)) {
-        setThumbnailPreview(data.thumbnail_url);
-      }
-      if (data.video_url && isValidUrl(data.video_url)) {
-        setVideoPreview(data.video_url);
+      // Load existing file URLs for FileUpload (edit mode). FileUpload handles preview safely (blob/data or backend URL).
+      const thumb = data.thumbnail_url || '';
+      const vid = data.video_url || '';
+      setExistingThumbnailUrl(thumb);
+      setExistingVideoUrl(vid);
+      if (import.meta.env.DEV) {
+        console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid });
       }
 
       // Check if category is custom
@@ -244,57 +234,31 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // File upload handlers (for editing past events)
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrorMessage('Thumbnail must be an image file');
-        return;
+  // File upload handler: FileUpload uses blob/data URLs or backend URL for preview (no unsanitized src).
+  const handleFileUpload = (field: 'thumbnail' | 'video', result: FileUploadResult | FileUploadResult[]) => {
+    const single = Array.isArray(result) ? result[0] : result;
+    if (field === 'thumbnail') {
+      if (single?.file) {
+        setThumbnailFile(single.file);
+        setDeleteThumbnail(false);
+        setExistingThumbnailUrl('');
+      } else {
+        setThumbnailFile(null);
+        setExistingThumbnailUrl('');
+        setDeleteThumbnail(!!editingId);
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage('Thumbnail file size must be less than 5MB');
-        return;
+    } else {
+      if (single?.file) {
+        setVideoFile(single.file);
+        setDeleteVideo(false);
+        setExistingVideoUrl('');
+      } else {
+        setVideoFile(null);
+        setExistingVideoUrl('');
+        setDeleteVideo(!!editingId);
       }
-      setThumbnailFile(file);
-      setDeleteThumbnail(false);
-      setThumbnailPreview(URL.createObjectURL(file));
-      setErrorMessage(null);
     }
-  };
-
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('video/')) {
-        setErrorMessage('Video must be a video file');
-        return;
-      }
-      if (file.size > 100 * 1024 * 1024) {
-        setErrorMessage('Video file size must be less than 100MB');
-        return;
-      }
-      setVideoFile(file);
-      setDeleteVideo(false);
-      setVideoPreview(URL.createObjectURL(file));
-      setErrorMessage(null);
-    }
-  };
-
-  const handleRemoveThumbnail = () => {
-    setThumbnailFile(null);
-    setThumbnailPreview('');
-    if (editingId && thumbnailPreview) {
-      setDeleteThumbnail(true);
-    }
-  };
-
-  const handleRemoveVideo = () => {
-    setVideoFile(null);
-    setVideoPreview('');
-    if (editingId && videoPreview) {
-      setDeleteVideo(true);
-    }
+    setErrorMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -344,7 +308,17 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     try {
       // Check if we need to use FormData (for file uploads in edit mode)
       const hasFiles = editingId && (thumbnailFile || videoFile || deleteThumbnail || deleteVideo);
-      
+      if (import.meta.env.DEV) {
+        console.log('[EventForm] Submit', {
+          editingId,
+          hasFiles,
+          thumbnailFile: !!thumbnailFile,
+          videoFile: !!videoFile,
+          deleteThumbnail,
+          deleteVideo,
+        });
+      }
+
       if (hasFiles) {
         // Use FormData for file uploads (edit mode only)
         const formDataToSend = new FormData();
@@ -376,6 +350,9 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         formDataToSend.append('delete_video', String(deleteVideo));
 
         await eventsService.updateWithFiles(editingId, formDataToSend);
+        if (import.meta.env.DEV) {
+          console.log('[EventForm] updateWithFiles completed for', editingId);
+        }
       } else {
         // Use regular JSON for create or edit without files
         const submitData: CreateEventDto = {
@@ -653,72 +630,25 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
             </div>
 
             <div className="form-grid">
-              {/* Thumbnail Upload */}
               <div className="form-field full-width">
                 <label>Thumbnail Image (Optional)</label>
-                <div className="file-upload-container">
-                  <input
-                    type="file"
-                    id="thumbnail-upload"
-                    accept="image/*"
-                    onChange={handleThumbnailChange}
-                    style={{ display: 'none' }}
-                  />
-                  {thumbnailPreview && isValidUrl(thumbnailPreview) ? (
-                    <div className="file-preview">
-                      <img src={thumbnailPreview} alt="Thumbnail preview" className="thumbnail-preview" />
-                      <button
-                        type="button"
-                        className="remove-file-btn"
-                        onClick={handleRemoveThumbnail}
-                      >
-                        Remove Thumbnail
-                      </button>
-                    </div>
-                  ) : (
-                    <label htmlFor="thumbnail-upload" className="file-upload-label">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span>Click to upload thumbnail</span>
-                      <span className="file-upload-hint">PNG, JPG up to 5MB</span>
-                    </label>
-                  )}
-                </div>
+                <FileUpload
+                  accept="image/*"
+                  maxSize={5}
+                  onUpload={(result) => handleFileUpload('thumbnail', result)}
+                  currentFile={existingThumbnailUrl || undefined}
+                  hint="PNG, JPG up to 5MB"
+                />
               </div>
-
-              {/* Video Upload */}
               <div className="form-field full-width">
                 <label>Video Recording (Optional)</label>
-                <div className="file-upload-container">
-                  <input
-                    type="file"
-                    id="video-upload"
-                    accept="video/*"
-                    onChange={handleVideoChange}
-                    style={{ display: 'none' }}
-                  />
-                  {videoPreview && isValidUrl(videoPreview) ? (
-                    <div className="file-preview">
-                      <video src={videoPreview} controls className="video-preview" />
-                      <button
-                        type="button"
-                        className="remove-file-btn"
-                        onClick={handleRemoveVideo}
-                      >
-                        Remove Video
-                      </button>
-                    </div>
-                  ) : (
-                    <label htmlFor="video-upload" className="file-upload-label">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span>Click to upload video</span>
-                      <span className="file-upload-hint">MP4, WebM up to 100MB</span>
-                    </label>
-                  )}
-                </div>
+                <FileUpload
+                  accept="video/mp4,video/quicktime,video/webm"
+                  maxSize={100}
+                  onUpload={(result) => handleFileUpload('video', result)}
+                  currentFile={existingVideoUrl || undefined}
+                  hint="MP4, WebM up to 100MB"
+                />
               </div>
             </div>
           </div>
