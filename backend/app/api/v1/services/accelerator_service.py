@@ -20,6 +20,7 @@ from app.api.v1.models.accelerator import (
     AcceleratorDetailResponse,
     DeleteAcceleratorResponse,
     MetricItem,
+    ReorderItem,
 )
 from app.api.v1.repositories.accelerator_repository import AcceleratorRepository
 from app.api.v1.exceptions.accelerator_exceptions import AcceleratorNotFoundError
@@ -83,6 +84,7 @@ class AcceleratorService:
             description=doc.get("description", ""),
             status=doc.get("status", "draft"),
             feature_on_homepage=doc.get("feature_on_homepage", False),
+            display_order=doc.get("display_order", 0),
             created_at=doc.get("created_at", datetime.now(timezone.utc)),
             updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
         )
@@ -140,6 +142,7 @@ class AcceleratorService:
             description=doc.get("description", ""),
             status=doc.get("status", "draft"),
             feature_on_homepage=doc.get("feature_on_homepage", False),
+            display_order=doc.get("display_order", 0),
             created_at=doc.get("created_at", datetime.now(timezone.utc)),
             updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
             metrics=metrics,
@@ -277,6 +280,13 @@ class AcceleratorService:
             id=accelerator_id,
             message="Accelerator deleted successfully",
         )
+
+    async def reorder_accelerators(self, items: List[ReorderItem]) -> None:
+        """
+        Update display order for multiple accelerators.
+        """
+        payload = [{"id": item.id, "display_order": item.display_order} for item in items]
+        await self._repository.reorder(payload)
 
     async def get_blob_paths(self, accelerator_id: str) -> Dict[str, str]:
         """

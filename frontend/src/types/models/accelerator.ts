@@ -29,6 +29,7 @@ export interface Accelerator {
   description: string;
   status: AcceleratorStatus;
   feature_on_homepage: boolean;
+  display_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +63,7 @@ export interface UpdateAcceleratorDto {
   metrics?: MetricItem[];
   status?: AcceleratorStatus;
   feature_on_homepage?: boolean;
+  display_order?: number;
   thumbnail_file?: File;
   video_file?: File;
   pdf_file?: File;
@@ -69,6 +71,12 @@ export interface UpdateAcceleratorDto {
   delete_thumbnail?: boolean;
   delete_video?: boolean;
   delete_pdf?: boolean;
+}
+
+/** Single item for reorder API request */
+export interface ReorderItem {
+  id: string;
+  display_order: number;
 }
 
 /** Response after creating an accelerator */

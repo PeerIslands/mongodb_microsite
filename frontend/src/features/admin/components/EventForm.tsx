@@ -664,7 +664,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                     onChange={handleThumbnailChange}
                     style={{ display: 'none' }}
                   />
-                  {thumbnailPreview ? (
+                  {thumbnailPreview && isValidUrl(thumbnailPreview) ? (
                     <div className="file-preview">
                       <img src={thumbnailPreview} alt="Thumbnail preview" className="thumbnail-preview" />
                       <button
@@ -698,7 +698,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                     onChange={handleVideoChange}
                     style={{ display: 'none' }}
                   />
-                  {videoPreview ? (
+                  {videoPreview && isValidUrl(videoPreview) ? (
                     <div className="file-preview">
                       <video src={videoPreview} controls className="video-preview" />
                       <button

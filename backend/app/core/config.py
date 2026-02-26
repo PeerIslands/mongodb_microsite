@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Get the backend directory (parent of app directory)
