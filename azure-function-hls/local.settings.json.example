@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "BlobStorageConnectionString": "<connection string for mmsuploads / microsite container>",
+    "BACKEND_BASE_URL": "http://localhost:8000",
+    "HLS_WEBHOOK_SECRET": ""
+  }
+}

@@ -1,4 +1,5 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import Hls from 'hls.js';
 import axios from 'axios';
 import { markdownToHtml } from '@/utils/markdown';
 import { useAuthModal } from '@/contexts/AuthModalContext';
@@ -24,6 +25,73 @@ const withCacheBust = (url: string, updatedAt?: string): string => {
   const param = updatedAt ? `t=${encodeURIComponent(updatedAt)}` : `t=${Date.now()}`;
   return url.includes('?') ? `${url}&${param}` : `${url}?${param}`;
 };
+
+/** HLS when playlist URL present, else fallback to single-file video (proxy URL) */
+function EventVideoPlayer({
+  hlsPlaylistUrl,
+  fallbackVideoUrl,
+  posterUrl,
+}: {
+  hlsPlaylistUrl: string;
+  fallbackVideoUrl: string;
+  posterUrl: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (hlsPlaylistUrl) {
+      if (Hls.isSupported()) {
+        if (hlsRef.current) {
+          hlsRef.current.destroy();
+          hlsRef.current = null;
+        }
+        const hls = new Hls();
+        hlsRef.current = hls;
+        hls.loadSource(hlsPlaylistUrl);
+        hls.attachMedia(video);
+        return () => {
+          hls.destroy();
+          hlsRef.current = null;
+        };
+      }
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsPlaylistUrl;
+        return () => {
+          video.removeAttribute('src');
+        };
+      }
+      // HLS not supported: fall back to single-file URL if available
+      if (fallbackVideoUrl) {
+        video.src = fallbackVideoUrl;
+        return () => video.removeAttribute('src');
+      }
+      return;
+    }
+
+    if (fallbackVideoUrl) {
+      video.src = fallbackVideoUrl;
+      return () => video.removeAttribute('src');
+    }
+  }, [hlsPlaylistUrl, fallbackVideoUrl]);
+
+  const src = hlsPlaylistUrl ? undefined : fallbackVideoUrl || undefined;
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      controls
+      className="event-detail-panel__video"
+      poster={posterUrl || undefined}
+    >
+      Your browser does not support the video tag.
+    </video>
+  );
+}
 
 /**
  * Format date to alphanumeric format (e.g., "January 15, 2026")
@@ -107,13 +175,21 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
     let cancelled = false;
     eventsService.getById(event.id).then((data) => {
       if (cancelled) return;
-      const merged: EventCardData = { ...event, ...data, thumbnail_url: data.thumbnail_url, video_url: data.video_url, is_past: data.is_past };
+      const merged: EventCardData = {
+        ...event,
+        ...data,
+        thumbnail_url: data.thumbnail_url,
+        video_url: data.video_url,
+        hls_playlist_url: (data as { hls_playlist_url?: string }).hls_playlist_url,
+        is_past: data.is_past,
+      };
       setDetailEvent(merged);
       if (import.meta.env.DEV) {
         console.log('[EventDetailPanel] Fetched event for detail', {
           eventId: event.id,
           thumbnail_url: data.thumbnail_url,
           video_url: data.video_url,
+          hls_playlist_url: (data as { hls_playlist_url?: string }).hls_playlist_url,
           hasThumbnail: !!data.thumbnail_url,
           hasVideo: !!data.video_url,
         });
@@ -408,19 +484,16 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Video Recording Section (for past events) - cache-bust so updated media loads */}
-          {displayEvent.is_past && displayEvent.video_url && (
+          {/* Video Recording Section (for past events) - HLS when available, else single-file proxy */}
+          {displayEvent.is_past && (displayEvent.video_url || displayEvent.hls_playlist_url) && (
             <section className="event-detail-panel__section">
               <h3 className="event-detail-panel__section-title">Event Recording</h3>
               <div className="event-detail-panel__video-container">
-                <video
-                  src={withCacheBust(displayEvent.video_url, displayEvent.updated_at)}
-                  controls
-                  className="event-detail-panel__video"
-                  poster={withCacheBust(displayEvent.thumbnail_url ?? '', displayEvent.updated_at)}
-                >
-                  Your browser does not support the video tag.
-                </video>
+                <EventVideoPlayer
+                  hlsPlaylistUrl={displayEvent.hls_playlist_url ? withCacheBust(displayEvent.hls_playlist_url, displayEvent.updated_at) : ''}
+                  fallbackVideoUrl={displayEvent.video_url ? withCacheBust(displayEvent.video_url, displayEvent.updated_at) : ''}
+                  posterUrl={displayEvent.thumbnail_url ? withCacheBust(displayEvent.thumbnail_url, displayEvent.updated_at) : ''}
+                />
               </div>
             </section>
           )}

@@ -99,18 +99,21 @@ class AzureBlobService:
     def _parse_sas_url(self, sas_url: str) -> tuple[str, str]:
         """
         Parse the SAS URL into base URL and SAS token.
-        
-        Args:
-            sas_url: Full SAS URL like https://account.blob.core.windows.net/container?sp=...
-            
-        Returns:
-            Tuple of (base_url, sas_token)
+        The base URL must include the container path so Azure uses the correct container.
+        If the SAS URL has no path (e.g. ...net?sp=...), the container from settings is appended.
         """
         if not sas_url:
             return "", ""
-        
+        sas_url = sas_url.strip()
         parsed = urlparse(sas_url)
-        base_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        path = (parsed.path or "").strip("/")
+        # Base URL must include container: otherwise blob_path "casestudies/..." is seen as container "casestudies"
+        if not path:
+            path = (getattr(settings, "AZURE_BLOB_CONTAINER", None) or "microsite").strip()
+        if path:
+            base_url = f"{parsed.scheme}://{parsed.netloc}/{path}"
+        else:
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
         sas_token = parsed.query
         return base_url, sas_token
 
@@ -521,6 +524,43 @@ class AzureBlobService:
                 async with client.stream("GET", download_url, timeout=300.0) as response:
                     response.raise_for_status()
                     async for chunk in response.aiter_bytes(chunk_size=65536):  # 64KB chunks
+                        yield chunk
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise AzureBlobServiceError(f"File not found: {blob_path}")
+            raise AzureBlobServiceError(f"Failed to stream file: {e}")
+        except Exception as e:
+            raise AzureBlobServiceError(f"Failed to stream file: {e}")
+
+    async def stream_file_range(
+        self, blob_path: str, range_header: str
+    ):
+        """
+        Stream a byte range from Azure Blob Storage. Supports video Range requests.
+        First yield is a metadata dict (content_type, content_length, content_range, status_code);
+        remaining yields are byte chunks.
+        """
+        if not blob_path or not self._sas_url:
+            raise AzureBlobServiceError("Invalid blob path or SAS URL not configured")
+        download_url = f"{self._base_url}/{blob_path}?{self._sas_token}"
+        try:
+            async with httpx.AsyncClient() as client:
+                async with client.stream(
+                    "GET", download_url, headers={"Range": range_header}, timeout=300.0
+                ) as response:
+                    response.raise_for_status()
+                    content_type = response.headers.get(
+                        "content-type", "application/octet-stream"
+                    )
+                    content_length = response.headers.get("content-length", "0")
+                    content_range = response.headers.get("content-range", "")
+                    yield {
+                        "content_type": content_type,
+                        "content_length": int(content_length) if content_length else 0,
+                        "content_range": content_range,
+                        "status_code": response.status_code,
+                    }
+                    async for chunk in response.aiter_bytes(chunk_size=65536):
                         yield chunk
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:

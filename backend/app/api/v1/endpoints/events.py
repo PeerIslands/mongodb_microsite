@@ -12,9 +12,12 @@ Endpoints:
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, Query, status, HTTPException, File, UploadFile, Form, Header, Request
 from fastapi.responses import Response, StreamingResponse
+from pydantic import BaseModel, Field
 import mimetypes
+
+from app.core.config import settings
 
 from app.api.v1.models.event import (
     CreateEventRequest,
@@ -173,6 +176,89 @@ async def get_categories(
 
 
 @router.get(
+    "/{event_id}/upload-url",
+    summary="Get direct upload URL for event media (SAS)",
+    description="""
+    Returns a signed URL and blob path for direct-to-Azure upload (e.g. chunked video).
+    Use for large files (e.g. 1GB+ video) to avoid streaming through the backend.
+    **field**: 'video' or 'thumbnail'
+    **filename**: original filename (e.g. recording.mp4) to determine extension.
+    """,
+    responses={200: {"description": "Upload URL and blob path"}, 404: {"description": "Event not found"}},
+)
+async def get_event_upload_url(
+    event_id: str,
+    field: str = Query(..., description="Field: 'video' or 'thumbnail'"),
+    filename: str = Query(..., description="Original filename for extension (e.g. recording.mp4)"),
+    service: EventService = Depends(get_event_service),
+) -> dict:
+    """Return SAS upload URL and blob path for direct Azure upload."""
+    try:
+        await service.get_event_by_id(event_id)
+    except EventNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    if field not in ("video", "thumbnail"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="field must be 'video' or 'thumbnail'",
+        )
+    # Normalize extension from filename
+    ext = "mp4"
+    if filename and "." in filename:
+        ext = filename.rsplit(".", 1)[-1].lower().strip()
+    if ext not in ("mp4", "mov", "webm", "avi") and field == "video":
+        ext = "mp4"
+    if ext not in ("jpg", "jpeg", "png", "webp", "gif") and field == "thumbnail":
+        ext = "jpg"
+    field_name = "video_url" if field == "video" else "thumbnail_url"
+    blob_path = f"events/{event_id}/{field_name}.{ext}"
+    blob_service = get_azure_blob_service()
+    upload_url = blob_service.get_full_url(blob_path)
+    return {"upload_url": upload_url, "blob_path": blob_path}
+
+
+class HlsReadyRequest(BaseModel):
+    """Request body for Azure Function callback when HLS transcoding is complete."""
+    hls_playlist_path: str = Field(..., description="Blob path to master.m3u8 (e.g. events/{event_id}/video_hls/master.m3u8)")
+
+
+@router.patch(
+    "/{event_id}/hls-ready",
+    status_code=status.HTTP_200_OK,
+    summary="Set HLS playlist path (internal)",
+    description="Called by Azure Function after FFmpeg transcoding. Requires X-HLS-Webhook-Secret header if HLS_WEBHOOK_SECRET is set.",
+    responses={200: {"description": "HLS path set"}, 400: {"description": "Invalid path"}, 401: {"description": "Missing or invalid secret"}, 404: {"description": "Event not found"}},
+)
+async def set_event_hls_ready(
+    event_id: str,
+    body: HlsReadyRequest,
+    x_hls_webhook_secret: Optional[str] = Header(None, alias="X-HLS-Webhook-Secret"),
+    service: EventService = Depends(get_event_service),
+) -> dict:
+    """Set the HLS playlist path for an event after transcoding completes."""
+    if settings.HLS_WEBHOOK_SECRET and x_hls_webhook_secret != settings.HLS_WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing X-HLS-Webhook-Secret",
+        )
+    path = (body.hls_playlist_path or "").strip()
+    expected_prefix = f"events/{event_id}/"
+    if not path.startswith(expected_prefix) or "video_hls" not in path:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hls_playlist_path must be under events/{event_id}/ and contain video_hls",
+        )
+    try:
+        await service.set_hls_playlist_path(event_id, path)
+        return {"message": "HLS playlist path set", "event_id": event_id}
+    except EventNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+
+
+@router.get(
     "/{event_id}",
     response_model=EventDetailResponse,
     summary="Get Event by ID",
@@ -270,17 +356,19 @@ async def update_event(
     status: Optional[str] = Form(None),
     delete_thumbnail: str = Form("false"),
     delete_video: str = Form("false"),
+    thumbnail_blob_path: Optional[str] = Form(None),
+    video_blob_path: Optional[str] = Form(None),
     thumbnail: Optional[UploadFile] = File(None),
     video: Optional[UploadFile] = File(None),
     service: EventService = Depends(get_event_service),
 ) -> UpdateEventResponse:
-    """Update an existing event with optional file uploads."""
+    """Update an existing event with optional file uploads or direct blob paths."""
     try:
         blob_service = get_azure_blob_service()
-        
+
         # Get existing blob paths
         existing_blob_paths = await service.get_blob_paths(event_id)
-        
+
         # Build update data
         update_data = {}
         if title is not None:
@@ -310,31 +398,47 @@ async def update_event(
         if status is not None:
             update_data["status"] = status
         
-        # Handle thumbnail file operations
+        # Handle thumbnail: direct blob path (from SAS upload) or file upload
         if delete_thumbnail.lower() == "true":
             if existing_blob_paths.get("thumbnail_url"):
                 await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
             update_data["thumbnail_url"] = ""
+        elif thumbnail_blob_path and thumbnail_blob_path.strip():
+            # Direct upload path (e.g. from frontend chunked upload)
+            if not thumbnail_blob_path.startswith(f"events/{event_id}/"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid thumbnail_blob_path",
+                )
+            update_data["thumbnail_url"] = thumbnail_blob_path.strip()
         elif is_valid_file(thumbnail):
             if existing_blob_paths.get("thumbnail_url"):
                 await blob_service.delete_file(existing_blob_paths["thumbnail_url"])
-            thumbnail_blob_path = await upload_image_to_blob(
+            path = await upload_image_to_blob(
                 thumbnail, event_id, "thumbnail_url", blob_service
             )
-            update_data["thumbnail_url"] = thumbnail_blob_path
-        
-        # Handle video file operations
+            update_data["thumbnail_url"] = path
+
+        # Handle video: direct blob path (from SAS chunked upload) or file upload
         if delete_video.lower() == "true":
             if existing_blob_paths.get("video_url"):
                 await blob_service.delete_file(existing_blob_paths["video_url"])
             update_data["video_url"] = ""
+        elif video_blob_path and video_blob_path.strip():
+            # Direct upload path (frontend uploaded to Azure via SAS)
+            if not video_blob_path.startswith(f"events/{event_id}/"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid video_blob_path",
+                )
+            update_data["video_url"] = video_blob_path.strip()
         elif is_valid_file(video):
             if existing_blob_paths.get("video_url"):
                 await blob_service.delete_file(existing_blob_paths["video_url"])
-            video_blob_path = await upload_video_to_blob(
+            path = await upload_video_to_blob(
                 video, event_id, "video_url", blob_service
             )
-            update_data["video_url"] = video_blob_path
+            update_data["video_url"] = path
         
         # Update event
         update_request = UpdateEventRequest(**update_data)
@@ -408,11 +512,12 @@ FILE_TYPE_CONFIG = {
     },
 )
 async def get_event_file(
+    request: Request,
     event_id: str,
     file_type: str,
     service: EventService = Depends(get_event_service),
 ) -> StreamingResponse:
-    """Serve event files securely through proxy endpoint."""
+    """Serve event files securely through proxy endpoint. Supports Range for video playback."""
     # Validate file type
     if file_type not in FILE_TYPE_CONFIG:
         raise HTTPException(
@@ -435,22 +540,54 @@ async def get_event_file(
                 detail=f"No {file_type} file found for this event"
             )
         
-        # Download file from Azure Blob
         blob_service = get_azure_blob_service()
-        file_content, content_type, content_length = await blob_service.download_file(blob_path)
-        
-        # Use default content type if not available
+        range_header = request.headers.get("range") or request.headers.get("Range")
+
+        # Range request: forward to Azure and return 206 so the player can start immediately
+        if range_header and range_header.strip().lower().startswith("bytes="):
+            gen = blob_service.stream_file_range(blob_path, range_header.strip())
+            meta = await gen.__anext__()
+            content_type = meta.get("content_type") or config["default_content_type"]
+            resp_headers = {
+                "Cache-Control": "public, max-age=31536000",
+                "Accept-Ranges": "bytes",
+            }
+            if meta.get("content_length"):
+                resp_headers["Content-Length"] = str(meta["content_length"])
+            if meta.get("content_range"):
+                resp_headers["Content-Range"] = meta["content_range"]
+
+            async def range_body():
+                async for chunk in gen:
+                    yield chunk
+
+            return StreamingResponse(
+                range_body(),
+                status_code=meta.get("status_code", 206),
+                media_type=content_type,
+                headers=resp_headers,
+            )
+
+        # Full file: stream without Range
+        content_type, content_length = await blob_service.get_file_info(blob_path)
         if not content_type:
             content_type = config["default_content_type"]
-        
-        # Return file as streaming response
+
+        async def stream_blob():
+            async for chunk in blob_service.stream_file(blob_path):
+                yield chunk
+
+        headers = {
+            "Cache-Control": "public, max-age=31536000",
+            "Accept-Ranges": "bytes",
+        }
+        if content_length:
+            headers["Content-Length"] = str(content_length)
+
         return StreamingResponse(
-            iter([file_content]),
+            stream_blob(),
             media_type=content_type,
-            headers={
-                "Content-Length": str(content_length),
-                "Cache-Control": "public, max-age=31536000",  # Cache for 1 year
-            }
+            headers=headers,
         )
         
     except EventNotFoundError as e:

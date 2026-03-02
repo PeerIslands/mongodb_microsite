@@ -27,14 +27,16 @@ class EventService:
     Service class for event business logic.
     """
 
-    def __init__(self, repository: EventRepository):
+    def __init__(self, repository: EventRepository, blob_service=None):
         """
-        Initialize the service with a repository.
-        
+        Initialize the service with a repository and optional blob service.
+
         Args:
             repository: EventRepository instance
+            blob_service: Optional Azure Blob service for building HLS playback URL
         """
         self._repository = repository
+        self._blob_service = blob_service
 
     # =========================================================================
     # SLUG HELPERS
@@ -92,19 +94,27 @@ class EventService:
         base_url = settings.API_BASE_URL or "http://localhost:8000"
         return f"{base_url}/api/v1/events/{event_id}/files/{file_type}"
     
+    def _get_hls_playlist_url(self, hls_playlist_path: str) -> str:
+        """Build direct Blob URL for HLS master playlist (Option 1: no CDN)."""
+        if not hls_playlist_path or not self._blob_service:
+            return ""
+        return self._blob_service.get_full_url(hls_playlist_path.strip())
+
     def _to_response(self, doc: dict) -> EventResponse:
         """Convert document to EventResponse."""
         event_id = str(doc.get("id", doc.get("_id", "")))
         event_date = doc.get("date", "")
-        
+
         # Get blob paths
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
-        
-        # Build secure proxy URLs
+        hls_playlist_path = doc.get("hls_playlist_path", "")
+
+        # Build secure proxy URLs for thumbnail/video
         thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
         video_url = self._build_proxy_url(event_id, "video", video_blob_path)
-        
+        hls_playlist_url = self._get_hls_playlist_url(hls_playlist_path)
+
         return EventResponse(
             id=event_id,
             title=doc.get("title", ""),
@@ -123,6 +133,7 @@ class EventService:
             location=doc.get("location", ""),
             thumbnail_url=thumbnail_url,
             video_url=video_url,
+            hls_playlist_url=hls_playlist_url,
             is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
@@ -132,15 +143,17 @@ class EventService:
         """Convert document to EventDetailResponse."""
         event_id = str(doc.get("id", doc.get("_id", "")))
         event_date = doc.get("date", "")
-        
+
         # Get blob paths
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
-        
-        # Build secure proxy URLs
+        hls_playlist_path = doc.get("hls_playlist_path", "")
+
+        # Build secure proxy URLs for thumbnail/video; direct Blob URL for HLS
         thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
         video_url = self._build_proxy_url(event_id, "video", video_blob_path)
-        
+        hls_playlist_url = self._get_hls_playlist_url(hls_playlist_path)
+
         return EventDetailResponse(
             id=event_id,
             title=doc.get("title", ""),
@@ -159,6 +172,7 @@ class EventService:
             location=doc.get("location", ""),
             thumbnail_url=thumbnail_url,
             video_url=video_url,
+            hls_playlist_url=hls_playlist_url,
             is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
             updated_at=doc.get("updated_at", ""),
@@ -289,6 +303,22 @@ class EventService:
             id=str(updated["id"]),
             message="Event updated successfully",
         )
+
+    async def set_hls_playlist_path(self, event_id: str, hls_playlist_path: str) -> None:
+        """
+        Set the HLS playlist path for an event (called by Azure Function after transcoding).
+
+        Args:
+            event_id: Event ID
+            hls_playlist_path: Blob path to master.m3u8 (e.g. events/{event_id}/video_hls/master.m3u8)
+
+        Raises:
+            EventNotFoundError: If event not found
+        """
+        existing = await self._repository.get_by_id(event_id)
+        if not existing:
+            raise EventNotFoundError(event_id)
+        await self._repository.update(event_id, {"hls_playlist_path": hls_playlist_path.strip()})
 
     async def delete_event(self, event_id: str) -> DeleteEventResponse:
         """

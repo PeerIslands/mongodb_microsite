@@ -142,6 +142,7 @@ class EventResponse(BaseModel):
     location: str = Field(..., description="Meeting link or physical address")
     thumbnail_url: str = Field(default="", description="Thumbnail image URL")
     video_url: str = Field(default="", description="Video recording URL")
+    hls_playlist_url: str = Field(default="", description="Direct Blob URL for HLS master playlist (when available)")
     is_past: bool = Field(default=False, description="Whether event is in the past")
     created_at: str = Field(..., description="Creation timestamp")
     updated_at: str = Field(..., description="Last update timestamp")
