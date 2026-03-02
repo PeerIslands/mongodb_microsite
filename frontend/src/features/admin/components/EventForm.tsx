@@ -644,10 +644,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                 <label>Video Recording (Optional)</label>
                 <FileUpload
                   accept="video/mp4,video/quicktime,video/webm"
-                  maxSize={100}
+                  maxSize={1024}
                   onUpload={(result) => handleFileUpload('video', result)}
                   currentFile={existingVideoUrl || undefined}
-                  hint="MP4, WebM up to 100MB"
+                  hint="MP4, WebM up to 1GB"
                 />
               </div>
             </div>

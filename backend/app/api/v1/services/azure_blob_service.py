@@ -64,7 +64,8 @@ IMAGE_EXTENSIONS = {
 
 # Maximum file sizes
 MAX_PDF_SIZE = 20 * 1024 * 1024      # 20MB for PDFs
-MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos
+MAX_VIDEO_SIZE = 100 * 1024 * 1024   # 100MB for videos (default)
+MAX_EVENT_VIDEO_SIZE = 1024 * 1024 * 1024  # 1GB for past event recordings
 MAX_IMAGE_SIZE = 20 * 1024 * 1024    # 20MB for images (increased to support large email template images)
 MAX_SVG_SIZE = 2 * 1024 * 1024       # 2MB for SVG files
 
@@ -150,7 +151,7 @@ class AzureBlobService:
                 "Invalid PDF file. File does not appear to be a valid PDF."
             )
 
-    def _validate_video_file(self, content_type: str, file_content: bytes, original_filename: str) -> str:
+    def _validate_video_file(self, content_type: str, file_content: bytes, original_filename: str, max_size: int = MAX_VIDEO_SIZE) -> str:
         """
         Validate that the file is a valid video.
         
@@ -158,6 +159,7 @@ class AzureBlobService:
             content_type: MIME content type
             file_content: Raw file bytes
             original_filename: Original filename
+            max_size: Maximum allowed file size in bytes (defaults to MAX_VIDEO_SIZE)
             
         Returns:
             File extension for the video (e.g., ".mp4")
@@ -172,9 +174,9 @@ class AzureBlobService:
             )
         
         # Check file size
-        if len(file_content) > MAX_VIDEO_SIZE:
+        if len(file_content) > max_size:
             raise AzureBlobServiceError(
-                f"Video too large. Maximum size is {MAX_VIDEO_SIZE // (1024 * 1024)}MB."
+                f"Video too large. Maximum size is {max_size // (1024 * 1024)}MB."
             )
         
         # Return the appropriate extension
@@ -287,6 +289,7 @@ class AzureBlobService:
         field_name: str,
         original_filename: str,
         content_type: str,
+        max_size: int = MAX_VIDEO_SIZE,
     ) -> str:
         """
         Upload a video file to Azure Blob Storage.
@@ -300,6 +303,7 @@ class AzureBlobService:
             field_name: Field name (video_url)
             original_filename: Original filename for validation
             content_type: MIME content type (must be a video type)
+            max_size: Maximum allowed file size in bytes (defaults to MAX_VIDEO_SIZE / 100MB)
             
         Returns:
             Blob path (without base URL) e.g., "accelerators/abc123/video_url.mp4"
@@ -318,7 +322,7 @@ class AzureBlobService:
             )
         
         # Validate video file and get extension
-        file_extension = self._validate_video_file(content_type, file_content, original_filename)
+        file_extension = self._validate_video_file(content_type, file_content, original_filename, max_size)
         
         # Create standardized filename: {field_name}.{ext}
         standardized_filename = f"{field_name}{file_extension}"
