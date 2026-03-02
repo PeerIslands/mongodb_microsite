@@ -22,6 +22,8 @@ export interface Event {
   location: string;
   thumbnail_url: string;
   video_url: string;
+  /** Direct Blob URL for HLS master playlist when available (adaptive streaming) */
+  hls_playlist_url?: string;
   is_past: boolean;
   created_at: string;
   updated_at: string;
