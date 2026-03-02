@@ -28,7 +28,7 @@ from app.api.v1.models.event import (
 from app.api.v1.services.event_service import EventService
 from app.api.v1.dependencies.services import get_event_service
 from app.api.v1.exceptions.event_exceptions import EventNotFoundError
-from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobServiceError
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobServiceError, MAX_EVENT_VIDEO_SIZE
 
 router = APIRouter(prefix="/events")
 
@@ -84,6 +84,7 @@ async def upload_video_to_blob(
         field_name=field_name,
         original_filename=file.filename or "recording.mp4",
         content_type=mime_type,
+        max_size=MAX_EVENT_VIDEO_SIZE,
     )
     return blob_path
 
