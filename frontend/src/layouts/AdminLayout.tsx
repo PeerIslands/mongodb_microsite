@@ -14,6 +14,7 @@ import '@/styles/features/admin/EmailTemplateList.css';
 import '@/styles/features/admin/EmailTemplateForm.css';
 import logo from '@/assets/logo.svg';
 import { newsletterAccessService } from '@/api/services/newsletter-access.service';
+import { eventResourceRequestService } from '@/api/services/eventResourceRequest.service';
 import { AccessRequestsPanel } from '@/features/admin/components/AccessRequestsPanel';
 
 /**
@@ -93,8 +94,11 @@ const AdminLayout = () => {
     if (adminStatus) {
       const fetchPendingCount = async () => {
         try {
-          const count = await newsletterAccessService.getPendingCount();
-          setPendingRequestsCount(count);
+          const [newsletterCount, eventResourceCount] = await Promise.all([
+            newsletterAccessService.getPendingCount(),
+            eventResourceRequestService.getPendingCount().catch(() => 0),
+          ]);
+          setPendingRequestsCount(newsletterCount + eventResourceCount);
         } catch (error) {
           console.error('Failed to fetch pending requests count:', error);
         }
@@ -115,8 +119,11 @@ const AdminLayout = () => {
 
   const fetchPendingCount = async () => {
     try {
-      const count = await newsletterAccessService.getPendingCount();
-      setPendingRequestsCount(count);
+      const [newsletterCount, eventResourceCount] = await Promise.all([
+        newsletterAccessService.getPendingCount(),
+        eventResourceRequestService.getPendingCount().catch(() => 0),
+      ]);
+      setPendingRequestsCount(newsletterCount + eventResourceCount);
     } catch (error) {
       console.error('Failed to fetch pending requests count:', error);
     }

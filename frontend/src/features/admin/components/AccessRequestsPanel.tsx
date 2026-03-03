@@ -1,10 +1,11 @@
 /**
  * Access Requests Panel Component
- * Displays pending newsletter access requests for admin approval
+ * Displays newsletter access requests and event resource requests for admin approval
  */
 
 import { useState, useEffect } from 'react';
 import { newsletterAccessService } from '@/api/services/newsletter-access.service';
+import { eventResourceRequestService, type EventResourceRequest } from '@/api/services/eventResourceRequest.service';
 import { NewsletterAccessRequest } from '@/types/newsletter-access';
 import '@/styles/features/admin/AccessRequestsPanel.css';
 
@@ -14,8 +15,12 @@ interface AccessRequestsPanelProps {
   onRequestHandled?: () => void;
 }
 
+type RequestTypeTab = 'newsletter' | 'event_resource';
+
 export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: AccessRequestsPanelProps) => {
+  const [requestTypeTab, setRequestTypeTab] = useState<RequestTypeTab>('newsletter');
   const [requests, setRequests] = useState<NewsletterAccessRequest[]>([]);
+  const [eventResourceRequests, setEventResourceRequests] = useState<EventResourceRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -23,50 +28,61 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
 
   useEffect(() => {
     if (isOpen) {
-      fetchRequests();
+      if (requestTypeTab === 'newsletter') {
+        fetchNewsletterRequests();
+      } else {
+        fetchEventResourceRequests();
+      }
     }
-  }, [isOpen, activeTab, statusFilter]);
+  }, [isOpen, requestTypeTab, activeTab, statusFilter]);
 
-  const fetchRequests = async () => {
+  const fetchNewsletterRequests = async () => {
     try {
       setLoading(true);
       let data: NewsletterAccessRequest[];
-      
       if (activeTab === 'pending') {
         data = await newsletterAccessService.getPendingRequests();
       } else {
         data = await newsletterAccessService.getAllRequests(statusFilter || undefined);
       }
-      
       setRequests(data);
     } catch (error) {
-      console.error('Failed to fetch requests:', error);
+      console.error('Failed to fetch newsletter requests:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAction = async (requestId: string, action: 'approve' | 'deny') => {
+  const fetchEventResourceRequests = async () => {
+    try {
+      setLoading(true);
+      let data: EventResourceRequest[];
+      if (activeTab === 'pending') {
+        data = await eventResourceRequestService.getPendingRequests();
+      } else {
+        data = await eventResourceRequestService.getAllRequests(statusFilter || undefined);
+      }
+      setEventResourceRequests(data);
+    } catch (error) {
+      console.error('Failed to fetch event resource requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRequests = () => {
+    if (requestTypeTab === 'newsletter') fetchNewsletterRequests();
+    else fetchEventResourceRequests();
+  };
+
+  const handleNewsletterAction = async (requestId: string, action: 'approve' | 'deny') => {
     try {
       setProcessingId(requestId);
-      
-      await newsletterAccessService.handleAction({
-        request_id: requestId,
-        action,
-        admin_note: undefined
-      });
-      
-      // Refresh the list
+      await newsletterAccessService.handleAction({ request_id: requestId, action, admin_note: undefined });
       await fetchRequests();
-      
-      // Notify parent to update count
-      if (onRequestHandled) {
-        onRequestHandled();
-      }
-      
+      if (onRequestHandled) onRequestHandled();
       alert(`Access request ${action === 'approve' ? 'approved' : 'denied'} successfully`);
     } catch (error: any) {
-      console.error('Failed to handle request:', error);
       alert(error.response?.data?.detail || `Failed to ${action} request`);
     } finally {
       setProcessingId(null);
@@ -74,18 +90,16 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
   };
 
   const handleDelete = async (requestId: string) => {
-    if (!confirm('Are you sure you want to delete this request?')) {
-      return;
-    }
-    
+    if (!confirm('Are you sure you want to delete this request?')) return;
     try {
       setProcessingId(requestId);
-      await newsletterAccessService.deleteRequest(requestId);
-      await fetchRequests();
-      
-      if (onRequestHandled) {
-        onRequestHandled();
+      if (requestTypeTab === 'newsletter') {
+        await newsletterAccessService.deleteRequest(requestId);
+      } else {
+        await eventResourceRequestService.delete(requestId);
       }
+      await fetchRequests();
+      if (onRequestHandled) onRequestHandled();
     } catch (error) {
       console.error('Failed to delete request:', error);
       alert('Failed to delete request');
@@ -121,6 +135,8 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
 
   if (!isOpen) return null;
 
+  const isEmpty = requestTypeTab === 'newsletter' ? requests.length === 0 : eventResourceRequests.length === 0;
+
   return (
     <>
       <div className="access-panel-overlay" onClick={onClose} />
@@ -128,22 +144,36 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
         <div className="access-panel-header">
           <div className="header-left">
             <span className="header-icon">📬</span>
-            <h2>Newsletter Access Requests</h2>
+            <h2>Access Requests</h2>
           </div>
           <button className="close-button" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
+        <div className="access-panel-tabs access-panel-tabs--type">
+          <button
+            className={`tab-button ${requestTypeTab === 'newsletter' ? 'active' : ''}`}
+            onClick={() => { setRequestTypeTab('newsletter'); setActiveTab('pending'); setStatusFilter(''); }}
+          >
+            Newsletter
+          </button>
+          <button
+            className={`tab-button ${requestTypeTab === 'event_resource' ? 'active' : ''}`}
+            onClick={() => { setRequestTypeTab('event_resource'); setActiveTab('pending'); setStatusFilter(''); }}
+          >
+            Event resources
+          </button>
+        </div>
+
         <div className="access-panel-tabs">
           <button
             className={`tab-button ${activeTab === 'pending' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('pending');
-              setStatusFilter('');
-            }}
+            onClick={() => { setActiveTab('pending'); setStatusFilter(''); }}
           >
-            Pending ({requests.filter(r => r.status === 'pending').length})
+            Pending ({requestTypeTab === 'newsletter'
+              ? requests.filter(r => r.status === 'pending').length
+              : eventResourceRequests.filter(r => r.status === 'pending').length})
           </button>
           <button
             className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
@@ -174,17 +204,17 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
               <div className="spinner" />
               <p>Loading requests...</p>
             </div>
-          ) : requests.length === 0 ? (
+          ) : isEmpty ? (
             <div className="empty-state">
               <span className="empty-icon">📭</span>
               <h3>No Requests</h3>
               <p>
                 {activeTab === 'pending'
-                  ? 'No pending access requests at the moment.'
-                  : 'No access requests found.'}
+                  ? 'No pending requests at the moment.'
+                  : 'No requests found.'}
               </p>
             </div>
-          ) : (
+          ) : requestTypeTab === 'newsletter' ? (
             <div className="requests-list">
               {requests.map((request) => (
                 <div key={request._id} className="request-card">
@@ -195,7 +225,6 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
                     </div>
                     {getStatusBadge(request.status)}
                   </div>
-
                   <div className="request-meta">
                     <span className="meta-item">
                       <span className="meta-label">Requested:</span>
@@ -208,44 +237,67 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
                       </span>
                     )}
                   </div>
-
                   {request.admin_note && (
                     <div className="admin-note">
                       <span className="note-label">Note:</span>
                       <span className="note-text">{request.admin_note}</span>
                     </div>
                   )}
-
                   {request.status === 'pending' && (
                     <div className="request-actions">
-                      <button
-                        className="action-button approve-button"
-                        onClick={() => handleAction(request._id, 'approve')}
-                        disabled={processingId === request._id}
-                      >
+                      <button className="action-button approve-button" onClick={() => handleNewsletterAction(request._id, 'approve')} disabled={processingId === request._id}>
                         {processingId === request._id ? '⏳' : '✅'} Approve
                       </button>
-                      <button
-                        className="action-button deny-button"
-                        onClick={() => handleAction(request._id, 'deny')}
-                        disabled={processingId === request._id}
-                      >
+                      <button className="action-button deny-button" onClick={() => handleNewsletterAction(request._id, 'deny')} disabled={processingId === request._id}>
                         {processingId === request._id ? '⏳' : '❌'} Deny
                       </button>
                     </div>
                   )}
-
                   {request.status !== 'pending' && (
                     <div className="request-actions">
-                      <button
-                        className="action-button delete-button"
-                        onClick={() => handleDelete(request._id)}
-                        disabled={processingId === request._id}
-                      >
+                      <button className="action-button delete-button" onClick={() => handleDelete(request._id)} disabled={processingId === request._id}>
                         {processingId === request._id ? '⏳' : '🗑️'} Delete
                       </button>
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="requests-list">
+              {eventResourceRequests.map((req) => (
+                <div key={req._id} className="request-card">
+                  <div className="request-header">
+                    <div className="user-info">
+                      {req.user_name && <div className="user-name">{req.user_name}</div>}
+                      <div className="user-email">{req.user_email}</div>
+                      {req.event_title && <div className="user-domain">Event: {req.event_title}</div>}
+                    </div>
+                    {getStatusBadge(req.status)}
+                  </div>
+                  <div className="request-meta">
+                    <span className="meta-item">
+                      <span className="meta-label">Requested:</span>
+                      <span className="meta-value">{formatDate(req.requested_at)}</span>
+                    </span>
+                    {req.resolved_at && (
+                      <span className="meta-item">
+                        <span className="meta-label">Resolved:</span>
+                        <span className="meta-value">{formatDate(req.resolved_at)}</span>
+                      </span>
+                    )}
+                  </div>
+                  {req.admin_note && (
+                    <div className="admin-note">
+                      <span className="note-label">Note:</span>
+                      <span className="note-text">{req.admin_note}</span>
+                    </div>
+                  )}
+                  <div className="request-actions">
+                    <button className="action-button delete-button" onClick={() => handleDelete(req._id)} disabled={processingId === req._id}>
+                      {processingId === req._id ? '⏳' : '🗑️'} Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

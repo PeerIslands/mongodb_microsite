@@ -218,15 +218,16 @@ class EventRepository:
         """
         doc = await self._collection.find_one(
             {"_id": event_id},
-            {"thumbnail_url": 1, "video_url": 1, "hls_playlist_path": 1}
+            {"thumbnail_url": 1, "video_url": 1, "pdf_url": 1, "hls_playlist_path": 1}
         )
         if doc:
             return {
                 "thumbnail_url": doc.get("thumbnail_url", ""),
                 "video_url": doc.get("video_url", ""),
+                "pdf_url": doc.get("pdf_url", ""),
                 "hls_playlist_path": doc.get("hls_playlist_path", ""),
             }
-        return {"thumbnail_url": "", "video_url": "", "hls_playlist_path": ""}
+        return {"thumbnail_url": "", "video_url": "", "pdf_url": "", "hls_playlist_path": ""}
 
     async def create_indexes(self) -> None:
         """Create indexes for better query performance."""

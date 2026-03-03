@@ -83,12 +83,15 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   // File upload states (only for editing past events). Preview handled by FileUpload (no raw URLs in src).
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   /** Set when video was uploaded via direct chunked upload to Azure (no backend proxy). */
   const [videoBlobPath, setVideoBlobPath] = useState<string | null>(null);
   const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>('');
   const [existingVideoUrl, setExistingVideoUrl] = useState<string>('');
+  const [existingPdfUrl, setExistingPdfUrl] = useState<string>('');
   const [deleteThumbnail, setDeleteThumbnail] = useState(false);
   const [deleteVideo, setDeleteVideo] = useState(false);
+  const [deletePdf, setDeletePdf] = useState(false);
 
   // Video upload tuning (chunked upload to Azure): chunk size + concurrency
   const [videoChunkSizePreset, setVideoChunkSizePreset] = useState<ChunkSizePreset>('4MB');
@@ -161,10 +164,12 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setVideoBlobPath(null);
       const thumb = data.thumbnail_url || '';
       const vid = data.video_url || '';
+      const pdf = data.pdf_url || '';
       setExistingThumbnailUrl(getAbsoluteEventMediaUrl(thumb));
       setExistingVideoUrl(getAbsoluteEventMediaUrl(vid));
+      setExistingPdfUrl(getAbsoluteEventMediaUrl(pdf));
       if (import.meta.env.DEV) {
-        console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid });
+        console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid, pdf_url: pdf });
       }
 
       // Check if category is custom
@@ -244,7 +249,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
   // File upload handler: FileUpload uses blob/data URLs or backend URL for preview (no unsanitized src).
   // For video with directVideoUpload, result may include blobPath (chunked upload to Azure).
-  const handleFileUpload = (field: 'thumbnail' | 'video', result: FileUploadResult | FileUploadResult[]) => {
+  const handleFileUpload = (field: 'thumbnail' | 'video' | 'pdf', result: FileUploadResult | FileUploadResult[]) => {
     const single = Array.isArray(result) ? result[0] : result;
     if (field === 'thumbnail') {
       if (single?.file) {
@@ -256,7 +261,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         setExistingThumbnailUrl('');
         setDeleteThumbnail(!!editingId);
       }
-    } else {
+    } else if (field === 'video') {
       if (single?.blobPath) {
         setVideoBlobPath(single.blobPath);
         setVideoFile(null);
@@ -272,6 +277,16 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         setVideoFile(null);
         setExistingVideoUrl('');
         setDeleteVideo(!!editingId);
+      }
+    } else {
+      if (single?.file) {
+        setPdfFile(single.file);
+        setDeletePdf(false);
+        setExistingPdfUrl('');
+      } else {
+        setPdfFile(null);
+        setExistingPdfUrl('');
+        setDeletePdf(!!editingId);
       }
     }
     setErrorMessage(null);
@@ -323,7 +338,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
     try {
       // Check if we need to use FormData (for file uploads or blob path in edit mode)
-      const hasFiles = editingId && (thumbnailFile || videoFile || videoBlobPath || deleteThumbnail || deleteVideo);
+      const hasFiles = editingId && (thumbnailFile || videoFile || videoBlobPath || pdfFile || deleteThumbnail || deleteVideo || deletePdf);
       if (import.meta.env.DEV) {
         console.log('[EventForm] Submit', {
           editingId,
@@ -331,8 +346,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
           thumbnailFile: !!thumbnailFile,
           videoFile: !!videoFile,
           videoBlobPath: !!videoBlobPath,
+          pdfFile: !!pdfFile,
           deleteThumbnail,
           deleteVideo,
+          deletePdf,
         });
       }
 
@@ -362,9 +379,13 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         } else if (videoFile) {
           formDataToSend.append('video', videoFile);
         }
+        if (pdfFile) {
+          formDataToSend.append('pdf', pdfFile);
+        }
         
         formDataToSend.append('delete_thumbnail', String(deleteThumbnail));
         formDataToSend.append('delete_video', String(deleteVideo));
+        formDataToSend.append('delete_pdf', String(deletePdf));
 
         await eventsService.updateWithFiles(editingId, formDataToSend);
         if (import.meta.env.DEV) {
@@ -643,7 +664,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
               </svg>
-              <span>This is a past event. You can optionally upload a thumbnail and video recording.</span>
+              <span>This is a past event. You can optionally upload a thumbnail, video recording, and PDF resource.</span>
             </div>
 
             <div className="form-grid">
@@ -701,6 +722,16 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                     </select>
                   </div>
                 )}
+              </div>
+              <div className="form-field full-width">
+                <label>PDF Resource (Optional)</label>
+                <FileUpload
+                  accept="application/pdf"
+                  maxSize={20}
+                  onUpload={(result) => handleFileUpload('pdf', result)}
+                  currentFile={existingPdfUrl || undefined}
+                  hint="PDF up to 20MB"
+                />
               </div>
             </div>
           </div>

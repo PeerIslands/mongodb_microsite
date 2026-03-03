@@ -91,6 +91,28 @@ async def upload_video_to_blob(
     return blob_path
 
 
+async def upload_pdf_to_blob(
+    file: UploadFile,
+    event_id: str,
+    field_name: str,
+    blob_service,
+) -> str:
+    """Upload a PDF file to Azure Blob Storage."""
+    content = await file.read()
+    mime_type = file.content_type
+    if not mime_type or mime_type == "application/octet-stream":
+        mime_type = "application/pdf"
+    blob_path = await blob_service.upload_file(
+        file_content=content,
+        category="events",
+        item_id=event_id,
+        field_name=field_name,
+        original_filename=file.filename or "resource.pdf",
+        content_type=mime_type,
+    )
+    return blob_path
+
+
 # =============================================================================
 # ENDPOINTS
 # =============================================================================
@@ -356,10 +378,13 @@ async def update_event(
     status: Optional[str] = Form(None),
     delete_thumbnail: str = Form("false"),
     delete_video: str = Form("false"),
+    delete_pdf: str = Form("false"),
     thumbnail_blob_path: Optional[str] = Form(None),
     video_blob_path: Optional[str] = Form(None),
+    pdf_blob_path: Optional[str] = Form(None),
     thumbnail: Optional[UploadFile] = File(None),
     video: Optional[UploadFile] = File(None),
+    pdf: Optional[UploadFile] = File(None),
     service: EventService = Depends(get_event_service),
 ) -> UpdateEventResponse:
     """Update an existing event with optional file uploads or direct blob paths."""
@@ -439,6 +464,26 @@ async def update_event(
                 video, event_id, "video_url", blob_service
             )
             update_data["video_url"] = path
+
+        # Handle PDF: direct blob path or file upload
+        if delete_pdf.lower() == "true":
+            if existing_blob_paths.get("pdf_url"):
+                await blob_service.delete_file(existing_blob_paths["pdf_url"])
+            update_data["pdf_url"] = ""
+        elif pdf_blob_path and pdf_blob_path.strip():
+            if not pdf_blob_path.startswith(f"events/{event_id}/"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid pdf_blob_path",
+                )
+            update_data["pdf_url"] = pdf_blob_path.strip()
+        elif is_valid_file(pdf):
+            if existing_blob_paths.get("pdf_url"):
+                await blob_service.delete_file(existing_blob_paths["pdf_url"])
+            path = await upload_pdf_to_blob(
+                pdf, event_id, "pdf_url", blob_service
+            )
+            update_data["pdf_url"] = path
         
         # Update event
         update_request = UpdateEventRequest(**update_data)
@@ -481,6 +526,8 @@ async def delete_event(
             await blob_service.delete_file(blob_paths["thumbnail_url"])
         if blob_paths.get("video_url"):
             await blob_service.delete_file(blob_paths["video_url"])
+        if blob_paths.get("pdf_url"):
+            await blob_service.delete_file(blob_paths["pdf_url"])
         
         return result
         
@@ -499,6 +546,7 @@ async def delete_event(
 FILE_TYPE_CONFIG = {
     "thumbnail": {"field": "thumbnail_url", "default_content_type": "image/jpeg"},
     "video": {"field": "video_url", "default_content_type": "video/mp4"},
+    "pdf": {"field": "pdf_url", "default_content_type": "application/pdf"},
 }
 
 

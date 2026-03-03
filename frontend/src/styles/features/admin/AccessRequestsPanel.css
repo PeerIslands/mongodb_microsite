@@ -256,6 +256,14 @@
   flex: 1;
 }
 
+.user-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
 .user-email {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
