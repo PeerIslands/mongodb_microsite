@@ -359,12 +359,15 @@ async def get_optional_current_user(
 def get_event_service() -> EventService:
     """
     Get EventService instance.
-    
+
     Returns:
-        EventService instance with injected repository
+        EventService instance with injected repository and blob service (for HLS URL)
     """
+    from app.api.v1.services.azure_blob_service import get_azure_blob_service
+
     repository = get_event_repository()
-    return EventService(repository)
+    blob_service = get_azure_blob_service()
+    return EventService(repository, blob_service)
 
 
 def get_event_registration_service() -> EventRegistrationService:

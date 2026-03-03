@@ -43,8 +43,13 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str
     
     # Azure Blob Storage Settings
-    # Full SAS URL for the blob container (includes SAS token)
+    # Full SAS URL for the blob container (must include container in path, e.g. .../microsite?sp=...)
     AZURE_BLOB_SAS_URL: str = ""
+    # Container name (used only if SAS URL has no path; should match the container the SAS was issued for)
+    AZURE_BLOB_CONTAINER: str = "microsite"
+
+    # HLS playback: secret for Azure Function callback to set hls_playlist_path (optional)
+    HLS_WEBHOOK_SECRET: str = ""
     
     # Azure Communication Services Email Settings
     AZURE_COMMUNICATION_CONNECTION_STRING: str = ""

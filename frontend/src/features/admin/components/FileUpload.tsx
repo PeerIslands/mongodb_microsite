@@ -1,19 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import '@/styles/features/admin/FileUpload.css';
+import { eventsService } from '@/api/services/events.service';
+import { uploadChunkedToAzure } from '@/utils/azureChunkedUpload';
 
 export interface FileUploadResult {
   file: File | null;
   previewUrl: string;
+  /** Set when video was uploaded directly to Azure (chunked); backend expects video_blob_path. */
+  blobPath?: string;
 }
 
 interface FileUploadProps {
   accept: string;
-  maxSize: number; // in MB
+  maxSize: number; // in MB (ignored for video when directVideoUpload is set - allows 1GB+)
   multiple?: boolean;
   maxFiles?: number;
   onUpload: (result: FileUploadResult | FileUploadResult[]) => void;
   currentFile?: string | string[];
   hint?: string;
+  /** When set, video files are uploaded directly to Azure in chunks (no backend proxy). Enables 1GB+ and progress. */
+  directVideoUpload?: { eventId: string; onProgress?: (percent: number) => void };
 }
 
 const FileUpload = ({ 
@@ -23,13 +29,15 @@ const FileUpload = ({
   maxFiles = 1,
   onUpload, 
   currentFile,
-  hint 
+  hint,
+  directVideoUpload,
 }: FileUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | string[] | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileType, setFileType] = useState<'image' | 'video' | 'pdf' | 'other' | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Set preview from currentFile prop (for edit mode)
@@ -94,18 +102,45 @@ const FileUpload = ({
       return;
     }
 
-    // Validate file sizes
-    for (const file of files) {
-      if (file.size > maxSize * 1024 * 1024) {
-        alert(`File ${file.name} exceeds ${maxSize}MB limit`);
-        return;
+    const file = files[0];
+    const isVideo = file?.type.startsWith('video/');
+    const useDirectChunkedUpload = directVideoUpload && isVideo && !multiple;
+
+    // Validate file sizes (skip for direct video upload - allows 1GB+)
+    if (!useDirectChunkedUpload) {
+      for (const f of files) {
+        if (f.size > maxSize * 1024 * 1024) {
+          alert(`File ${f.name} exceeds ${maxSize}MB limit`);
+          return;
+        }
       }
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
-      if (multiple) {
+      if (useDirectChunkedUpload && file) {
+        const { upload_url, blob_path } = await eventsService.getEventUploadUrl(
+          directVideoUpload!.eventId,
+          'video',
+          file.name
+        );
+        await uploadChunkedToAzure(
+          upload_url,
+          file,
+          (percent) => {
+            setUploadProgress(percent);
+            directVideoUpload!.onProgress?.(percent);
+          },
+          file.type || 'video/mp4'
+        );
+        setFileType('video');
+        setFileName(file.name);
+        const previewUrl = URL.createObjectURL(file);
+        setPreview(previewUrl);
+        onUpload({ file: null, previewUrl, blobPath: blob_path });
+      } else if (multiple) {
         // Multiple file upload - return File objects with preview URLs
         const results: FileUploadResult[] = [];
         const previews: string[] = [];
@@ -280,7 +315,12 @@ const FileUpload = ({
           {uploading ? (
             <div className="upload-status">
               <div className="spinner"></div>
-              <p>Uploading...</p>
+              <p>{uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Uploading...'}</p>
+              {uploadProgress > 0 && (
+                <div className="upload-progress-bar">
+                  <div className="upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              )}
             </div>
           ) : (
             <>

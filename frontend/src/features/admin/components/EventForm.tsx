@@ -5,6 +5,7 @@ import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
 import FileUpload, { type FileUploadResult } from './FileUpload';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
+import { getAbsoluteEventMediaUrl } from '@/utils/eventMediaUrl';
 import type { EventStatus, EventType } from '@/types/models/event';
 
 // Event type options
@@ -81,6 +82,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   // File upload states (only for editing past events). Preview handled by FileUpload (no raw URLs in src).
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  /** Set when video was uploaded via direct chunked upload to Azure (no backend proxy). */
+  const [videoBlobPath, setVideoBlobPath] = useState<string | null>(null);
   const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>('');
   const [existingVideoUrl, setExistingVideoUrl] = useState<string>('');
   const [deleteThumbnail, setDeleteThumbnail] = useState(false);
@@ -150,11 +153,11 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         location: data.location || '',
       });
 
-      // Load existing file URLs for FileUpload (edit mode). FileUpload handles preview safely (blob/data or backend URL).
+      setVideoBlobPath(null);
       const thumb = data.thumbnail_url || '';
       const vid = data.video_url || '';
-      setExistingThumbnailUrl(thumb);
-      setExistingVideoUrl(vid);
+      setExistingThumbnailUrl(getAbsoluteEventMediaUrl(thumb));
+      setExistingVideoUrl(getAbsoluteEventMediaUrl(vid));
       if (import.meta.env.DEV) {
         console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid });
       }
@@ -235,6 +238,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   };
 
   // File upload handler: FileUpload uses blob/data URLs or backend URL for preview (no unsanitized src).
+  // For video with directVideoUpload, result may include blobPath (chunked upload to Azure).
   const handleFileUpload = (field: 'thumbnail' | 'video', result: FileUploadResult | FileUploadResult[]) => {
     const single = Array.isArray(result) ? result[0] : result;
     if (field === 'thumbnail') {
@@ -248,11 +252,18 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         setDeleteThumbnail(!!editingId);
       }
     } else {
-      if (single?.file) {
+      if (single?.blobPath) {
+        setVideoBlobPath(single.blobPath);
+        setVideoFile(null);
+        setDeleteVideo(false);
+        setExistingVideoUrl('');
+      } else if (single?.file) {
+        setVideoBlobPath(null);
         setVideoFile(single.file);
         setDeleteVideo(false);
         setExistingVideoUrl('');
       } else {
+        setVideoBlobPath(null);
         setVideoFile(null);
         setExistingVideoUrl('');
         setDeleteVideo(!!editingId);
@@ -306,21 +317,22 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // Check if we need to use FormData (for file uploads in edit mode)
-      const hasFiles = editingId && (thumbnailFile || videoFile || deleteThumbnail || deleteVideo);
+      // Check if we need to use FormData (for file uploads or blob path in edit mode)
+      const hasFiles = editingId && (thumbnailFile || videoFile || videoBlobPath || deleteThumbnail || deleteVideo);
       if (import.meta.env.DEV) {
         console.log('[EventForm] Submit', {
           editingId,
           hasFiles,
           thumbnailFile: !!thumbnailFile,
           videoFile: !!videoFile,
+          videoBlobPath: !!videoBlobPath,
           deleteThumbnail,
           deleteVideo,
         });
       }
 
       if (hasFiles) {
-        // Use FormData for file uploads (edit mode only)
+        // Use FormData for file uploads or direct blob path (edit mode only)
         const formDataToSend = new FormData();
         
         formDataToSend.append('title', formData.title);
@@ -337,15 +349,15 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         formDataToSend.append('event_type', formData.eventType);
         formDataToSend.append('location', formData.location);
         
-        // Add file uploads
         if (thumbnailFile) {
           formDataToSend.append('thumbnail', thumbnailFile);
         }
-        if (videoFile) {
+        if (videoBlobPath) {
+          formDataToSend.append('video_blob_path', videoBlobPath);
+        } else if (videoFile) {
           formDataToSend.append('video', videoFile);
         }
         
-        // Add delete flags
         formDataToSend.append('delete_thumbnail', String(deleteThumbnail));
         formDataToSend.append('delete_video', String(deleteVideo));
 
@@ -647,7 +659,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                   maxSize={100}
                   onUpload={(result) => handleFileUpload('video', result)}
                   currentFile={existingVideoUrl || undefined}
-                  hint="MP4, WebM up to 100MB"
+                  hint="MP4, WebM. Large files (1GB+) upload in chunks directly to Azure."
+                  directVideoUpload={editingId ? { eventId: editingId } : undefined}
                 />
               </div>
             </div>

@@ -56,7 +56,20 @@ export const eventsService = {
     return response.data;
   },
 
-  // Update event with file uploads (using FormData)
+  // Get direct upload URL (SAS) for event media - for chunked upload to Azure
+  getEventUploadUrl: async (
+    eventId: string,
+    field: 'video' | 'thumbnail',
+    filename: string
+  ): Promise<{ upload_url: string; blob_path: string }> => {
+    const response = await apiClient.get<{ upload_url: string; blob_path: string }>(
+      `/api/v1/events/${eventId}/upload-url`,
+      { params: { field, filename } }
+    );
+    return response.data;
+  },
+
+  // Update event with file uploads (using FormData); can include video_blob_path/thumbnail_blob_path from direct upload
   updateWithFiles: async (id: string, formData: FormData) => {
     const response = await apiClient.put<EventMutationResponse>(`/api/v1/events/${id}`, formData, {
       headers: {
