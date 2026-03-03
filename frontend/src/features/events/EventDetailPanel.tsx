@@ -408,8 +408,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Video Recording Section (for past events) - cache-bust so updated media loads */}
-          {displayEvent.is_past && displayEvent.video_url && (
+          {/* Video Recording Section (for past events, logged-in users only) - cache-bust so updated media loads */}
+          {displayEvent.is_past && displayEvent.video_url && isLoggedIn() && (
             <section className="event-detail-panel__section">
               <h3 className="event-detail-panel__section-title">Event Recording</h3>
               <div className="event-detail-panel__video-container">
