@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
 import FileUpload, { type FileUploadResult } from './FileUpload';
+import { CHUNK_SIZE_PRESETS, type ChunkSizePreset } from '@/utils/azureChunkedUpload';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
 import { getAbsoluteEventMediaUrl } from '@/utils/eventMediaUrl';
 import type { EventStatus, EventType } from '@/types/models/event';
@@ -88,6 +89,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   const [existingVideoUrl, setExistingVideoUrl] = useState<string>('');
   const [deleteThumbnail, setDeleteThumbnail] = useState(false);
   const [deleteVideo, setDeleteVideo] = useState(false);
+
+  // Video upload tuning (chunked upload to Azure): chunk size + concurrency
+  const [videoChunkSizePreset, setVideoChunkSizePreset] = useState<ChunkSizePreset>('4MB');
+  const [videoUploadConcurrency, setVideoUploadConcurrency] = useState(4);
 
   // Check if selected date is in the past
   const isDateInPast = useMemo(() => {
@@ -660,8 +665,42 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                   onUpload={(result) => handleFileUpload('video', result)}
                   currentFile={existingVideoUrl || undefined}
                   hint="MP4, WebM. Large files (1GB+) upload in chunks directly to Azure."
-                  directVideoUpload={editingId ? { eventId: editingId } : undefined}
+                  directVideoUpload={
+                    editingId
+                      ? {
+                          eventId: editingId,
+                          chunkSizeBytes: CHUNK_SIZE_PRESETS[videoChunkSizePreset],
+                          concurrency: videoUploadConcurrency,
+                        }
+                      : undefined
+                  }
                 />
+                {editingId && (
+                  <div className="video-upload-tuning">
+                    <span className="tuning-label">Upload speed (large files):</span>
+                    <select
+                      aria-label="Chunk size"
+                      value={videoChunkSizePreset}
+                      onChange={(e) => setVideoChunkSizePreset(e.target.value as ChunkSizePreset)}
+                    >
+                      <option value="4MB">4MB (safe)</option>
+                      <option value="8MB">8MB (balance)</option>
+                      <option value="16MB">16MB (fast)</option>
+                      <option value="32MB">32MB (enterprise)</option>
+                    </select>
+                    <select
+                      aria-label="Concurrency"
+                      value={videoUploadConcurrency}
+                      onChange={(e) => setVideoUploadConcurrency(Number(e.target.value))}
+                    >
+                      {[3, 4, 5, 6, 7, 8].map((n) => (
+                        <option key={n} value={n}>
+                          {n} concurrent
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
           </div>
