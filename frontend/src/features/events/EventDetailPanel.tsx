@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import Hls from 'hls.js';
 import axios from 'axios';
 import { markdownToHtml } from '@/utils/markdown';
+import { getAbsoluteEventMediaUrl } from '@/utils/eventMediaUrl';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import { eventsService } from '@/api/services/events.service';
 import { isAuthenticated } from '@/utils/sessionStorage';
@@ -491,8 +492,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
               <div className="event-detail-panel__video-container">
                 <EventVideoPlayer
                   hlsPlaylistUrl={displayEvent.hls_playlist_url ? withCacheBust(displayEvent.hls_playlist_url, displayEvent.updated_at) : ''}
-                  fallbackVideoUrl={displayEvent.video_url ? withCacheBust(displayEvent.video_url, displayEvent.updated_at) : ''}
-                  posterUrl={displayEvent.thumbnail_url ? withCacheBust(displayEvent.thumbnail_url, displayEvent.updated_at) : ''}
+                  fallbackVideoUrl={displayEvent.video_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.video_url), displayEvent.updated_at) : ''}
+                  posterUrl={displayEvent.thumbnail_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.thumbnail_url), displayEvent.updated_at) : ''}
                 />
               </div>
             </section>
