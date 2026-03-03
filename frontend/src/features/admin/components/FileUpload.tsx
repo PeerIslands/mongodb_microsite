@@ -3,7 +3,6 @@ import '@/styles/features/admin/FileUpload.css';
 import { eventsService } from '@/api/services/events.service';
 import {
   uploadChunkedToAzure,
-  CHUNK_SIZE_PRESETS,
   type AzureChunkedUploadOptions,
 } from '@/utils/azureChunkedUpload';
 
