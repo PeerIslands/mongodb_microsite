@@ -19,7 +19,6 @@ from app.api.v1.models.event import (
 )
 from app.api.v1.repositories.event_repository import EventRepository
 from app.api.v1.exceptions.event_exceptions import EventNotFoundError
-from app.core.config import settings
 
 
 class EventService:
@@ -88,11 +87,10 @@ class EventService:
             return False
     
     def _build_proxy_url(self, event_id: str, file_type: str, blob_path: str) -> str:
-        """Build secure proxy URL for files."""
+        """Return relative path for event file proxy; frontend resolves with its API base URL."""
         if not blob_path:
             return ""
-        base_url = settings.API_BASE_URL or "http://localhost:8000"
-        return f"{base_url}/api/v1/events/{event_id}/files/{file_type}"
+        return f"/api/v1/events/{event_id}/files/{file_type}"
     
     def _get_hls_playlist_url(self, hls_playlist_path: str) -> str:
         """Build direct Blob URL for HLS master playlist (Option 1: no CDN)."""

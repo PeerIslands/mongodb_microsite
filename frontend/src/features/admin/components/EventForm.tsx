@@ -5,6 +5,7 @@ import '@/styles/features/admin/EventForm.css';
 import RichTextEditor from './RichTextEditor';
 import FileUpload, { type FileUploadResult } from './FileUpload';
 import { eventsService, CreateEventDto } from '@/api/services/events.service';
+import { getAbsoluteEventMediaUrl } from '@/utils/eventMediaUrl';
 import type { EventStatus, EventType } from '@/types/models/event';
 
 // Event type options
@@ -155,8 +156,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setVideoBlobPath(null);
       const thumb = data.thumbnail_url || '';
       const vid = data.video_url || '';
-      setExistingThumbnailUrl(thumb);
-      setExistingVideoUrl(vid);
+      setExistingThumbnailUrl(getAbsoluteEventMediaUrl(thumb));
+      setExistingVideoUrl(getAbsoluteEventMediaUrl(vid));
       if (import.meta.env.DEV) {
         console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid });
       }
