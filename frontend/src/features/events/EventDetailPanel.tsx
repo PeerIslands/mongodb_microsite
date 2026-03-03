@@ -485,8 +485,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Video Recording Section (for past events, logged-in users only) - cache-bust so updated media loads */}
-          {displayEvent.is_past && displayEvent.video_url && isLoggedIn() && (
+          {/* Video Recording Section (for past events, only if user is logged in and registered for the event) */}
+          {displayEvent.is_past && displayEvent.video_url && isLoggedIn() && isRegistered && (
             <section className="event-detail-panel__section">
               <h3 className="event-detail-panel__section-title">Event Recording</h3>
               <div className="event-detail-panel__video-container">
