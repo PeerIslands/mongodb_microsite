@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import '@/styles/features/admin/FileUpload.css';
 import { eventsService } from '@/api/services/events.service';
-import { uploadChunkedToAzure } from '@/utils/azureChunkedUpload';
+import {
+  uploadChunkedToAzure,
+  CHUNK_SIZE_PRESETS,
+  type AzureChunkedUploadOptions,
+} from '@/utils/azureChunkedUpload';
 
 export interface FileUploadResult {
   file: File | null;
@@ -19,7 +23,14 @@ interface FileUploadProps {
   currentFile?: string | string[];
   hint?: string;
   /** When set, video files are uploaded directly to Azure in chunks (no backend proxy). Enables 1GB+ and progress. */
-  directVideoUpload?: { eventId: string; onProgress?: (percent: number) => void };
+  directVideoUpload?: {
+    eventId: string;
+    onProgress?: (percent: number) => void;
+    /** Chunk size (bytes). 4MB default, 8/16/32MB for faster uploads. */
+    chunkSizeBytes?: number;
+    /** Concurrent block uploads. 3–5 stable, 6–8 faster. Default 4. */
+    concurrency?: number;
+  };
 }
 
 const FileUpload = ({ 
@@ -126,6 +137,14 @@ const FileUpload = ({
           'video',
           file.name
         );
+        const uploadOptions: AzureChunkedUploadOptions | undefined =
+          directVideoUpload!.chunkSizeBytes !== undefined ||
+          directVideoUpload!.concurrency !== undefined
+            ? {
+                chunkSizeBytes: directVideoUpload!.chunkSizeBytes,
+                concurrency: directVideoUpload!.concurrency,
+              }
+            : undefined;
         await uploadChunkedToAzure(
           upload_url,
           file,
@@ -133,7 +152,8 @@ const FileUpload = ({
             setUploadProgress(percent);
             directVideoUpload!.onProgress?.(percent);
           },
-          file.type || 'video/mp4'
+          file.type || 'video/mp4',
+          uploadOptions
         );
         setFileType('video');
         setFileName(file.name);
