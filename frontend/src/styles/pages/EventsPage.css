@@ -471,6 +471,26 @@
     padding: 0 5px;
     font-size: 0.65rem;
   }
+
+  /* Stack tabs and search so search doesn't overlap on tablet */
+  .events-content__container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .events-search-bar {
+    position: static;
+    width: 100%;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    justify-content: center;
+  }
+
+  .events-results-info {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -499,9 +519,11 @@
     padding: 2rem 1.5rem 3rem;
   }
 
-  /* Tablet: Reduce tab gap and font size */
+  /* Tablet: Reduce tab gap and font size; keep search below tabs */
   .events-tabs {
     gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .events-tab {
@@ -514,6 +536,15 @@
     height: 18px;
     padding: 0 5px;
     font-size: 0.65rem;
+  }
+
+  .events-search-bar {
+    margin-top: 0.5rem;
+  }
+
+  .events-results-info {
+    margin-top: 1.75rem;
+    margin-bottom: 1.25rem;
   }
 }
 
@@ -554,16 +585,19 @@
     font-size: 0.9375rem;
   }
 
-  /* Phone: Smaller tabs with tighter spacing */
+  /* Phone: Smaller tabs with tighter spacing; ensure no overflow */
   .events-tabs {
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .events-tab {
     font-size: 0.85rem;
-    padding: 0.6rem 0;
+    padding: 0.6rem 0.5rem;
     gap: 0.35rem;
+    white-space: nowrap;
   }
 
   .events-tab-count {
@@ -571,5 +605,21 @@
     height: 16px;
     padding: 0 4px;
     font-size: 0.6rem;
+  }
+
+  .events-search-bar {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .events-results-info {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .events-loading,
+  .events-error,
+  .events-empty {
+    margin-top: 2rem;
   }
 }

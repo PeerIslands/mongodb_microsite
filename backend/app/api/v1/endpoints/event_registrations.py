@@ -16,7 +16,7 @@ Endpoints:
 
 from typing import List, Optional
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, date
 import logging
 from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -119,45 +119,55 @@ async def create_registration(
             event_id=request.event_id,
         )
         
-        # Build calendar download link (frontend route that proxies to backend)
-        calendar_download_link = f"{settings.FRONTEND_BASE_URL}/events/{request.event_id}/calendar"
+        # Skip confirmation email for past events (user is registering to access recording/resources)
+        event_date_str = event.get('date', '')
+        try:
+            event_date = datetime.strptime(event_date_str, "%Y-%m-%d").date()
+            is_past_event = event_date < date.today()
+        except (ValueError, TypeError):
+            is_past_event = False
         
-        # Prepare event data for email
-        event_data = {
-            'title': event.get('title', ''),
-            'category': event.get('category', ''),
-            'date': event.get('date', ''),
-            'time': event.get('time', ''),
-            'timezone': event.get('timezone', ''),
-            'duration_minutes': event.get('duration_minutes', 60),
-            'description': event.get('description', ''),
-            'attendee_value': event.get('attendee_value', ''),
-            'event_type': event.get('event_type', 'online'),
-            'location': event.get('location', ''),
-            'calendar_download_link': calendar_download_link,
-        }
-        
-        # Send confirmation email (synchronously - fail if email fails)
-        logger.info(f"Sending confirmation email to {user_email}")
-        email_sent = await EmailService.send_event_registration_confirmation_email(
-            receiver_email=user_email,
-            event_data=event_data,
-        )
-        
-        if not email_sent:
-            # Rollback: Delete the registration if email fails (only for new registrations)
-            if is_new_registration:
-                logger.error(f"Email failed, rolling back registration {result.id}")
-                await service.delete_registration(result.id)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to send confirmation email. Registration cancelled.",
+        if not is_past_event:
+            # Build calendar download link (frontend route that proxies to backend)
+            calendar_download_link = f"{settings.FRONTEND_BASE_URL}/events/{request.event_id}/calendar"
+            
+            # Prepare event data for email
+            event_data = {
+                'title': event.get('title', ''),
+                'category': event.get('category', ''),
+                'date': event.get('date', ''),
+                'time': event.get('time', ''),
+                'timezone': event.get('timezone', ''),
+                'duration_minutes': event.get('duration_minutes', 60),
+                'description': event.get('description', ''),
+                'attendee_value': event.get('attendee_value', ''),
+                'event_type': event.get('event_type', 'online'),
+                'location': event.get('location', ''),
+                'calendar_download_link': calendar_download_link,
+            }
+            
+            # Send confirmation email (synchronously - fail if email fails)
+            logger.info(f"Sending confirmation email to {user_email}")
+            email_sent = await EmailService.send_event_registration_confirmation_email(
+                receiver_email=user_email,
+                event_data=event_data,
             )
+            
+            if not email_sent:
+                # Rollback: Delete the registration if email fails (only for new registrations)
+                if is_new_registration:
+                    logger.error(f"Email failed, rolling back registration {result.id}")
+                    await service.delete_registration(result.id)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to send confirmation email. Registration cancelled.",
+                )
+            logger.info(f"Registration {'created' if is_new_registration else 'updated'} and email sent successfully: {result.id}")
+        else:
+            logger.info(f"Registration {'created' if is_new_registration else 'updated'} for past event (no email sent): {result.id}")
         
         # Determine HTTP status code based on whether it's a new registration or re-registration
         http_status = status.HTTP_201_CREATED if is_new_registration else status.HTTP_200_OK
-        
-        logger.info(f"Registration {'created' if is_new_registration else 'updated'} and email sent successfully: {result.id}")
         
         return JSONResponse(
             status_code=http_status,

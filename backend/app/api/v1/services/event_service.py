@@ -106,11 +106,13 @@ class EventService:
         # Get blob paths
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
+        pdf_blob_path = doc.get("pdf_url", "")
         hls_playlist_path = doc.get("hls_playlist_path", "")
 
-        # Build secure proxy URLs for thumbnail/video
+        # Build secure proxy URLs for thumbnail/video/pdf
         thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
         video_url = self._build_proxy_url(event_id, "video", video_blob_path)
+        pdf_url = self._build_proxy_url(event_id, "pdf", pdf_blob_path)
         hls_playlist_url = self._get_hls_playlist_url(hls_playlist_path)
 
         return EventResponse(
@@ -131,6 +133,7 @@ class EventService:
             location=doc.get("location", ""),
             thumbnail_url=thumbnail_url,
             video_url=video_url,
+            pdf_url=pdf_url,
             hls_playlist_url=hls_playlist_url,
             is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
@@ -145,11 +148,13 @@ class EventService:
         # Get blob paths
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
+        pdf_blob_path = doc.get("pdf_url", "")
         hls_playlist_path = doc.get("hls_playlist_path", "")
 
-        # Build secure proxy URLs for thumbnail/video; direct Blob URL for HLS
+        # Build secure proxy URLs for thumbnail/video/pdf; direct Blob URL for HLS
         thumbnail_url = self._build_proxy_url(event_id, "thumbnail", thumbnail_blob_path)
         video_url = self._build_proxy_url(event_id, "video", video_blob_path)
+        pdf_url = self._build_proxy_url(event_id, "pdf", pdf_blob_path)
         hls_playlist_url = self._get_hls_playlist_url(hls_playlist_path)
 
         return EventDetailResponse(
@@ -170,6 +175,7 @@ class EventService:
             location=doc.get("location", ""),
             thumbnail_url=thumbnail_url,
             video_url=video_url,
+            pdf_url=pdf_url,
             hls_playlist_url=hls_playlist_url,
             is_past=self._is_past_event(event_date),
             created_at=doc.get("created_at", ""),
