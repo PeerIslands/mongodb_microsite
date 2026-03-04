@@ -187,7 +187,9 @@ const EventCard = ({ data, onCardClick, isRegistered = false }: EventCardProps) 
           </span>
         ) : (
           <span className="event-card__link">
-            <span className="event-card__link-text">Save your Seat</span>
+            <span className="event-card__link-text">
+              {data.is_past ? 'Register to view recording' : 'Save your Seat'}
+            </span>
             <span className="event-card__link-icon">
               <svg 
                 width="16" 
