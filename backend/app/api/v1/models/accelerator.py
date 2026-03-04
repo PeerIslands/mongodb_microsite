@@ -73,6 +73,7 @@ class UpdateAcceleratorRequest(BaseModel):
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail image path in Azure Blob")
     video_url: Optional[str] = Field(None, description="Video file path in Azure Blob")
     pdf_url: Optional[str] = Field(None, description="PDF file path in Azure Blob")
+    hls_playlist_path: Optional[str] = Field(None, description="HLS master playlist blob path (set by Azure Function)")
 
     @field_validator('status')
     @classmethod
@@ -123,6 +124,7 @@ class AcceleratorDetailResponse(AcceleratorResponse):
     thumbnail_url: str = Field(default="", description="Thumbnail image URL")
     video_url: str = Field(default="", description="Video URL")
     pdf_url: str = Field(default="", description="PDF URL")
+    hls_playlist_url: str = Field(default="", description="Direct Blob URL for HLS master playlist (when available)")
 
 
 class CreateAcceleratorResponse(BaseModel):

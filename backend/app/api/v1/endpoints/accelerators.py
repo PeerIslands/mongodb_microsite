@@ -18,9 +18,11 @@ File Storage:
 import json
 import mimetypes
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form, HTTPException
+from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Form, HTTPException, Header
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 
+from app.core.config import settings
 from app.api.v1.models.accelerator import (
     CreateAcceleratorRequest,
     CreateAcceleratorResponse,
@@ -484,6 +486,7 @@ async def update_accelerator(
         if existing_blob_paths.get("video_url"):
             await blob_service.delete_file(existing_blob_paths["video_url"])
         update_data["video_url"] = ""  # Clear the video URL in database
+        update_data["hls_playlist_path"] = ""  # Clear HLS so UI does not show stale playlist
     elif is_valid_file(video_file):
         # User is uploading a new video (delete old file first)
         if existing_blob_paths.get("video_url"):
@@ -491,6 +494,7 @@ async def update_accelerator(
         update_data["video_url"] = await upload_video_to_blob(
             video_file, accelerator_id, "video_url", blob_service
         )
+        update_data["hls_playlist_path"] = ""  # Clear until Azure Function produces new HLS
     
     # Handle PDF file operations
     if delete_pdf.lower() == "true":
@@ -510,6 +514,49 @@ async def update_accelerator(
     request = UpdateAcceleratorRequest(**update_data)
     
     return await service.update_accelerator(accelerator_id, request)
+
+
+class HlsReadyRequest(BaseModel):
+    """Request body for Azure Function callback when HLS transcoding is complete."""
+    hls_playlist_path: str = Field(..., description="Blob path to master.m3u8 (e.g. accelerators/{id}/video_hls/master.m3u8)")
+
+
+@router.patch(
+    "/{accelerator_id}/hls-ready",
+    status_code=status.HTTP_200_OK,
+    summary="Set HLS playlist path (internal)",
+    description="Called by Azure Function after FFmpeg transcoding. Requires X-HLS-Webhook-Secret header if HLS_WEBHOOK_SECRET is set.",
+    responses={
+        200: {"description": "HLS path set"},
+        400: {"description": "Invalid path"},
+        401: {"description": "Missing or invalid secret"},
+        404: {"description": "Accelerator not found"},
+    },
+)
+async def set_accelerator_hls_ready(
+    accelerator_id: str,
+    body: HlsReadyRequest,
+    x_hls_webhook_secret: Optional[str] = Header(None, alias="X-HLS-Webhook-Secret"),
+    service: AcceleratorService = Depends(get_accelerator_service),
+) -> dict:
+    """Set the HLS playlist path for an accelerator after transcoding completes."""
+    if settings.HLS_WEBHOOK_SECRET and x_hls_webhook_secret != settings.HLS_WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing X-HLS-Webhook-Secret",
+        )
+    path = (body.hls_playlist_path or "").strip()
+    expected_prefix = f"accelerators/{accelerator_id}/"
+    if not path.startswith(expected_prefix) or "video_hls" not in path:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="hls_playlist_path must be under accelerators/{accelerator_id}/ and contain video_hls",
+        )
+    try:
+        await service.set_hls_playlist_path(accelerator_id, path)
+        return {"message": "HLS playlist path set", "accelerator_id": accelerator_id}
+    except AcceleratorNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete(
