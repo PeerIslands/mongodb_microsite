@@ -29,9 +29,16 @@ from app.api.v1.exceptions.accelerator_exceptions import AcceleratorNotFoundErro
 class AcceleratorService:
     """Service for accelerator business logic."""
 
-    def __init__(self, repository: AcceleratorRepository):
-        """Initialize service with repository."""
+    def __init__(self, repository: AcceleratorRepository, blob_service=None):
+        """Initialize service with repository and optional blob service for HLS URL."""
         self._repository = repository
+        self._blob_service = blob_service
+
+    def _get_hls_playlist_url(self, hls_playlist_path: str) -> str:
+        """Build direct Blob URL for HLS master playlist."""
+        if not hls_playlist_path or not self._blob_service:
+            return ""
+        return self._blob_service.get_full_url(hls_playlist_path.strip())
 
     # =========================================================================
     # SLUG HELPERS
@@ -128,11 +135,13 @@ class AcceleratorService:
         thumbnail_blob_path = doc.get("thumbnail_url", "")
         video_blob_path = doc.get("video_url", "")
         pdf_blob_path = doc.get("pdf_url", "")
-        
+        hls_playlist_path = doc.get("hls_playlist_path", "")
+
         # Build secure proxy URLs instead of direct Azure URLs
         thumbnail_url = self._build_proxy_url(accelerator_id, "thumbnail", thumbnail_blob_path)
         video_url = self._build_proxy_url(accelerator_id, "video", video_blob_path)
         pdf_url = self._build_proxy_url(accelerator_id, "pdf", pdf_blob_path)
+        hls_playlist_url = self._get_hls_playlist_url(hls_playlist_path)
 
         return AcceleratorDetailResponse(
             id=accelerator_id,
@@ -149,6 +158,7 @@ class AcceleratorService:
             thumbnail_url=thumbnail_url,
             video_url=video_url,
             pdf_url=pdf_url,
+            hls_playlist_url=hls_playlist_url,
         )
 
     async def create_accelerator(
@@ -288,15 +298,31 @@ class AcceleratorService:
         payload = [{"id": item.id, "display_order": item.display_order} for item in items]
         await self._repository.reorder(payload)
 
+    async def set_hls_playlist_path(self, accelerator_id: str, hls_playlist_path: str) -> None:
+        """
+        Set the HLS playlist path for an accelerator (called by Azure Function after transcoding).
+
+        Args:
+            accelerator_id: Accelerator ID
+            hls_playlist_path: Blob path to master.m3u8 (e.g. accelerators/{id}/video_hls/master.m3u8)
+
+        Raises:
+            AcceleratorNotFoundError: If accelerator not found
+        """
+        existing = await self._repository.get_by_id(accelerator_id)
+        if not existing:
+            raise AcceleratorNotFoundError(accelerator_id)
+        await self._repository.update(accelerator_id, {"hls_playlist_path": hls_playlist_path.strip()})
+
     async def get_blob_paths(self, accelerator_id: str) -> Dict[str, str]:
         """
         Get blob paths for an accelerator's files.
-        
+
         Args:
             accelerator_id: Accelerator ID
-            
+
         Returns:
-            Dictionary with video_url and pdf_url blob paths
+            Dictionary with video_url, pdf_url, and hls_playlist_path blob paths
         """
         return await self._repository.get_blob_paths(accelerator_id)
 

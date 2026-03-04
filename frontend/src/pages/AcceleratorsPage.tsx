@@ -101,6 +101,7 @@ const AcceleratorsPage = () => {
           {activeAccelerator.video_url && (
             <DemoVideoSection
               videoUrl={getFileUrl(activeAccelerator.video_url)}
+              hlsPlaylistUrl={activeAccelerator.hls_playlist_url || undefined}
               thumbnailUrl={getFileUrl(activeAccelerator.thumbnail_url)}
               title={activeAccelerator.title}
               isPlaying={isVideoPlaying}

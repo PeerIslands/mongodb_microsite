@@ -40,6 +40,8 @@ export interface AcceleratorDetail extends Accelerator {
   thumbnail_url: string;
   video_url: string;
   pdf_url: string;
+  /** Direct Blob URL for HLS master playlist (when available); use for segment-chunk playback */
+  hls_playlist_url?: string;
 }
 
 /** Data for creating a new accelerator */

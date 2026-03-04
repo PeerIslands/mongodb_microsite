@@ -182,19 +182,20 @@ class AcceleratorRepository:
             accelerator_id: Accelerator ID
             
         Returns:
-            Dictionary with thumbnail_url, video_url and pdf_url blob paths
+            Dictionary with thumbnail_url, video_url, pdf_url, and hls_playlist_path blob paths
         """
         doc = await self._collection.find_one(
             {"_id": accelerator_id},
-            {"thumbnail_url": 1, "video_url": 1, "pdf_url": 1}
+            {"thumbnail_url": 1, "video_url": 1, "pdf_url": 1, "hls_playlist_path": 1}
         )
         if doc:
             return {
                 "thumbnail_url": doc.get("thumbnail_url", ""),
                 "video_url": doc.get("video_url", ""),
                 "pdf_url": doc.get("pdf_url", ""),
+                "hls_playlist_path": doc.get("hls_playlist_path", ""),
             }
-        return {"thumbnail_url": "", "video_url": "", "pdf_url": ""}
+        return {"thumbnail_url": "", "video_url": "", "pdf_url": "", "hls_playlist_path": ""}
 
     async def reorder(self, items: List[Dict[str, Any]]) -> None:
         """

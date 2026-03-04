@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # JWT Settings
     JWT_SECRET_KEY: str = "jwt-secret-change-in-production"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
     # MongoDB Settings
     # Pydantic settings will load these from .env file automatically
