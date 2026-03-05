@@ -28,8 +28,8 @@ interface AuthModalContextValue {
   switchToLogin: () => void;
   switchToForgotPassword: () => void;
   
-  // Success callback (used after successful login)
-  onLoginSuccess: () => void;
+  // Success callback (used after successful login). Returns Promise so caller can wait for async callbacks (e.g. auto-register) before reload.
+  onLoginSuccess: () => void | Promise<void>;
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | undefined>(undefined);
@@ -54,8 +54,8 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
   const [isPDFDownloadModalOpen, setIsPDFDownloadModalOpen] = useState(false);
   const [pdfDownloadResource, setPdfDownloadResource] = useState<PDFDownloadResource | null>(null);
   
-  // Store the callback to execute after successful login
-  const [successCallback, setSuccessCallback] = useState<(() => void) | null>(null);
+  // Store the callback to execute after successful login (may be async)
+  const [successCallback, setSuccessCallback] = useState<(() => void | Promise<void>) | null>(null);
 
   const closeAllModals = useCallback(() => {
     setIsLoginModalOpen(false);
@@ -65,7 +65,7 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
     setPdfDownloadResource(null);
   }, []);
 
-  const openLoginModal = useCallback((onSuccessCallback?: () => void) => {
+  const openLoginModal = useCallback((onSuccessCallback?: () => void | Promise<void>) => {
     closeAllModals();
     if (onSuccessCallback) {
       setSuccessCallback(() => onSuccessCallback);
@@ -96,6 +96,7 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
     setIsLoginModalOpen(false);
     setIsForgotPasswordModalOpen(false);
     setIsSignupModalOpen(true);
+    // successCallback is not cleared so it still runs when user logs in after signup (Register Now → Sign up → complete → log in)
   }, []);
 
   const switchToLogin = useCallback(() => {
@@ -110,15 +111,25 @@ export const AuthModalProvider = ({ children }: AuthModalProviderProps) => {
     setIsForgotPasswordModalOpen(true);
   }, []);
 
-  // Called when login is successful - executes the stored callback
-  const onLoginSuccess = useCallback(() => {
-    if (successCallback) {
-      // Small delay to ensure auth state is updated
-      setTimeout(() => {
-        successCallback();
-        setSuccessCallback(null);
-      }, 100);
-    }
+  // Called when login is successful - runs the stored callback and returns a Promise that resolves when callback (and any async work) is done
+  const onLoginSuccess = useCallback((): Promise<void> => {
+    if (!successCallback) return Promise.resolve();
+    return new Promise((resolve) => {
+      const run = async () => {
+        try {
+          const result = successCallback();
+          if (result != null && typeof (result as Promise<unknown>).then === 'function') {
+            await (result as Promise<void>);
+          }
+        } catch (_) {
+          // ignore so reload still happens
+        } finally {
+          setSuccessCallback(null);
+        }
+        resolve();
+      };
+      setTimeout(run, 100);
+    });
   }, [successCallback]);
 
   return (

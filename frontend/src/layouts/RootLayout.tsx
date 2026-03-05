@@ -57,6 +57,7 @@ const GlobalAuthModals = () => {
         isOpen={isSignupModalOpen}
         onClose={closeAllModals}
         onSwitchToLogin={switchToLogin}
+        onAuthSuccess={onLoginSuccess}
       />
       <ForgotPasswordModal
         isOpen={isForgotPasswordModalOpen}
