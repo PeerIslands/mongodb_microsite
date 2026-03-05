@@ -224,18 +224,46 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
     }
   }, [isOpen, event?.id, event?.thumbnail_url, event?.video_url]);
 
-  // Show registration confirmation modal
+  // Show registration confirmation modal (used when already logged in)
   const showRegistrationModal = () => {
     setShowConfirmModal(true);
   };
+
+  // Auto-register for the event after user completes login (no confirm modal)
+  const handleAutoRegisterAfterLogin = useCallback(async () => {
+    if (!event?.id) return;
+
+    setShowConfirmModal(false);
+    setErrorMessage(null);
+    setIsRegistering(true);
+
+    try {
+      await eventsService.registerForEvent(event.id);
+      setSuccessMessageText('You have been registered for this event.');
+      setShowSuccessMessage(true);
+      onRegistrationSuccess?.();
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        onClose();
+      }, 3000);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setErrorMessage('You are already registered for this event.');
+      } else {
+        setErrorMessage('Failed to register. Please try again.');
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  }, [event?.id, onRegistrationSuccess, onClose]);
 
   // Handle register button click - requires login
   const handleRegisterClick = () => {
     if (isLoggedIn()) {
       showRegistrationModal();
     } else {
-      // Open login modal with callback to show registration after successful login
-      openLoginModal(showRegistrationModal);
+      // Open login modal; after successful login, auto-register for this event
+      openLoginModal(handleAutoRegisterAfterLogin);
     }
   };
 

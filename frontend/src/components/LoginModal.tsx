@@ -13,7 +13,7 @@ interface LoginModalProps {
   onClose: () => void;
   onSwitchToSignup?: () => void;
   onSwitchToForgotPassword?: () => void;
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: () => void | Promise<void>;
 }
 
 type LoginStep = 'credentials' | 'verify-totp' | 'incomplete-registration' | 'backup-codes';
@@ -104,15 +104,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         // Close modal
         onClose();
 
-        // Execute success callback if provided (e.g., download PDF)
+        // Run success callback (e.g. auto-register for event) and wait for it so reload happens after
         if (onLoginSuccess) {
-          onLoginSuccess();
+          await onLoginSuccess();
         }
 
         // Reload page to update UI state and show logged-in header
         setTimeout(() => {
           globalThis.location.reload();
-        }, 1000);
+        }, 500);
       }
     } else {
       // Check if registration is incomplete (TOTP not set up)
@@ -275,15 +275,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         // Close modal
         onClose();
         
-        // Execute success callback if provided (e.g., download PDF)
+        // Run success callback (e.g. auto-register for event) and wait for it before reload
         if (onLoginSuccess) {
-          onLoginSuccess();
+          await onLoginSuccess();
         }
         
         // Reload page
         setTimeout(() => {
           globalThis.location.reload();
-        }, 1000);
+        }, 500);
       } else {
         const errorMsg = response.data?.detail || 'Invalid code';
         console.log('TOTP Login Error:', errorMsg);

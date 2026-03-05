@@ -13,6 +13,8 @@ interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToLogin?: () => void;
+  /** When provided (e.g. from Register Now flow), runs after user logs in post-signup; callback is preserved when switching login → signup. */
+  onAuthSuccess?: () => void | Promise<void>;
 }
 
 interface TOTPSetupData {
@@ -57,7 +59,7 @@ const getCountryCode = (countryName: string): Country => {
   return countryMap[countryName] || 'US';
 };
 
-const SignupModal = ({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) => {
+const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onAuthSuccess: _onAuthSuccess }: SignupModalProps) => {
   // Registration form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
