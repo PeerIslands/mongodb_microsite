@@ -232,12 +232,14 @@ def get_blog_service() -> BlogService:
 def get_accelerator_service() -> AcceleratorService:
     """
     Get AcceleratorService instance.
-    
+
     Returns:
-        AcceleratorService instance with injected repository
+        AcceleratorService instance with injected repository and blob service (for HLS URL).
     """
     repository = get_accelerator_repository()
-    return AcceleratorService(repository)
+    from app.api.v1.services.azure_blob_service import get_azure_blob_service
+    blob_service = get_azure_blob_service()
+    return AcceleratorService(repository, blob_service)
 
 
 def get_analytics_service() -> AnalyticsService:
