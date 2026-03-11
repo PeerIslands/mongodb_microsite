@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.models.home_popup import (
-    HomePopupConfig,
     HomePopupPublicResponse,
     HomePopupAdminResponse,
     HomePopupUpdateRequest,
