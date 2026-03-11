@@ -20,10 +20,11 @@ import {
   TestimonialList,
   TestimonialForm,
   UserList,
+  HomePopupForm,
 } from '@/features/admin/components';
 import LeafLoader from '@/components/LeafLoader';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
 
 const navItems: { key: MainView; icon: string; label: string }[] = [
@@ -32,6 +33,7 @@ const navItems: { key: MainView; icon: string; label: string }[] = [
   { key: 'blogs', icon: '📝', label: 'Blogs' },
   { key: 'events', icon: '📅', label: 'Events' },
   { key: 'testimonials', icon: '💬', label: 'Testimonials' },
+  { key: 'homepopup', icon: '🪟', label: 'Home Popup' },
   { key: 'analytics', icon: '📊', label: 'Analytics' },
   { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
   { key: 'users', icon: '👥', label: 'Users' },
@@ -65,6 +67,7 @@ const AdminDashboard = () => {
       emailtemplates: 'Loading Newsletters...',
       testimonials: 'Loading Testimonials...',
       users: 'Loading Users...',
+      homepopup: 'Loading Home Popup...',
     };
     return messages[view];
   };
@@ -175,7 +178,7 @@ const AdminDashboard = () => {
   const handleMainViewChange = (view: MainView) => {
     // Only show loader if switching to a different tab
     // Skip loader for analytics (static) and emailtemplates (has its own loader)
-    if (view !== mainView && view !== 'analytics' && view !== 'emailtemplates') {
+    if (view !== mainView && view !== 'analytics' && view !== 'emailtemplates' && view !== 'homepopup') {
       setLoadingMessage(getLoadingMessage(view));
       setIsTabLoading(true);
     }
@@ -200,6 +203,8 @@ const AdminDashboard = () => {
       setEditingTestimonialId(null);
     } else if (view === 'users') {
       // Users view doesn't have sub-views, but we handle it for consistency
+    } else if (view === 'homepopup') {
+      // Single form view, no list
     }
   };
 
@@ -372,6 +377,8 @@ const AdminDashboard = () => {
         )}
         
         {mainView === 'users' && <UserList onLoadComplete={handleLoadComplete} />}
+
+        {mainView === 'homepopup' && <HomePopupForm />}
       </div>
   );
 };

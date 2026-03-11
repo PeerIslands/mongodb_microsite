@@ -598,7 +598,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
                         <p className="event-detail-panel__pdf-card-hint">Click to view</p>
                       </div>
                       {resourceRequestSubmitted ? (
-                        <p className="event-detail-panel__resource-message">The resource will be mailed to you.</p>
+                        <p className="event-detail-panel__resource-message">Email request submitted</p>
                       ) : (
                         <button
                           type="button"
@@ -642,7 +642,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
                       <p className="event-detail-panel__pdf-card-hint">Click to view</p>
                     </div>
                     {resourceRequestSubmitted ? (
-                      <p className="event-detail-panel__resource-message">The resource will be mailed to you.</p>
+                      <p className="event-detail-panel__resource-message">Email request submitted</p>
                     ) : (
                       <button
                         type="button"

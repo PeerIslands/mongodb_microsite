@@ -69,8 +69,8 @@ MAX_IMAGE_SIZE = 20 * 1024 * 1024    # 20MB for images (increased to support lar
 MAX_SVG_SIZE = 2 * 1024 * 1024       # 2MB for SVG files
 
 # Valid categories for folder organization
-CategoryType = Literal["casestudies", "accelerators", "emailtemplates", "events"]
-VALID_CATEGORIES = ["casestudies", "accelerators", "emailtemplates", "events"]
+CategoryType = Literal["casestudies", "accelerators", "emailtemplates", "events", "homepopup"]
+VALID_CATEGORIES = ["casestudies", "accelerators", "emailtemplates", "events", "homepopup"]
 
 
 class AzureBlobServiceError(Exception):

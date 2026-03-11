@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
+import { ROUTES } from '@/constants';
 import { useEvents } from '@/hooks/useEvents';
 import { EventGrid, EventDetailPanel, type EventCardData } from '@/features/events';
 import LeafLoader from '@/components/LeafLoader';
@@ -11,6 +12,7 @@ import '@/styles/pages/EventsPage.css';
  */
 const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const { events: allEvents, registeredEventIds, registrationIdByEventId, isLoading, error, refetch } = useEvents({
     autoFetch: true,
   });
@@ -18,8 +20,14 @@ const EventsPage = () => {
   // Filter to show only published events
   const events = allEvents.filter(event => event.status === 'published');
 
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+  const isOnDemandRoute = location.pathname === ROUTES.EVENTS_ON_DEMAND;
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>(() => (isOnDemandRoute ? 'past' : 'upcoming'));
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Sync tab when navigating between /events and /events/on-demand
+  useEffect(() => {
+    setActiveTab(location.pathname === ROUTES.EVENTS_ON_DEMAND ? 'past' : 'upcoming');
+  }, [location.pathname]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -110,7 +118,7 @@ const EventsPage = () => {
       {/* Content Section */}
       <section className="events-content">
         <div className="events-content__container">
-          {/* Tabs for Upcoming/Past Events */}
+          {/* Tabs for Upcoming / On Demand Webinars */}
           <div className="events-tabs">
             <button
               className={`events-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
@@ -123,7 +131,7 @@ const EventsPage = () => {
               className={`events-tab ${activeTab === 'past' ? 'active' : ''}`}
               onClick={() => setActiveTab('past')}
             >
-              Past Events
+              On Demand Webinars
               <span className="events-tab-count">{pastEvents.length}</span>
             </button>
           </div>

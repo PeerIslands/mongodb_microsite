@@ -6,5 +6,6 @@ export { default as Capabilities } from './Capabilities';
 export { default as CaseStudies } from './CaseStudies';
 export { default as Events } from './Events';
 export { default as Testimonials } from './Testimonials';
+export { default as OnDemandWebinarsPopup } from './OnDemandWebinarsPopup';
 export { default as Footer } from './Footer';
 

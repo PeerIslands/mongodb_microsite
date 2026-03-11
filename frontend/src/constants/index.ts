@@ -14,6 +14,7 @@ export const ROUTES = {
   NEWSLETTER: '/newsletter',
   ADMIN: '/admin',
   EVENTS: '/events',
+  EVENTS_ON_DEMAND: '/events/on-demand',
   ABOUT: '/about',
   CONTACT: '/contact',
 } as const;

@@ -110,6 +110,14 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.EVENTS_ON_DEMAND,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EventsPage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.ABOUT,
             element: (
               <Suspense fallback={<PageLoader />}>

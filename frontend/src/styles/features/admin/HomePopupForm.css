@@ -1,0 +1,123 @@
+.home-popup-form {
+  max-width: 560px;
+  padding: 1rem 0;
+}
+
+.home-popup-form--loading {
+  padding: 2rem;
+}
+
+.home-popup-form__title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.home-popup-form__desc {
+  color: var(--text-muted, #666);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.home-popup-form__error {
+  color: var(--error, #c00);
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(204, 0, 0, 0.08);
+  border-radius: 6px;
+}
+
+.home-popup-form__success {
+  color: var(--success, #0a0);
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(0, 160, 0, 0.08);
+  border-radius: 6px;
+}
+
+.home-popup-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.home-popup-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.home-popup-form__section--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.home-popup-form__label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.home-popup-form__input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.home-popup-form__checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.home-popup-form__preview {
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border, #ddd);
+  max-width: 240px;
+}
+
+.home-popup-form__preview-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.home-popup-form__upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.home-popup-form__file {
+  font-size: 0.9rem;
+}
+
+.home-popup-form__btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid var(--border, #ccc);
+  background: var(--bg, #f5f5f5);
+}
+
+.home-popup-form__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.home-popup-form__btn--upload {
+  background: var(--bg-secondary, #e8e8e8);
+}
+
+.home-popup-form__btn--primary {
+  background: var(--primary, #0066cc);
+  color: #fff;
+  border-color: var(--primary, #0066cc);
+}
+
+.home-popup-form__actions {
+  margin-top: 0.5rem;
+}

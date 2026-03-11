@@ -22,3 +22,4 @@ export { default as UserList } from './UserList';
 export { default as VideoUploader } from './VideoUploader';
 export { default as TestimonialForm } from './TestimonialForm';
 export { default as TestimonialList } from './TestimonialList';
+export { default as HomePopupForm } from './HomePopupForm';

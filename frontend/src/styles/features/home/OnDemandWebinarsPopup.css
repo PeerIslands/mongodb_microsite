@@ -1,0 +1,207 @@
+/* On-Demand Webinars popup - square card, bottom-left, glassmorphism, image content */
+.on-demand-popup {
+  position: fixed;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 1000;
+  width: 240px;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(2, 9, 22, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 32px 12px rgba(70, 255, 150, 0.38),
+    0 0 40px 8px rgba(70, 255, 150, 0.07),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+  animation: on-demand-popup-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.on-demand-popup--exiting {
+  animation: on-demand-popup-out 0.3s ease-in forwards;
+}
+
+@keyframes on-demand-popup-in {
+  0%   { opacity: 0; transform: translateY(60px) scale(0.7);  }
+  55%  { opacity: 1; transform: translateY(-16px) scale(1.06); }
+  75%  { transform: translateY(8px) scale(0.97); }
+  90%  { transform: translateY(-5px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes on-demand-popup-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) translateX(-8px) scale(0.98);
+  }
+}
+
+.on-demand-popup__close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.on-demand-popup__close:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.on-demand-popup__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+
+.on-demand-popup__content:hover {
+  background: rgba(91, 108, 255, 0.06);
+}
+
+.on-demand-popup__content:focus-visible {
+  outline: 2px solid rgba(91, 108, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.on-demand-popup__image-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.on-demand-popup__image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  filter: brightness(0.5);
+}
+
+.on-demand-popup__overlay-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  padding: 0 1rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 0 20px rgba(0, 0, 0, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.9),
+    0 1px 3px rgba(0, 0, 0, 1);
+  pointer-events: none;
+}
+
+.on-demand-popup__cta {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  background: rgba(91, 108, 255, 0.2);
+  border-top: 1px solid rgba(91, 108, 255, 0.25);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.on-demand-popup__content:hover .on-demand-popup__cta {
+  background: rgba(91, 108, 255, 0.3);
+  color: #00ED64;
+}
+
+/* Slightly larger on desktop */
+@media (min-width: 1024px) {
+  .on-demand-popup {
+    width: 280px;
+    height: 280px;
+    left: 2rem;
+    bottom: 2rem;
+  }
+}
+
+/* Tablet: keep square, reduced size */
+@media (max-width: 1023px) {
+  .on-demand-popup {
+    width: 220px;
+    height: 220px;
+    left: 1rem;
+    bottom: 1rem;
+  }
+
+  .on-demand-popup__cta {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.75rem;
+  }
+
+  .on-demand-popup__overlay-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+}
+
+/* Phone: square but smaller, centered above bottom */
+@media (max-width: 767px) {
+  .on-demand-popup {
+    width: 200px;
+    height: 200px;
+    left: 50%;
+    margin-left: -100px;
+    bottom: 1rem;
+  }
+
+  .on-demand-popup--exiting {
+    animation: on-demand-popup-out 0.3s ease-in forwards;
+  }
+
+  .on-demand-popup__cta {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.6875rem;
+  }
+
+  .on-demand-popup__overlay-title {
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 0 0.75rem;
+  }
+}
