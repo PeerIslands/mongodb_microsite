@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatMarkdown } from '@/utils/markdownFormatter';
+import { ROUTES } from '@/constants';
 import '@/styles/components/AIChatbot.css';
 
 interface Message {
@@ -11,6 +13,7 @@ interface Message {
 }
 
 const AIChatbot = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -141,15 +144,20 @@ const AIChatbot = () => {
     }]);
   };
 
-  const suggestedQuestions = [
-    "What accelerators do you offer?",
-    "Tell me about your success stories",
-    "What events are coming up?",
-    "What industries do you serve?"
+  const suggestedQuestions: { label: string; link?: string }[] = [
+    { label: "What accelerators do you offer?" },
+    { label: "Tell me about your success stories" },
+    { label: "What events are coming up?" },
+    { label: "Visit our On-Demand Webinars", link: ROUTES.EVENTS_ON_DEMAND },
   ];
 
-  const handleSuggestedQuestion = (question: string) => {
-    handleSendMessage(question);
+  const handleSuggestedQuestion = (item: { label: string; link?: string }) => {
+    if (item.link) {
+      setIsOpen(false);
+      navigate(item.link);
+    } else {
+      handleSendMessage(item.label);
+    }
   };
 
   return (
@@ -264,13 +272,14 @@ const AIChatbot = () => {
             {messages.length <= 1 && !isLoading && (
               <div className="chat-suggestions">
                 <p className="chat-suggestions-title">Try asking:</p>
-                {suggestedQuestions.map((question, index) => (
+                {suggestedQuestions.map((item, index) => (
                   <button
                     key={index}
-                    className="chat-suggestion-chip"
-                    onClick={() => handleSuggestedQuestion(question)}
+                    className={`chat-suggestion-chip${item.link ? ' chat-suggestion-chip--link' : ''}`}
+                    onClick={() => handleSuggestedQuestion(item)}
                   >
-                    {question}
+                    {item.link && <span className="chat-suggestion-chip__arrow">↗ </span>}
+                    {item.label}
                   </button>
                 ))}
               </div>

@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     testimonials,
     newsletter_access,
     event_resource_requests,
+    home_popup,
 )
 
 api_router = APIRouter()
@@ -42,6 +43,7 @@ api_router.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
 api_router.include_router(testimonials.router, tags=["testimonials"])
 api_router.include_router(newsletter_access.router, prefix="/newsletter-access", tags=["newsletter-access"])
 api_router.include_router(event_resource_requests.router, tags=["event-resource-requests"])
+api_router.include_router(home_popup.router)
 
 
 

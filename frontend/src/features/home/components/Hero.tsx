@@ -1,20 +1,24 @@
-
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/constants';
 import { analytics } from '@/utils/analytics';
 import '@/styles/features/home/Hero.css';
 import heroCard1 from '@/assets/HeroCard1.png';
+import onDemandWebinarsHero from '@/assets/Gemini_Generated_Image_mfduncmfduncmfdu (2).png';
 import heroCard3 from '@/assets/Herocard3.png';
 import heroCard5 from '@/assets/Herocard5.png';
 import arrowIcon from '@/assets/9676e79a76f01cf2ed247a83e933b0c8e983525f.svg';
 
 const Hero = () => {
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const heroImages = [
+  const heroImages: { src: string; alt: string; linkTo?: string }[] = [
     { src: heroCard1, alt: "Powering Data Modernization with PeerAI & MongoDB" },
     { src: heroCard3, alt: "Accelerators Purpose-Built for MongoDB Transformations" },
-    { src: heroCard5, alt: "Why Leaders Choose PeerIslands" }
+    { src: heroCard5, alt: "Why Leaders Choose PeerIslands" },
+    { src: onDemandWebinarsHero, alt: "Visit our Events Tab to see our On-Demand Webinars", linkTo: ROUTES.EVENTS_ON_DEMAND },
   ];
 
   useEffect(() => {
@@ -59,9 +63,23 @@ const Hero = () => {
           {heroImages.map((image, index) => (
             <div 
               key={index}
-              className={`hero-carousel-slide ${index === currentSlide ? 'active' : ''}`}
+              className={`hero-carousel-slide ${index === currentSlide ? 'active' : ''} ${image.linkTo ? 'hero-carousel-slide--on-demand' : ''}`}
             >
-              <img src={image.src} alt={image.alt} className="hero-carousel-image" />
+              {image.linkTo ? (
+                <button
+                  type="button"
+                  className="hero-carousel-slide-link"
+                  onClick={() => {
+                    analytics.trackCTAClick('On-Demand Webinars Hero', 'Hero Section');
+                    navigate(image.linkTo!);
+                  }}
+                  aria-label={`${image.alt} - Go to events`}
+                >
+                  <img src={image.src} alt={image.alt} className="hero-carousel-image" />
+                </button>
+              ) : (
+                <img src={image.src} alt={image.alt} className="hero-carousel-image" />
+              )}
             </div>
           ))}
         </div>

@@ -157,12 +157,12 @@ const formatInlineMarkdown = (text: string): React.ReactNode => {
             fontWeight: '500'
           }}
           onClick={(e) => {
-            // Handle internal links with client-side routing
-            if (linkUrl.startsWith('/')) {
+            if (!linkUrl.startsWith('http')) {
               e.preventDefault();
-              window.location.href = linkUrl;
+              // Use history.pushState for SPA navigation without full reload
+              window.history.pushState({}, '', linkUrl);
+              window.dispatchEvent(new PopStateEvent('popstate'));
             }
-            // External links open normally
           }}
           target={linkUrl.startsWith('http') ? '_blank' : undefined}
           rel={linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
