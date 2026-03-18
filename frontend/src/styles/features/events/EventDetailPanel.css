@@ -688,6 +688,27 @@
   max-height: 500px;
 }
 
+/* External Video Embed (YouTube, Vimeo, Dailymotion, etc.) */
+.event-detail-panel__external-video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  margin-top: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000000;
+  border: 1px solid rgba(91, 108, 255, 0.2);
+}
+
+.event-detail-panel__external-video-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 /* Error Toast */
 .event-detail-panel__error-toast {
   position: fixed;
@@ -857,3 +878,4 @@
   color: #00ED64;
   font-weight: 500;
 }
+

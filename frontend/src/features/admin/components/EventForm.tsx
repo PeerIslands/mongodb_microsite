@@ -93,6 +93,10 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
   const [deleteVideo, setDeleteVideo] = useState(false);
   const [deletePdf, setDeletePdf] = useState(false);
 
+  // Video source: 'upload' for file upload, 'link' for external video URL
+  const [videoSource, setVideoSource] = useState<'upload' | 'link'>('upload');
+  const [externalVideoUrl, setExternalVideoUrl] = useState<string>('');
+
   // Video upload tuning (chunked upload to Azure): chunk size + concurrency
   const [videoChunkSizePreset, setVideoChunkSizePreset] = useState<ChunkSizePreset>('4MB');
   const [videoUploadConcurrency, setVideoUploadConcurrency] = useState(4);
@@ -164,10 +168,18 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
       setVideoBlobPath(null);
       const thumb = data.thumbnail_url || '';
       const vid = data.video_url || '';
+      const extVideo = (data as { external_video_url?: string }).external_video_url || '';
       const pdf = data.pdf_url || '';
       setExistingThumbnailUrl(getAbsoluteEventMediaUrl(thumb));
       setExistingVideoUrl(getAbsoluteEventMediaUrl(vid));
       setExistingPdfUrl(getAbsoluteEventMediaUrl(pdf));
+      if (extVideo) {
+        setVideoSource('link');
+        setExternalVideoUrl(extVideo);
+      } else {
+        setVideoSource('upload');
+        setExternalVideoUrl('');
+      }
       if (import.meta.env.DEV) {
         console.log('[EventForm] Fetched event media', { eventId: data.id, thumbnail_url: thumb, video_url: vid, pdf_url: pdf });
       }
@@ -338,7 +350,8 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
 
     try {
       // Check if we need to use FormData (for file uploads or blob path in edit mode)
-      const hasFiles = editingId && (thumbnailFile || videoFile || videoBlobPath || pdfFile || deleteThumbnail || deleteVideo || deletePdf);
+      const hasExternalVideoChange = editingId && videoSource === 'link';
+      const hasFiles = editingId && (thumbnailFile || videoFile || videoBlobPath || pdfFile || deleteThumbnail || deleteVideo || deletePdf || hasExternalVideoChange);
       if (import.meta.env.DEV) {
         console.log('[EventForm] Submit', {
           editingId,
@@ -370,6 +383,7 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
         formDataToSend.append('status', formData.status);
         formDataToSend.append('event_type', formData.eventType);
         formDataToSend.append('location', formData.location);
+        formDataToSend.append('external_video_url', videoSource === 'link' ? externalVideoUrl.trim() : '');
         
         if (thumbnailFile) {
           formDataToSend.append('thumbnail', thumbnailFile);
@@ -680,46 +694,92 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
               </div>
               <div className="form-field full-width">
                 <label>Video Recording (Optional)</label>
-                <FileUpload
-                  accept="video/mp4,video/quicktime,video/webm"
-                  maxSize={100}
-                  onUpload={(result) => handleFileUpload('video', result)}
-                  currentFile={existingVideoUrl || undefined}
-                  hint="MP4, WebM. Large files (1GB+) upload in chunks directly to Azure."
-                  directVideoUpload={
-                    editingId
-                      ? {
-                          eventId: editingId,
-                          chunkSizeBytes: CHUNK_SIZE_PRESETS[videoChunkSizePreset],
-                          concurrency: videoUploadConcurrency,
-                        }
-                      : undefined
-                  }
-                />
-                {editingId && (
-                  <div className="video-upload-tuning">
-                    <span className="tuning-label">Upload speed (large files):</span>
-                    <select
-                      aria-label="Chunk size"
-                      value={videoChunkSizePreset}
-                      onChange={(e) => setVideoChunkSizePreset(e.target.value as ChunkSizePreset)}
-                    >
-                      <option value="4MB">4MB (safe)</option>
-                      <option value="8MB">8MB (balance)</option>
-                      <option value="16MB">16MB (fast)</option>
-                      <option value="32MB">32MB (enterprise)</option>
-                    </select>
-                    <select
-                      aria-label="Concurrency"
-                      value={videoUploadConcurrency}
-                      onChange={(e) => setVideoUploadConcurrency(Number(e.target.value))}
-                    >
-                      {[3, 4, 5, 6, 7, 8].map((n) => (
-                        <option key={n} value={n}>
-                          {n} concurrent
-                        </option>
-                      ))}
-                    </select>
+                <div className="video-source-toggle">
+                  <button
+                    type="button"
+                    className={`video-source-btn ${videoSource === 'upload' ? 'active' : ''}`}
+                    onClick={() => { setVideoSource('upload'); setExternalVideoUrl(''); }}
+                  >
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    className={`video-source-btn ${videoSource === 'link' ? 'active' : ''}`}
+                    onClick={() => {
+                      setVideoSource('link');
+                      setVideoFile(null);
+                      setVideoBlobPath(null);
+                      setDeleteVideo(!!editingId && !!existingVideoUrl);
+                    }}
+                  >
+                    Video Link
+                  </button>
+                </div>
+
+                {videoSource === 'upload' ? (
+                  <>
+                    <FileUpload
+                      accept="video/mp4,video/quicktime,video/webm"
+                      maxSize={100}
+                      onUpload={(result) => handleFileUpload('video', result)}
+                      currentFile={existingVideoUrl || undefined}
+                      hint="MP4, WebM. Large files (1GB+) upload in chunks directly to Azure."
+                      directVideoUpload={
+                        editingId
+                          ? {
+                              eventId: editingId,
+                              chunkSizeBytes: CHUNK_SIZE_PRESETS[videoChunkSizePreset],
+                              concurrency: videoUploadConcurrency,
+                            }
+                          : undefined
+                      }
+                    />
+                    {editingId && (
+                      <div className="video-upload-tuning">
+                        <span className="tuning-label">Upload speed (large files):</span>
+                        <select
+                          aria-label="Chunk size"
+                          value={videoChunkSizePreset}
+                          onChange={(e) => setVideoChunkSizePreset(e.target.value as ChunkSizePreset)}
+                        >
+                          <option value="4MB">4MB (safe)</option>
+                          <option value="8MB">8MB (balance)</option>
+                          <option value="16MB">16MB (fast)</option>
+                          <option value="32MB">32MB (enterprise)</option>
+                        </select>
+                        <select
+                          aria-label="Concurrency"
+                          value={videoUploadConcurrency}
+                          onChange={(e) => setVideoUploadConcurrency(Number(e.target.value))}
+                        >
+                          {[3, 4, 5, 6, 7, 8].map((n) => (
+                            <option key={n} value={n}>
+                              {n} concurrent
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="external-video-url-input">
+                    <input
+                      type="url"
+                      value={externalVideoUrl}
+                      onChange={(e) => setExternalVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=... or https://vimeo.com/..."
+                    />
+                    {externalVideoUrl && /^https?:\/\/.+/.test(externalVideoUrl) && (
+                      <span className="external-video-url-valid">
+                        {/youtube\.com|youtu\.be/.test(externalVideoUrl) ? 'YouTube' :
+                         /vimeo\.com/.test(externalVideoUrl) ? 'Vimeo' :
+                         /dailymotion\.com|dai\.ly/.test(externalVideoUrl) ? 'Dailymotion' :
+                         'External'} video URL
+                      </span>
+                    )}
+                    {externalVideoUrl && !/^https?:\/\/.+/.test(externalVideoUrl) && (
+                      <span className="external-video-url-invalid">Please enter a valid video URL</span>
+                    )}
                   </div>
                 )}
               </div>

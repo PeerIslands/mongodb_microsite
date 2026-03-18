@@ -49,6 +49,7 @@ class CreateEventRequest(BaseModel):
     # Media fields (for past events)
     thumbnail_url: str = Field(default="", description="Thumbnail image path in Azure Blob")
     video_url: str = Field(default="", description="Video recording path in Azure Blob")
+    external_video_url: str = Field(default="", description="External video URL — YouTube, Vimeo, or other embeddable link (alternative to uploaded video)")
     pdf_url: str = Field(default="", description="PDF resource path in Azure Blob")
 
     @field_validator("date")
@@ -93,6 +94,7 @@ class UpdateEventRequest(BaseModel):
     # Media fields (for past events)
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail image path in Azure Blob")
     video_url: Optional[str] = Field(None, description="Video recording path in Azure Blob")
+    external_video_url: Optional[str] = Field(None, description="External video URL — YouTube, Vimeo, or other embeddable link (alternative to uploaded video)")
     pdf_url: Optional[str] = Field(None, description="PDF resource path in Azure Blob")
 
     @field_validator("date")
@@ -144,6 +146,7 @@ class EventResponse(BaseModel):
     location: str = Field(..., description="Meeting link or physical address")
     thumbnail_url: str = Field(default="", description="Thumbnail image URL")
     video_url: str = Field(default="", description="Video recording URL")
+    external_video_url: str = Field(default="", description="External video URL — YouTube, Vimeo, or other embeddable link")
     pdf_url: str = Field(default="", description="PDF resource URL")
     hls_playlist_url: str = Field(default="", description="Direct Blob URL for HLS master playlist (when available)")
     is_past: bool = Field(default=False, description="Whether event is in the past")
