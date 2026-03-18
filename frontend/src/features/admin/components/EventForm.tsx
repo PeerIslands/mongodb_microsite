@@ -724,18 +724,13 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                       onUpload={(result) => handleFileUpload('video', result)}
                       currentFile={existingVideoUrl || undefined}
                       hint="MP4, WebM. Large files (1GB+) upload in chunks directly to Azure."
-                      directVideoUpload={
-                        editingId
-                          ? {
-                              eventId: editingId,
-                              chunkSizeBytes: CHUNK_SIZE_PRESETS[videoChunkSizePreset],
-                              concurrency: videoUploadConcurrency,
-                            }
-                          : undefined
-                      }
+                      directVideoUpload={{
+                        eventId: editingId,
+                        chunkSizeBytes: CHUNK_SIZE_PRESETS[videoChunkSizePreset],
+                        concurrency: videoUploadConcurrency,
+                      }}
                     />
-                    {editingId && (
-                      <div className="video-upload-tuning">
+                    <div className="video-upload-tuning">
                         <span className="tuning-label">Upload speed (large files):</span>
                         <select
                           aria-label="Chunk size"
@@ -759,7 +754,6 @@ const EventForm = ({ editingId, onCancel, onSuccess }: EventFormProps) => {
                           ))}
                         </select>
                       </div>
-                    )}
                   </>
                 ) : (
                   <div className="external-video-url-input">
