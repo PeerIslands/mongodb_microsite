@@ -376,6 +376,7 @@ async def update_event(
     location: Optional[str] = Form(None),
     featured: Optional[bool] = Form(None),
     status: Optional[str] = Form(None),
+    external_video_url: Optional[str] = Form(None),
     delete_thumbnail: str = Form("false"),
     delete_video: str = Form("false"),
     delete_pdf: str = Form("false"),
@@ -444,19 +445,31 @@ async def update_event(
             )
             update_data["thumbnail_url"] = path
 
+        # Handle external_video_url (mutually exclusive with uploaded video)
+        if external_video_url is not None:
+            ext_url = external_video_url.strip()
+            if ext_url:
+                if existing_blob_paths.get("video_url"):
+                    await blob_service.delete_file(existing_blob_paths["video_url"])
+                update_data["external_video_url"] = ext_url
+                update_data["video_url"] = ""
+                update_data["hls_playlist_path"] = ""
+            else:
+                update_data["external_video_url"] = ""
+
         # Handle video: direct blob path (from SAS chunked upload) or file upload
         if delete_video.lower() == "true":
             if existing_blob_paths.get("video_url"):
                 await blob_service.delete_file(existing_blob_paths["video_url"])
             update_data["video_url"] = ""
         elif video_blob_path and video_blob_path.strip():
-            # Direct upload path (frontend uploaded to Azure via SAS)
             if not video_blob_path.startswith(f"events/{event_id}/"):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid video_blob_path",
                 )
             update_data["video_url"] = video_blob_path.strip()
+            update_data["external_video_url"] = ""
         elif is_valid_file(video):
             if existing_blob_paths.get("video_url"):
                 await blob_service.delete_file(existing_blob_paths["video_url"])
@@ -464,6 +477,7 @@ async def update_event(
                 video, event_id, "video_url", blob_service
             )
             update_data["video_url"] = path
+            update_data["external_video_url"] = ""
 
         # Handle PDF: direct blob path or file upload
         if delete_pdf.lower() == "true":

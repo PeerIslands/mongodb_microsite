@@ -23,6 +23,53 @@ interface EventDetailPanelProps {
   onCancelSuccess?: () => void;
 }
 
+/** Build an embeddable iframe src from a video URL (YouTube, Vimeo, Dailymotion, or raw embed URL). */
+function getEmbedUrl(url: string): string | null {
+  if (!url) return null;
+
+  // YouTube
+  const ytPatterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]+)/,
+    /(?:youtube\.com\/embed\/)([\w-]+)/,
+    /(?:youtu\.be\/)([\w-]+)/,
+    /(?:youtube\.com\/v\/)([\w-]+)/,
+  ];
+  for (const p of ytPatterns) {
+    const m = url.match(p);
+    if (m) return `https://www.youtube-nocookie.com/embed/${m[1]}`;
+  }
+
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+
+  // Dailymotion
+  const dmMatch = url.match(/(?:dailymotion\.com\/video\/|dai\.ly\/)([\w-]+)/);
+  if (dmMatch) return `https://www.dailymotion.com/embed/video/${dmMatch[1]}`;
+
+  // Already an embed/iframe-friendly URL
+  if (/^https?:\/\/.+/.test(url)) return url;
+
+  return null;
+}
+
+/** Embeddable external video player — supports YouTube, Vimeo, Dailymotion, and generic iframe URLs. */
+function ExternalVideoPlayer({ videoUrl }: { videoUrl: string }) {
+  const embedSrc = getEmbedUrl(videoUrl);
+  if (!embedSrc) return null;
+  return (
+    <div className="event-detail-panel__external-video-container">
+      <iframe
+        src={embedSrc}
+        title="Event video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="event-detail-panel__external-video-iframe"
+      />
+    </div>
+  );
+}
+
 /** Append cache-busting param so updated thumbnail/video are not served from cache */
 const withCacheBust = (url: string, updatedAt?: string): string => {
   if (!url) return url;
@@ -190,6 +237,7 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
         ...data,
         thumbnail_url: data.thumbnail_url,
         video_url: data.video_url,
+        external_video_url: (data as { external_video_url?: string }).external_video_url,
         hls_playlist_url: (data as { hls_playlist_url?: string }).hls_playlist_url,
         is_past: data.is_past,
       };
@@ -548,116 +596,98 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Media Section: Video + PDF tabs (past events with video or PDF; only for logged-in registered users) */}
-          {displayEvent.is_past && (displayEvent.video_url || displayEvent.pdf_url) && isLoggedIn() && isRegistered && (
-            <section className="event-detail-panel__section event-detail-panel__media-section">
-              <h3 className="event-detail-panel__section-title">Event Resources</h3>
-              {displayEvent.video_url && displayEvent.pdf_url ? (
-                <>
-                  <div className="event-detail-panel__tabs">
-                    <button
-                      type="button"
-                      className={`event-detail-panel__tab ${mediaTab === 'video' ? 'active' : ''}`}
-                      onClick={() => setMediaTab('video')}
-                    >
-                      Video
-                    </button>
-                    <button
-                      type="button"
-                      className={`event-detail-panel__tab ${mediaTab === 'pdf' ? 'active' : ''}`}
-                      onClick={() => setMediaTab('pdf')}
-                    >
-                      PDF
-                    </button>
+          {/* Media Section: Video/External embed + PDF tabs (past events with media; only for logged-in registered users) */}
+          {displayEvent.is_past && (displayEvent.video_url || displayEvent.external_video_url || displayEvent.pdf_url) && isLoggedIn() && isRegistered && (() => {
+            const hasVideo = !!(displayEvent.video_url || displayEvent.external_video_url);
+            const hasPdf = !!displayEvent.pdf_url;
+
+            const renderVideoPlayer = () => {
+              if (displayEvent.external_video_url) {
+                return <ExternalVideoPlayer videoUrl={displayEvent.external_video_url} />;
+              }
+              if (displayEvent.video_url) {
+                return (
+                  <EventVideoPlayer
+                    hlsPlaylistUrl={displayEvent.hls_playlist_url ? withCacheBust(displayEvent.hls_playlist_url, displayEvent.updated_at) : ''}
+                    fallbackVideoUrl={withCacheBust(getAbsoluteEventMediaUrl(displayEvent.video_url), displayEvent.updated_at)}
+                    posterUrl={displayEvent.thumbnail_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.thumbnail_url), displayEvent.updated_at) : ''}
+                  />
+                );
+              }
+              return null;
+            };
+
+            const renderPdfSection = () => (
+              <div className="event-detail-panel__pdf-tab">
+                <div
+                  className="event-detail-panel__pdf-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowPdfPreview(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPdfPreview(true); }}
+                >
+                  <div className="event-detail-panel__pdf-card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
-                  {mediaTab === 'video' && isLoggedIn() && isRegistered && (
-                    <div className="event-detail-panel__video-container">
-                      <EventVideoPlayer
-                        hlsPlaylistUrl={displayEvent.hls_playlist_url ? withCacheBust(displayEvent.hls_playlist_url, displayEvent.updated_at) : ''}
-                        fallbackVideoUrl={displayEvent.video_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.video_url), displayEvent.updated_at) : ''}
-                        posterUrl={displayEvent.thumbnail_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.thumbnail_url), displayEvent.updated_at) : ''}
-                      />
-                    </div>
-                  )}
-                  {mediaTab === 'pdf' && displayEvent.pdf_url && isLoggedIn() && isRegistered && (
-                    <div className="event-detail-panel__pdf-tab">
-                      <div
-                        className="event-detail-panel__pdf-card"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setShowPdfPreview(true)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPdfPreview(true); }}
-                      >
-                        <div className="event-detail-panel__pdf-card-icon">
-                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <h4 className="event-detail-panel__pdf-card-title">Event Resource (PDF)</h4>
-                        <p className="event-detail-panel__pdf-card-hint">Click to view</p>
-                      </div>
-                      {resourceRequestSubmitted ? (
-                        <p className="event-detail-panel__resource-message">Email request submitted</p>
-                      ) : (
-                        <button
-                          type="button"
-                          className="event-detail-panel__request-resource-btn"
-                          onClick={handleRequestResource}
-                          disabled={isRequestingResource}
-                        >
-                          {isRequestingResource ? 'Submitting...' : 'Request resource'}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : displayEvent.video_url ? (
-                isLoggedIn() && isRegistered && (
-                  <div className="event-detail-panel__video-container">
-                    <EventVideoPlayer
-                      hlsPlaylistUrl={displayEvent.hls_playlist_url ? withCacheBust(displayEvent.hls_playlist_url, displayEvent.updated_at) : ''}
-                      fallbackVideoUrl={withCacheBust(getAbsoluteEventMediaUrl(displayEvent.video_url), displayEvent.updated_at)}
-                      posterUrl={displayEvent.thumbnail_url ? withCacheBust(getAbsoluteEventMediaUrl(displayEvent.thumbnail_url), displayEvent.updated_at) : ''}
-                    />
-                  </div>
-                )
-              ) : displayEvent.pdf_url ? (
-                isLoggedIn() && isRegistered && (
-                  <div className="event-detail-panel__pdf-tab">
-                    <div
-                      className="event-detail-panel__pdf-card"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setShowPdfPreview(true)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPdfPreview(true); }}
-                    >
-                      <div className="event-detail-panel__pdf-card-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                      <h4 className="event-detail-panel__pdf-card-title">Event Resource (PDF)</h4>
-                      <p className="event-detail-panel__pdf-card-hint">Click to view</p>
-                    </div>
-                    {resourceRequestSubmitted ? (
-                      <p className="event-detail-panel__resource-message">Email request submitted</p>
-                    ) : (
+                  <h4 className="event-detail-panel__pdf-card-title">Event Resource (PDF)</h4>
+                  <p className="event-detail-panel__pdf-card-hint">Click to view</p>
+                </div>
+                {resourceRequestSubmitted ? (
+                  <p className="event-detail-panel__resource-message">Email request submitted</p>
+                ) : (
+                  <button
+                    type="button"
+                    className="event-detail-panel__request-resource-btn"
+                    onClick={handleRequestResource}
+                    disabled={isRequestingResource}
+                  >
+                    {isRequestingResource ? 'Submitting...' : 'Request resource'}
+                  </button>
+                )}
+              </div>
+            );
+
+            return (
+              <section className="event-detail-panel__section event-detail-panel__media-section">
+                <h3 className="event-detail-panel__section-title">Event Resources</h3>
+                {hasVideo && hasPdf ? (
+                  <>
+                    <div className="event-detail-panel__tabs">
                       <button
                         type="button"
-                        className="event-detail-panel__request-resource-btn"
-                        onClick={handleRequestResource}
-                        disabled={isRequestingResource}
+                        className={`event-detail-panel__tab ${mediaTab === 'video' ? 'active' : ''}`}
+                        onClick={() => setMediaTab('video')}
                       >
-                        {isRequestingResource ? 'Submitting...' : 'Request resource'}
+                        Video
                       </button>
+                      <button
+                        type="button"
+                        className={`event-detail-panel__tab ${mediaTab === 'pdf' ? 'active' : ''}`}
+                        onClick={() => setMediaTab('pdf')}
+                      >
+                        PDF
+                      </button>
+                    </div>
+                    {mediaTab === 'video' && (
+                      <div className="event-detail-panel__video-container">
+                        {renderVideoPlayer()}
+                      </div>
                     )}
+                    {mediaTab === 'pdf' && renderPdfSection()}
+                  </>
+                ) : hasVideo ? (
+                  <div className="event-detail-panel__video-container">
+                    {renderVideoPlayer()}
                   </div>
-                )
-              ) : null}
-            </section>
-          )}
+                ) : hasPdf ? (
+                  renderPdfSection()
+                ) : null}
+              </section>
+            );
+          })()}
         </div>
 
         {/* Footer with Register Button or Cancel Registration (upcoming only) or Submit enquiry (past only) */}

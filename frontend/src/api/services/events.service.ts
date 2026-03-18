@@ -50,9 +50,19 @@ export const eventsService = {
     return response.data;
   },
 
-  // Update event by ID
+  // Update event by ID (backend expects multipart/form-data, not JSON)
   update: async (id: string, data: UpdateEventDto) => {
-    const response = await apiClient.put<EventMutationResponse>(`/api/v1/events/${id}`, data);
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    }
+    const response = await apiClient.put<EventMutationResponse>(`/api/v1/events/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -93,6 +103,7 @@ export const eventsService = {
     );
     return response.data;
   },
+
 
   // Get registrations for a specific user
   getUserRegistrations: async (status?: string) => {
