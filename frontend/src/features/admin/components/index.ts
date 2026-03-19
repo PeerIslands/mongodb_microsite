@@ -23,3 +23,4 @@ export { default as VideoUploader } from './VideoUploader';
 export { default as TestimonialForm } from './TestimonialForm';
 export { default as TestimonialList } from './TestimonialList';
 export { default as HomePopupForm } from './HomePopupForm';
+export { default as EventDomainManager } from './EventDomainManager';

@@ -42,7 +42,17 @@ from app.api.v1.dependencies.services import (
     get_event_repository,
     get_user_repository,
     get_current_active_user,
+    get_event_guest_registration_repository,
+    get_event_domain_repository,
 )
+from app.api.v1.repositories.event_domain_repository import EventDomainRepository
+from app.api.v1.models.event_guest_registration import (
+    GuestEventRegistrationCreate,
+    GuestEventRegistrationResponse,
+    VerifyGuestAccessRequest,
+    VerifyGuestAccessResponse,
+)
+from app.api.v1.repositories.event_guest_registration_repository import EventGuestRegistrationRepository
 from app.api.v1.models.user import UserModel
 from app.api.v1.exceptions.event_registration_exceptions import (
     EventRegistrationNotFoundError,
@@ -54,6 +64,130 @@ from app.api.v1.exceptions.event_registration_exceptions import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/event-registrations")
+
+
+# =============================================================================
+# PUBLIC (no auth) — guest registration via form
+# =============================================================================
+
+@router.post(
+    "/public",
+    response_model=GuestEventRegistrationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Guest Event Registration (no login required)",
+    description="Register for an event without a user account. Collects name, email, company, designation and phone.",
+    responses={
+        201: {"description": "Registered successfully"},
+        404: {"description": "Event not found"},
+        409: {"description": "Already registered with this email"},
+    },
+)
+async def guest_register(
+    request: GuestEventRegistrationCreate,
+    guest_repo: EventGuestRegistrationRepository = Depends(get_event_guest_registration_repository),
+    domain_repo: EventDomainRepository = Depends(get_event_domain_repository),
+    event_repository=Depends(get_event_repository),
+):
+    """Public event registration — no JWT required. Domain whitelist enforced."""
+    event = await event_repository.get_by_id(request.event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    # Domain whitelist check
+    email_domain = request.email.split("@")[-1].lower().strip()
+    is_allowed = await domain_repo.is_domain_whitelisted(email_domain)
+    if not is_allowed:
+        # Record unique domain request (only notifies once per domain)
+        await domain_repo.record_domain_request(email_domain)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="domain_not_whitelisted",
+        )
+
+    existing = await guest_repo.find_by_event_and_email(request.event_id, request.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already registered for the event",
+        )
+
+    doc = await guest_repo.create(
+        event_id=request.event_id,
+        first_name=request.first_name,
+        last_name=request.last_name,
+        email=request.email,
+        company=request.company,
+        designation=request.designation,
+        phone=request.phone,
+    )
+
+    # Send confirmation email for future events (fire-and-forget — never fail the registration)
+    event_date_str = event.get("date", "")
+    try:
+        from datetime import datetime as _dt, date as _date
+        event_date = _dt.strptime(event_date_str, "%Y-%m-%d").date()
+        is_future = event_date >= _date.today()
+    except (ValueError, TypeError):
+        is_future = False
+
+    if is_future:
+        try:
+            event_data = {
+                "title": event.get("title", ""),
+                "category": event.get("category", ""),
+                "date": event.get("date", ""),
+                "time": event.get("time", ""),
+                "timezone": event.get("timezone", ""),
+                "duration_minutes": event.get("duration_minutes", 60),
+                "description": event.get("description", ""),
+                "attendee_value": event.get("attendee_value", ""),
+                "event_type": event.get("event_type", "online"),
+                "location": event.get("location", ""),
+                "calendar_download_link": f"{settings.FRONTEND_BASE_URL}/events/{request.event_id}/calendar",
+            }
+            await EmailService.send_event_registration_confirmation_email(
+                receiver_email=request.email,
+                event_data=event_data,
+            )
+            logger.info(f"Guest confirmation email sent to {request.email} for event {request.event_id}")
+        except Exception as email_err:
+            logger.warning(f"Failed to send guest confirmation email: {email_err}")
+
+    return GuestEventRegistrationResponse(**doc)
+
+
+@router.post(
+    "/public/verify-access",
+    response_model=VerifyGuestAccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify guest access to a past event",
+    description="Checks whether an email address has a guest registration for the given event. Used by returning users who registered previously but are no longer in the same browser session.",
+    responses={
+        200: {"description": "Email found — access granted"},
+        404: {"description": "No registration found for this email"},
+    },
+)
+async def verify_guest_access(
+    request: VerifyGuestAccessRequest,
+    guest_repo: EventGuestRegistrationRepository = Depends(get_event_guest_registration_repository),
+    event_repository=Depends(get_event_repository),
+):
+    """Verify a guest registration by email. Returns first_name on success."""
+    event = await event_repository.get_by_id(request.event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    doc = await guest_repo.find_by_event_and_email(request.event_id, str(request.email))
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No registration found for this email address.",
+        )
+
+    return VerifyGuestAccessResponse(
+        email=doc["email"],
+        first_name=doc.get("first_name", ""),
+    )
 
 
 # =============================================================================
@@ -422,65 +556,85 @@ async def export_event_registrations(
     service: EventRegistrationService = Depends(get_event_registration_service),
     event_repository=Depends(get_event_repository),
     user_repository=Depends(get_user_repository),
+    guest_repo: EventGuestRegistrationRepository = Depends(get_event_guest_registration_repository),
 ):
-    """Export all registrations for a specific event to an Excel file."""
+    """Export all registrations (accounts + guests) for a specific event to an Excel file."""
     try:
-        # Fetch event details
         event = await event_repository.get_by_id(event_id)
         if not event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Event not found: {event_id}",
-            )
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Event not found: {event_id}")
+
         event_title = event.get("title", "Unknown Event")
-        
-        # Fetch all registrations for this event
-        registrations = await service.get_registrations_by_event(event_id)
-        
-        # Create Excel workbook
+
+        # Fetch both account and guest registrations
+        account_registrations = await service.get_registrations_by_event(event_id)
+        guest_registrations = await guest_repo.get_by_event(event_id)
+
+        # Normalise into a single list of dicts for rendering
+        all_rows = []
+
+        for reg in account_registrations:
+            user = await user_repository.get_user_by_id(reg.user_id)
+            if user:
+                all_rows.append({
+                    "email": user.get("user_email", "N/A"),
+                    "first_name": user.get("first_name", "N/A"),
+                    "last_name": user.get("last_name", "N/A"),
+                    "company": user.get("company", "N/A"),
+                    "designation": user.get("job_function", "N/A"),
+                    "phone": user.get("business_phone", "N/A"),
+                    "status": reg.status,
+                    "registered_at": reg.registered_at,
+                    "type": "Account",
+                })
+            else:
+                all_rows.append({
+                    "email": "User not found",
+                    "first_name": "N/A", "last_name": "N/A",
+                    "company": "N/A", "designation": "N/A", "phone": "N/A",
+                    "status": reg.status,
+                    "registered_at": reg.registered_at,
+                    "type": "Account",
+                })
+
+        for g in guest_registrations:
+            all_rows.append({
+                "email": g.get("email", ""),
+                "first_name": g.get("first_name", ""),
+                "last_name": g.get("last_name", ""),
+                "company": g.get("company", ""),
+                "designation": g.get("designation", ""),
+                "phone": g.get("phone", ""),
+                "status": g.get("status", "REGISTERED"),
+                "registered_at": g.get("registered_at", ""),
+                "type": "Guest",
+            })
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Registrations"
-        
-        # Define styles
+
         header_font = Font(bold=True, color="FFFFFF", size=12)
         header_fill = PatternFill(start_color="5B6CFF", end_color="5B6CFF", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
         thin_border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin"),
+            left=Side(style="thin"), right=Side(style="thin"),
+            top=Side(style="thin"), bottom=Side(style="thin"),
         )
-        
-        # Add event title as header row
-        ws.merge_cells("A1:H1")
-        title_cell = ws["A1"]
-        title_cell.value = f"Registrations for: {event_title}"
-        title_cell.font = Font(bold=True, size=14)
-        title_cell.alignment = Alignment(horizontal="center", vertical="center")
-        
-        # Add export date
-        ws.merge_cells("A2:H2")
-        date_cell = ws["A2"]
-        date_cell.value = f"Exported on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        date_cell.font = Font(italic=True, size=10)
-        date_cell.alignment = Alignment(horizontal="center", vertical="center")
-        
-        # Define headers (starting from row 4)
-        headers = [
-            "Email",
-            "First Name",
-            "Last Name",
-            "Company",
-            "Designation",
-            "Phone Number",
-            "Registration Status",
-            "Registration Date",
-        ]
-        
-        # Write headers
+
+        ws.merge_cells("A1:I1")
+        ws["A1"].value = f"Registrations for: {event_title}"
+        ws["A1"].font = Font(bold=True, size=14)
+        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+
+        ws.merge_cells("A2:I2")
+        ws["A2"].value = f"Exported on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws["A2"].font = Font(italic=True, size=10)
+        ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+
+        headers = ["Email", "First Name", "Last Name", "Company", "Designation",
+                   "Phone Number", "Registration Status", "Registration Date", "Type"]
+
         header_row = 4
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=header_row, column=col, value=header)
@@ -488,98 +642,53 @@ async def export_event_registrations(
             cell.fill = header_fill
             cell.alignment = header_alignment
             cell.border = thin_border
-        
-        # Write data rows
+
         data_start_row = 5
-        for idx, registration in enumerate(registrations):
-            # Fetch user details
-            user = await user_repository.get_user_by_id(registration.user_id)
-            
-            if user:
-                email = user.get("user_email", "N/A")
-                first_name = user.get("first_name", "N/A")
-                last_name = user.get("last_name", "N/A")
-                company = user.get("company", "N/A")
-                job_function = user.get("job_function", "N/A")
-                phone_number = user.get("business_phone", "N/A")
-            else:
-                email = "User not found"
-                first_name = "N/A"
-                last_name = "N/A"
-                company = "N/A"
-                job_function = "N/A"
-                phone_number = "N/A"
-            
-            row_data = [
-                email,
-                first_name,
-                last_name,
-                company,
-                job_function,
-                phone_number,
-                registration.status,
-                registration.registered_at,
-            ]
-            
+        for idx, row in enumerate(all_rows):
             current_row = data_start_row + idx
+            row_data = [
+                row["email"], row["first_name"], row["last_name"],
+                row["company"], row["designation"], row["phone"],
+                row["status"], row["registered_at"], row["type"],
+            ]
             for col, value in enumerate(row_data, 1):
                 cell = ws.cell(row=current_row, column=col, value=value)
                 cell.border = thin_border
                 cell.alignment = Alignment(vertical="center")
-        
-        # Adjust column widths
+
         column_widths = {
-            "A": 35,  # Email
-            "B": 15,  # First Name
-            "C": 15,  # Last Name
-            "D": 25,  # Company
-            "E": 20,  # Designation
-            "F": 18,  # Phone Number
-            "G": 18,  # Status
-            "H": 22,  # Registration Date
+            "A": 35, "B": 15, "C": 15, "D": 25,
+            "E": 20, "F": 18, "G": 18, "H": 22, "I": 10,
         }
         for col_letter, width in column_widths.items():
             ws.column_dimensions[col_letter].width = width
-        
-        # Count only REGISTERED registrations for the total
-        registered_count = sum(1 for reg in registrations if reg.status == "REGISTERED")
-        cancelled_count = sum(1 for reg in registrations if reg.status == "CANCELLED")
-        
-        # Add total count row
-        total_row = data_start_row + len(registrations) + 1
-        ws.cell(row=total_row, column=1, value=f"Total Registrations: {registered_count}")
-        ws.cell(row=total_row, column=1).font = Font(bold=True)
-        ws.cell(row=total_row+1, column=1, value=f"Cancelled Registrations: {cancelled_count}")
-        ws.cell(row=total_row+1, column=1).font = Font(bold=True)
-        
-        # Save to BytesIO
+
+        registered_count = sum(1 for r in all_rows if r["status"] == "REGISTERED")
+        guest_count = sum(1 for r in all_rows if r["type"] == "Guest")
+        total_row = data_start_row + len(all_rows) + 1
+        ws.cell(row=total_row, column=1, value=f"Total Registered: {registered_count}").font = Font(bold=True)
+        ws.cell(row=total_row + 1, column=1, value=f"  — of which guests: {guest_count}").font = Font(bold=True)
+
         output = BytesIO()
         wb.save(output)
         output.seek(0)
-        
-        # Generate filename
-        safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in event_title)
-        safe_title = safe_title[:50]  # Limit length
+
+        safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in event_title)[:50]
         filename = f"{safe_title}_registrations_{datetime.now().strftime('%Y%m%d')}.xlsx"
-        
-        logger.info(f"Generated Excel export for event {event_id} with {len(registrations)} registrations")
-        
+
+        logger.info(f"Exported {len(all_rows)} registrations for event {event_id} ({guest_count} guests)")
+
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"',
-            },
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to export registrations: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export registrations: {str(e)}",
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to export: {str(e)}")
 
 
 @router.get(

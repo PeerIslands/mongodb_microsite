@@ -1,0 +1,261 @@
+.edm {
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.edm__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e8e8e8;
+  margin-bottom: 0.5rem;
+}
+
+.edm__desc {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+/* ── Sub-tabs ──────────────────────────────────────── */
+.edm__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0;
+}
+
+.edm__tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+
+.edm__tab:hover {
+  color: #e8e8e8;
+}
+
+.edm__tab--active {
+  color: #00ed64;
+  border-bottom-color: #00ed64;
+}
+
+.edm__tab-count {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.edm__tab-badge {
+  background: #ef4444;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  color: #fff;
+  font-weight: 700;
+  animation: edm-pulse 2s ease-in-out infinite;
+}
+
+@keyframes edm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+/* ── Panel ─────────────────────────────────────────── */
+.edm__panel {
+  animation: edm-fade 0.2s ease;
+}
+
+@keyframes edm-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Add form ──────────────────────────────────────── */
+.edm__add-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.edm__input {
+  flex: 1;
+  max-width: 360px;
+  padding: 0.55rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #e8e8e8;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edm__input:focus {
+  border-color: #00ed64;
+}
+
+.edm__input::placeholder {
+  color: #6b7280;
+}
+
+/* ── Buttons ───────────────────────────────────────── */
+.edm__btn {
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.edm__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edm__btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.edm__btn--primary {
+  background: #00ed64;
+  color: #001e2b;
+}
+
+.edm__btn--primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.edm__btn--danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.edm__btn--danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.edm__btn--approve {
+  background: rgba(0, 237, 100, 0.15);
+  color: #00ed64;
+  border: 1px solid rgba(0, 237, 100, 0.3);
+}
+
+.edm__btn--approve:hover:not(:disabled) {
+  background: rgba(0, 237, 100, 0.25);
+}
+
+.edm__action-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ── Table ─────────────────────────────────────────── */
+.edm__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.edm__table th {
+  text-align: left;
+  padding: 0.6rem 1rem;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.edm__table td {
+  padding: 0.75rem 1rem;
+  color: #d1d5db;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.edm__table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.edm__domain-cell {
+  font-family: 'Courier New', monospace;
+  color: #e8e8e8 !important;
+  font-weight: 500;
+}
+
+.edm__date-cell {
+  color: #9ca3af !important;
+  font-size: 0.82rem;
+}
+
+.edm__count-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Status badges ─────────────────────────────────── */
+.edm__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.edm__status--pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.edm__status--approved {
+  background: rgba(0, 237, 100, 0.12);
+  color: #00ed64;
+  border: 1px solid rgba(0, 237, 100, 0.25);
+}
+
+.edm__status--rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.edm__done-label {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+/* ── Messages ──────────────────────────────────────── */
+.edm__error {
+  color: #f87171;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.edm__loading,
+.edm__empty {
+  color: #6b7280;
+  font-size: 0.9rem;
+  padding: 2rem 0;
+  text-align: center;
+}
