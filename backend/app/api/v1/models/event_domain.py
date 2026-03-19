@@ -1,7 +1,6 @@
 """
 Event domain whitelist models.
 """
-from datetime import datetime
 from pydantic import BaseModel, Field
 
 
