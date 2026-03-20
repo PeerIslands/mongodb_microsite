@@ -106,6 +106,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@peerislands.io"
 
+    # Estimator guest email verification
+    ESTIMATOR_GUEST_OTP_EXPIRY_MINUTES: int = 10
+    ESTIMATOR_GUEST_VERIFICATION_SESSION_MINUTES: int = 60
+    ESTIMATOR_GUEST_OTP_RESEND_COOLDOWN_SECONDS: int = 60
+    ESTIMATOR_GUEST_OTP_MAX_ATTEMPTS: int = 5
+
     
     # Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: str = ""

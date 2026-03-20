@@ -35,6 +35,7 @@ const Header = () => {
     if (path === ROUTES.ABOUT || path === '/about') return 'About';
     if (path === '/contact') return 'Contact';
     if (path === '/profile') return 'Profile';
+    if (path === ROUTES.ESTIMATOR || path === '/estimator') return 'Estimator';
     if (path === '/admin' || path.startsWith('/admin')) return 'Admin';
     // Default to Offerings for home page
     return 'Offerings';
@@ -50,6 +51,7 @@ const Header = () => {
       { label: 'Insights', path: ROUTES.INSIGHTS },
       { label: 'Events', path: ROUTES.EVENTS },
       { label: 'About', path: ROUTES.ABOUT },
+      { label: 'Estimator', path: ROUTES.ESTIMATOR },
     ];
     // Filter out current page from dropdown
     return allItems.filter(item => item.label !== currentLabel);
@@ -130,6 +132,7 @@ const Header = () => {
             <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
             <a href={ROUTES.EVENTS} className="nav-link">Events</a>
             <a href={ROUTES.ABOUT} className="nav-link">About</a>
+            <a href={ROUTES.ESTIMATOR} className="nav-link">Estimator</a>
             {isLoggedIn && isAdmin && (
               <a href={ROUTES.ADMIN} className="nav-link admin-link">Admin Dashboard</a>
             )}
@@ -154,6 +157,7 @@ const Header = () => {
                   <div className="nav-dropdown-menu">
                     <a href={ROUTES.EVENTS} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Events</a>
                     <a href={ROUTES.ABOUT} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>About</a>
+                    <a href={ROUTES.ESTIMATOR} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Estimator</a>
                     {isLoggedIn && isAdmin && (
                       <a href={ROUTES.ADMIN} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Admin Dashboard</a>
                     )}

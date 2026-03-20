@@ -19,12 +19,15 @@ async def lifespan(app: FastAPI):
     try:
         from app.api.v1.repositories.email_template_repository import EmailTemplateRepository
         from app.api.v1.repositories.testimonial_repository import TestimonialRepository
+        from estimator_backend.app.core.startup import ensure_indexes as ensure_estimator_indexes
         
         email_repo = EmailTemplateRepository(Database.get_db())
         await email_repo.ensure_indexes()
         
         testimonial_repo = TestimonialRepository(Database.get_db())
         await testimonial_repo.create_indexes()
+
+        await ensure_estimator_indexes(Database.get_db())
     except Exception as e:
         print(f"Warning: Failed to create indexes: {e}")
     

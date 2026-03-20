@@ -29,4 +29,5 @@ lxml==5.1.0
 markdown>=3.5.0
 # Excel generation
 openpyxl>=3.1.2
+PyYAML==6.0.3
 

@@ -13,6 +13,8 @@ export const ROUTES = {
   OFFERINGS: '/offerings',
   NEWSLETTER: '/newsletter',
   ADMIN: '/admin',
+  ADMIN_PRICING: '/admin/pricing',
+  ESTIMATOR: '/estimator',
   EVENTS: '/events',
   EVENTS_ON_DEMAND: '/events/on-demand',
   ABOUT: '/about',

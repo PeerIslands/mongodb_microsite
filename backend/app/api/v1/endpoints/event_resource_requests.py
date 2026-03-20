@@ -3,7 +3,9 @@ Event Resource Request Endpoints
 Request event PDF resource - name and email sent to admin (same flow as newsletter access).
 """
 
+import base64
 import logging
+import re
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 
@@ -14,6 +16,8 @@ from app.api.v1.models.event_resource_request import (
 from app.api.v1.models.user import UserModel
 from app.api.v1.repositories.event_resource_request_repository import EventResourceRequestRepository
 from app.api.v1.repositories.event_repository import EventRepository
+from app.api.v1.services.email_service import EmailService
+from app.api.v1.services.azure_blob_service import get_azure_blob_service, AzureBlobServiceError
 from app.core.database import get_database
 from app.api.v1.dependencies.services import get_current_user, get_optional_current_user, get_event_repository
 
@@ -154,10 +158,87 @@ async def update_event_resource_request_status(
     action: str = Query(..., description="approve or deny"),
     admin_note: Optional[str] = Query(None),
     repo: EventResourceRequestRepository = Depends(get_event_resource_request_repository),
+    event_repository: EventRepository = Depends(get_event_repository),
     current_user: UserModel = Depends(require_admin),
 ) -> EventResourceRequestResponse:
     if action not in ("approve", "deny"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Action must be approve or deny")
+
+    existing = await repo.get_request_by_id(request_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    if existing.get("status") != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Request already {existing.get('status')}",
+        )
+
+    if action == "approve":
+        event = await event_repository.get_by_id(existing["event_id"])
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Associated event not found")
+
+        pdf_blob_path = (event.get("pdf_url") or "").strip()
+        if not pdf_blob_path:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This event does not have a PDF resource to send",
+            )
+
+        try:
+            blob_service = get_azure_blob_service()
+            file_content, content_type, _ = await blob_service.download_file(pdf_blob_path)
+        except AzureBlobServiceError as e:
+            logger.error(f"Failed to download event resource PDF for request {request_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to fetch the event PDF from storage",
+            )
+
+        event_title = event.get("title") or existing.get("event_title") or "event-resource"
+        safe_filename = re.sub(r"[^A-Za-z0-9 _-]", "_", event_title).strip() or "event-resource"
+        attachment_name = f"{safe_filename[:80]}.pdf"
+        receiver_email = existing["user_email"]
+        receiver_name = existing.get("user_name") or receiver_email
+
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Your requested event resource is attached</h2>
+            <p>Hello {receiver_name},</p>
+            <p>Your request for the event resource <strong>{event_title}</strong> has been approved.</p>
+            <p>Please find the PDF attached to this email.</p>
+            <p>Best regards,<br>Peerislands Team</p>
+        </body>
+        </html>
+        """
+        plain_text_content = (
+            f"Hello {receiver_name},\n\n"
+            f"Your request for the event resource '{event_title}' has been approved.\n"
+            "Please find the PDF attached to this email.\n\n"
+            "Best regards,\nPeerislands Team"
+        )
+
+        try:
+            service = EmailService()
+            await service.send_email(
+                to_addresses=[receiver_email],
+                subject=f"Approved: {event_title} resource",
+                html_content=html_content,
+                plain_text_content=plain_text_content,
+                attachments=[{
+                    "name": attachment_name,
+                    "content_type": content_type or "application/pdf",
+                    "content_bytes": base64.b64encode(file_content).decode("utf-8"),
+                }],
+            )
+        except Exception as e:
+            logger.error(f"Failed to send event resource approval email for request {request_id}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send approval email with the event resource",
+            )
+
     updated = await repo.update_status(
         request_id=request_id,
         status="approved" if action == "approve" else "denied",

@@ -89,6 +89,20 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
     }
   };
 
+  const handleEventResourceAction = async (requestId: string, action: 'approve' | 'deny') => {
+    try {
+      setProcessingId(requestId);
+      await eventResourceRequestService.updateStatus(requestId, action);
+      await fetchRequests();
+      if (onRequestHandled) onRequestHandled();
+      alert(`Event resource request ${action === 'approve' ? 'approved' : 'denied'} successfully`);
+    } catch (error: any) {
+      alert(error.response?.data?.detail || `Failed to ${action} request`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleDelete = async (requestId: string) => {
     if (!confirm('Are you sure you want to delete this request?')) return;
     try {
@@ -293,11 +307,30 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
                       <span className="note-text">{req.admin_note}</span>
                     </div>
                   )}
-                  <div className="request-actions">
-                    <button className="action-button delete-button" onClick={() => handleDelete(req._id)} disabled={processingId === req._id}>
-                      {processingId === req._id ? '⏳' : '🗑️'} Delete
-                    </button>
-                  </div>
+                  {req.status === 'pending' ? (
+                    <div className="request-actions">
+                      <button
+                        className="action-button approve-button"
+                        onClick={() => handleEventResourceAction(req._id, 'approve')}
+                        disabled={processingId === req._id}
+                      >
+                        {processingId === req._id ? '⏳' : '✅'} Approve
+                      </button>
+                      <button
+                        className="action-button deny-button"
+                        onClick={() => handleEventResourceAction(req._id, 'deny')}
+                        disabled={processingId === req._id}
+                      >
+                        {processingId === req._id ? '⏳' : '❌'} Deny
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="request-actions">
+                      <button className="action-button delete-button" onClick={() => handleDelete(req._id)} disabled={processingId === req._id}>
+                        {processingId === req._id ? '⏳' : '🗑️'} Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

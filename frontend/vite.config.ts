@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@estimator': path.resolve(__dirname, './estimator_frontend/src'),
       },
     },
   }
