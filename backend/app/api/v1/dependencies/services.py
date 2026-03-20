@@ -26,6 +26,8 @@ from app.api.v1.repositories.event_registration_repository import EventRegistrat
 from app.api.v1.repositories.pdf_download_repository import PDFDownloadRepository
 from app.api.v1.repositories.testimonial_repository import TestimonialRepository
 from app.api.v1.repositories.home_popup_repository import HomePopupRepository
+from app.api.v1.repositories.event_guest_registration_repository import EventGuestRegistrationRepository
+from app.api.v1.repositories.event_domain_repository import EventDomainRepository
 from app.api.v1.services.user_service import UserService
 from app.api.v1.services.auth_service import AuthService
 from app.api.v1.services.case_study_service import CaseStudyService
@@ -154,6 +156,16 @@ def get_testimonial_repository() -> TestimonialRepository:
     """
     db = Database.get_db()
     return TestimonialRepository(db)
+
+
+def get_event_domain_repository() -> EventDomainRepository:
+    db = Database.get_db()
+    return EventDomainRepository(db)
+
+
+def get_event_guest_registration_repository() -> EventGuestRegistrationRepository:
+    db = Database.get_db()
+    return EventGuestRegistrationRepository(db)
 
 
 def get_home_popup_repository() -> HomePopupRepository:

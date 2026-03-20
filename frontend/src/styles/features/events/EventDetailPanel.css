@@ -307,7 +307,14 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.3);
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* When there's only one item (button) it should still be right-aligned */
+.event-detail-panel__footer > :only-child {
+  margin-left: auto;
 }
 
 /* Register Button */
@@ -417,6 +424,26 @@
 
 .event-detail-panel__enquiry-btn:active {
   transform: translateY(0);
+}
+
+/* Already-registered verify-access link (left side of footer) */
+.event-detail-panel__verify-access-btn {
+  display: inline;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.event-detail-panel__verify-access-btn:hover {
+  color: #00ed64;
 }
 
 /* Success Overlay */
