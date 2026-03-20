@@ -146,6 +146,28 @@ export const eventsService = {
     return response.data;
   },
 
+  // Send OTP for a returning guest to access a past event
+  sendGuestAccessOtp: async (event_id: string, email: string): Promise<{ message: string; resend_cooldown_seconds: number }> => {
+    const response = await apiClient.post<{ message: string; resend_cooldown_seconds: number }>(
+      '/api/v1/event-registrations/public/send-access-otp',
+      { event_id, email }
+    );
+    return response.data;
+  },
+
+  // Verify OTP for a returning guest to access a past event
+  verifyGuestAccessOtp: async (
+    event_id: string,
+    email: string,
+    otp_code: string
+  ): Promise<{ email: string; first_name: string }> => {
+    const response = await apiClient.post<{ email: string; first_name: string }>(
+      '/api/v1/event-registrations/public/verify-access-otp',
+      { event_id, email, otp_code }
+    );
+    return response.data;
+  },
+
   // Get registrations for a specific user
   getUserRegistrations: async (status?: string) => {
     const response = await apiClient.get<EventRegistrationResponse[]>(

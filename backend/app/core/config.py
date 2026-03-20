@@ -112,6 +112,11 @@ class Settings(BaseSettings):
     ESTIMATOR_GUEST_OTP_RESEND_COOLDOWN_SECONDS: int = 60
     ESTIMATOR_GUEST_OTP_MAX_ATTEMPTS: int = 5
 
+    # Event guest access verification for on-demand webinars
+    EVENT_GUEST_ACCESS_OTP_EXPIRY_MINUTES: int = 10
+    EVENT_GUEST_ACCESS_OTP_RESEND_COOLDOWN_SECONDS: int = 60
+    EVENT_GUEST_ACCESS_OTP_MAX_ATTEMPTS: int = 5
+
     
     # Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: str = ""

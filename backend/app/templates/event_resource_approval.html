@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Resource Approved</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #001E2B;
+            background-color: #F5F7FA;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FFFFFF;
+            border: 1px solid #D6DADD;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        .email-header {
+            background-color: #001E2B;
+            padding: 30px 28px;
+            text-align: center;
+        }
+
+        .email-header h1 {
+            margin: 12px 0 0 0;
+            color: #00ED64;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .email-body {
+            padding: 30px 28px;
+        }
+
+        .greeting {
+            margin: 0 0 16px 0;
+            font-size: 17px;
+        }
+
+        .summary-card {
+            margin: 24px 0;
+            background-color: #001E2B;
+            border-radius: 10px;
+            padding: 24px;
+        }
+
+        .summary-label {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background-color: rgba(0, 237, 100, 0.15);
+            color: #00ED64;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .summary-title {
+            margin: 0;
+            color: #FFFFFF;
+            font-size: 22px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            background-color: #F4FBF7;
+            border: 1px solid #CFF3DD;
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+
+        .info-box-title {
+            margin: 0 0 8px 0;
+            color: #00684A;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .info-box p,
+        .email-body p {
+            margin: 0 0 14px 0;
+        }
+
+        .email-footer {
+            padding: 20px 28px 24px 28px;
+            background-color: #FAFAFA;
+            border-top: 1px solid #E8EAED;
+            text-align: center;
+        }
+
+        .footer-text {
+            margin: 0;
+            color: #5D6C74;
+            font-size: 12px;
+        }
+
+        .footer-brand {
+            color: #00684A;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="32" cy="32" r="30" stroke="#00ED64" stroke-width="4"/>
+                <path d="M18 33L27 42L46 23" stroke="#00ED64" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h1>Your Resource Is Ready</h1>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">Hello {{receiver_name}},</p>
+            <p>Your request for the event resource below has been approved. We have attached the PDF to this email so you can review it right away.</p>
+
+            <div class="summary-card">
+                <span class="summary-label">Event Resource</span>
+                <h2 class="summary-title">{{event_title}}</h2>
+            </div>
+
+            <div class="info-box">
+                <p class="info-box-title">PDF Attached</p>
+                <p>The requested document is attached to this email and can be opened directly from your email client.</p>
+            </div>
+
+            <p style="margin-top: 22px;">If you need anything else related to this event, simply reply to this email and our team will help.</p>
+        </div>
+
+        <div class="email-footer">
+            <p class="footer-text">This email was sent by <span class="footer-brand">Peerislands</span></p>
+        </div>
+    </div>
+</body>
+</html>

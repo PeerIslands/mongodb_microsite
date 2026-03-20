@@ -23,6 +23,22 @@ class VerifyGuestAccessRequest(BaseModel):
     email: EmailStr
 
 
+class SendGuestAccessOTPRequest(BaseModel):
+    event_id: str
+    email: EmailStr
+
+
+class SendGuestAccessOTPResponse(BaseModel):
+    message: str
+    resend_cooldown_seconds: int
+
+
+class VerifyGuestAccessOTPRequest(BaseModel):
+    event_id: str
+    email: EmailStr
+    otp_code: str = Field(..., min_length=4, max_length=10)
+
+
 class VerifyGuestAccessResponse(BaseModel):
     email: str
     first_name: str

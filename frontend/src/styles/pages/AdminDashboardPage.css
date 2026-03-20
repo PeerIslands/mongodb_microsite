@@ -10,6 +10,29 @@
   gap: 0.5rem;
   padding: 2rem 2rem 0 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91, 108, 255, 0.55) rgba(255, 255, 255, 0.04);
+  -webkit-overflow-scrolling: touch;
+}
+
+.main-navigation-desktop::-webkit-scrollbar {
+  height: 8px;
+}
+
+.main-navigation-desktop::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.main-navigation-desktop::-webkit-scrollbar-thumb {
+  background: rgba(91, 108, 255, 0.55);
+  border-radius: 999px;
+}
+
+.main-navigation-desktop::-webkit-scrollbar-thumb:hover {
+  background: rgba(91, 108, 255, 0.8);
 }
 
 /* Hide carousel on desktop */
@@ -30,6 +53,7 @@
   transition: all 0.2s;
   position: relative;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .main-nav-tab:hover {

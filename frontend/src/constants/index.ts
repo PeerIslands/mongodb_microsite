@@ -15,6 +15,7 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_PRICING: '/admin/pricing',
   ESTIMATOR: '/estimator',
+  ESTIMATOR_FLOW: '/estimator/estimate',
   EVENTS: '/events',
   EVENTS_ON_DEMAND: '/events/on-demand',
   ABOUT: '/about',

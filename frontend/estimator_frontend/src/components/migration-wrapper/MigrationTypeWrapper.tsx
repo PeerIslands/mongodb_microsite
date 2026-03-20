@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { ROUTES } from "@/constants";
 import styles from "./MigrationTypeWrapper.module.css";
 
 const COSMOS_MONGO_VALUE = "cosmos-mongodb-api";
@@ -24,12 +26,12 @@ export const MIGRATION_OPTIONS = [
 
 export default function MigrationTypeWrapper() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSelect = (value: string) => {
     setSelectedType(value);
     if (value === COSMOS_MONGO_VALUE) {
-      router.push("/estimate");
+      navigate(ROUTES.ESTIMATOR_FLOW);
     }
   };
 

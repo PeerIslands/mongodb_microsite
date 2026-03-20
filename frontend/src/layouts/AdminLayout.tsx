@@ -246,8 +246,6 @@ const AdminLayout = () => {
                 )}
               </div>
             )}
-            <Link to="/admin" className="view-site-link">Content</Link>
-            <Link to="/admin/pricing" className="view-site-link">Pricing</Link>
             <Link to="/" className="view-site-link">View Site</Link>
           </div>
         </div>

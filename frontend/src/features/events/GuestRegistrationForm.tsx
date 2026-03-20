@@ -8,6 +8,8 @@ interface GuestRegistrationFormProps {
   onClose: () => void;
   /** Called with the registered email once registration is confirmed */
   onSuccess: (email: string) => void;
+  /** Called when a past-event guest is already registered and should verify via OTP instead */
+  onExistingRegistration?: (email: string) => void;
   /** Optionally called when the user clicks "Log in instead" */
   onLoginInstead?: () => void;
   eventId: string;
@@ -23,6 +25,7 @@ const GuestRegistrationForm = ({
   isOpen,
   onClose,
   onSuccess,
+  onExistingRegistration,
   onLoginInstead,
   eventId,
   eventTitle,
@@ -113,7 +116,11 @@ const GuestRegistrationForm = ({
         if (err.response?.status === 403 && err.response?.data?.detail === 'domain_not_whitelisted') {
           setDomainBlocked(true);
         } else if (err.response?.status === 409) {
-          setError('This email is already registered for this event.');
+          if (isPastEvent && onExistingRegistration) {
+            onExistingRegistration(form.email.trim());
+          } else {
+            setError('This email is already registered for this event.');
+          }
         } else {
           setError('Failed to register. Please try again.');
         }

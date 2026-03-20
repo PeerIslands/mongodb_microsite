@@ -313,7 +313,7 @@ export async function saveEstimation(data: EstimationPayload): Promise<SavedEsti
   return apiClient("/estimations/", {
     method: "POST",
     body: JSON.stringify(data),
-  }, false); // Changed to false - auth not required
+  }, true);
 }
 
 /**
@@ -323,7 +323,7 @@ export async function updateEstimation(estimationId: string, data: EstimationPay
   return apiClient(`/estimations/${estimationId}`, {
     method: "PUT",
     body: JSON.stringify(data),
-  }, false); // Changed to false - auth not required
+  }, true);
 }
 
 /**

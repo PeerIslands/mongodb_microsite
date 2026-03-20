@@ -20,6 +20,7 @@ import formConfig from "@estimator/components/metadata/form.json";
 import styles from "./HomeClient.module.css";
 
 type EstimationMode = "quick" | "detailed" | null;
+const ESTIMATOR_HOME_PATH = "/estimator";
 
 interface UserInfo {
   name: string;
@@ -84,18 +85,19 @@ export default function HomeClient() {
   // Clear admin access flag when landing on home page
   useEffect(() => {
     sessionStorage.removeItem("admin_access_allowed");
+    const currentPath = window.location.pathname || ESTIMATOR_HOME_PATH;
 
     // Prevent back button from navigating to admin
     const preventBackToAdmin = () => {
       // If user tries to navigate back from home, push forward to stay on home
-      if (window.location.pathname === "/estimator" || window.location.pathname === "") {
+      if (window.location.pathname === currentPath || window.location.pathname === "") {
         console.log("Back button pressed on home - staying on home");
-        window.history.pushState(null, "", "/estimator");
+        window.history.pushState(null, "", currentPath);
       }
     };
 
     // Add state entry when landing on home
-    window.history.pushState(null, "", "/estimator");
+    window.history.pushState(null, "", currentPath);
     window.addEventListener("popstate", preventBackToAdmin);
 
     return () => {
@@ -456,7 +458,7 @@ export default function HomeClient() {
           }}
           onReset={() => {
             handleResetEstimation();
-            navigate("/estimator");
+            navigate(ESTIMATOR_HOME_PATH);
           }}
         />
       </div>
@@ -482,7 +484,7 @@ export default function HomeClient() {
               }
             }
             handleResetEstimation();
-            navigate("/estimator");
+            navigate(ESTIMATOR_HOME_PATH);
           }}
           className={styles.backToHomeButton}
         >

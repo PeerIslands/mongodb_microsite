@@ -35,7 +35,7 @@ const Header = () => {
     if (path === ROUTES.ABOUT || path === '/about') return 'About';
     if (path === '/contact') return 'Contact';
     if (path === '/profile') return 'Profile';
-    if (path === ROUTES.ESTIMATOR || path === '/estimator') return 'Estimator';
+    if (path === ROUTES.ESTIMATOR || path.startsWith(`${ROUTES.ESTIMATOR}/`)) return 'Pricing';
     if (path === '/admin' || path.startsWith('/admin')) return 'Admin';
     // Default to Offerings for home page
     return 'Offerings';
@@ -51,7 +51,7 @@ const Header = () => {
       { label: 'Insights', path: ROUTES.INSIGHTS },
       { label: 'Events', path: ROUTES.EVENTS },
       { label: 'About', path: ROUTES.ABOUT },
-      { label: 'Estimator', path: ROUTES.ESTIMATOR },
+      { label: 'Pricing', path: ROUTES.ESTIMATOR },
     ];
     // Filter out current page from dropdown
     return allItems.filter(item => item.label !== currentLabel);
@@ -111,6 +111,16 @@ const Header = () => {
     return email.charAt(0).toUpperCase();
   };
 
+  const isActivePath = (path: string) => {
+    if (path === ROUTES.OFFERINGS) {
+      return location.pathname === ROUTES.HOME || location.pathname === '/offerings';
+    }
+    if (path === ROUTES.ESTIMATOR) {
+      return location.pathname === ROUTES.ESTIMATOR || location.pathname.startsWith(`${ROUTES.ESTIMATOR}/`);
+    }
+    return location.pathname === path;
+  };
+
   const currentPageLabel = getCurrentPageLabel();
   const dropdownItems = getDropdownItems();
 
@@ -126,25 +136,21 @@ const Header = () => {
 
             {/* Desktop Navigation - All links */}
             <nav className="nav nav-desktop">
-            <a href={ROUTES.OFFERINGS} className="nav-link">Offerings</a>
-            <a href={ROUTES.ACCELERATORS} className="nav-link">Accelerators</a>
-            <a href={ROUTES.SUCCESS_STORIES} className="nav-link">Success Stories</a>
-            <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
-            <a href={ROUTES.EVENTS} className="nav-link">Events</a>
-            <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="nav-link" target="_blank" rel="noopener noreferrer">Pricing</a>
-            <a href={ROUTES.ABOUT} className="nav-link">About</a>
-            <a href={ROUTES.ESTIMATOR} className="nav-link">Estimator</a>
-            {isLoggedIn && isAdmin && (
-              <a href={ROUTES.ADMIN} className="nav-link admin-link">Admin Dashboard</a>
-            )}
+            <a href={ROUTES.OFFERINGS} className={`nav-link ${isActivePath(ROUTES.OFFERINGS) ? 'nav-link-active' : ''}`}>Offerings</a>
+            <a href={ROUTES.ACCELERATORS} className={`nav-link ${isActivePath(ROUTES.ACCELERATORS) ? 'nav-link-active' : ''}`}>Accelerators</a>
+            <a href={ROUTES.SUCCESS_STORIES} className={`nav-link ${isActivePath(ROUTES.SUCCESS_STORIES) ? 'nav-link-active' : ''}`}>Success Stories</a>
+            <a href={ROUTES.INSIGHTS} className={`nav-link ${isActivePath(ROUTES.INSIGHTS) ? 'nav-link-active' : ''}`}>Insights</a>
+            <a href={ROUTES.EVENTS} className={`nav-link ${isActivePath(ROUTES.EVENTS) ? 'nav-link-active' : ''}`}>Events</a>
+            <a href={ROUTES.ABOUT} className={`nav-link ${isActivePath(ROUTES.ABOUT) ? 'nav-link-active' : ''}`}>About</a>
+            <a href={ROUTES.ESTIMATOR} className={`nav-link ${isActivePath(ROUTES.ESTIMATOR) ? 'nav-link-active' : ''}`}>Pricing</a>
           </nav>
           
           {/* Tablet Navigation - 4 links + dropdown */}
           <nav className="nav nav-tablet">
-            <a href={ROUTES.OFFERINGS} className="nav-link">Offerings</a>
-            <a href={ROUTES.ACCELERATORS} className="nav-link">Accelerators</a>
-            <a href={ROUTES.SUCCESS_STORIES} className="nav-link">Success Stories</a>
-            <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
+            <a href={ROUTES.OFFERINGS} className={`nav-link ${isActivePath(ROUTES.OFFERINGS) ? 'nav-link-active' : ''}`}>Offerings</a>
+            <a href={ROUTES.ACCELERATORS} className={`nav-link ${isActivePath(ROUTES.ACCELERATORS) ? 'nav-link-active' : ''}`}>Accelerators</a>
+            <a href={ROUTES.SUCCESS_STORIES} className={`nav-link ${isActivePath(ROUTES.SUCCESS_STORIES) ? 'nav-link-active' : ''}`}>Success Stories</a>
+            <a href={ROUTES.INSIGHTS} className={`nav-link ${isActivePath(ROUTES.INSIGHTS) ? 'nav-link-active' : ''}`}>Insights</a>
             
             <div className="nav-dropdown">
               <button className="nav-dropdown-button" onClick={() => setShowMoreMenu(!showMoreMenu)} aria-label="More">
@@ -157,12 +163,8 @@ const Header = () => {
                   <button type="button" className="nav-dropdown-overlay" onClick={() => setShowMoreMenu(false)} aria-label="Close" />
                   <div className="nav-dropdown-menu">
                     <a href={ROUTES.EVENTS} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Events</a>
-                    <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="nav-dropdown-link" target="_blank" rel="noopener noreferrer" onClick={() => setShowMoreMenu(false)}>Pricing</a>
                     <a href={ROUTES.ABOUT} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>About</a>
-                    <a href={ROUTES.ESTIMATOR} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Estimator</a>
-                    {isLoggedIn && isAdmin && (
-                      <a href={ROUTES.ADMIN} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Admin Dashboard</a>
-                    )}
+                    <a href={ROUTES.ESTIMATOR} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Pricing</a>
                   </div>
                 </>
               )}
@@ -263,7 +265,6 @@ const Header = () => {
                       {item.label}
                     </a>
                   ))}
-                  <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="phone-dropdown-item" target="_blank" rel="noopener noreferrer" onClick={() => setShowMobileDropdown(false)}>Pricing</a>
                   {isLoggedIn && isAdmin && (
                     <a href={ROUTES.ADMIN} className="phone-dropdown-item" onClick={() => setShowMobileDropdown(false)}>Admin</a>
                   )}

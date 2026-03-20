@@ -18,6 +18,7 @@ const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 const AdminPricingPage = lazy(() => import('@/pages/AdminPricingPage'));
 const EstimatorPage = lazy(() => import('@/pages/EstimatorPage'));
+const EstimatorEstimatePage = lazy(() => import('@/pages/EstimatorEstimatePage'));
 const EventsPage = lazy(() => import('@/pages/EventsPage'));
 const AboutPage = lazy(() => import('@/pages/AboutPage'));
 const CalendarDownloadPage = lazy(() => import('@/pages/CalendarDownloadPage'));
@@ -108,6 +109,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <EstimatorPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.ESTIMATOR_FLOW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EstimatorEstimatePage />
               </Suspense>
             ),
           },

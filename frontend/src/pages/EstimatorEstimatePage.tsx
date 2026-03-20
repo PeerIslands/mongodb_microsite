@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 
-import MigrationTypeWrapper from '@estimator/components/migration-wrapper/MigrationTypeWrapper';
+import HomeClient from '@estimator/app/HomeClient';
 import { useAuthStore } from '@estimator/store/authStore';
 
-const EstimatorPage = () => {
+const EstimatorEstimatePage = () => {
   useEffect(() => {
     const sync = () => {
       useAuthStore.getState().syncFromMicrosite();
@@ -17,7 +17,7 @@ const EstimatorPage = () => {
     };
   }, []);
 
-  return <MigrationTypeWrapper />;
+  return <HomeClient />;
 };
 
-export default EstimatorPage;
+export default EstimatorEstimatePage;

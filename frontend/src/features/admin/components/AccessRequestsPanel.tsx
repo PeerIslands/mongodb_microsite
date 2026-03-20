@@ -285,6 +285,9 @@ export const AccessRequestsPanel = ({ isOpen, onClose, onRequestHandled }: Acces
                     <div className="user-info">
                       {req.user_name && <div className="user-name">{req.user_name}</div>}
                       <div className="user-email">{req.user_email}</div>
+                      <div className="user-domain">
+                        Source: {req.requester_type === 'guest' || req.guest_registration_id ? 'Guest registration' : 'Authenticated account'}
+                      </div>
                       {req.event_title && <div className="user-domain">Event: {req.event_title}</div>}
                     </div>
                     {getStatusBadge(req.status)}
