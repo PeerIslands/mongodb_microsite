@@ -131,6 +131,7 @@ const Header = () => {
             <a href={ROUTES.SUCCESS_STORIES} className="nav-link">Success Stories</a>
             <a href={ROUTES.INSIGHTS} className="nav-link">Insights</a>
             <a href={ROUTES.EVENTS} className="nav-link">Events</a>
+            <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="nav-link" target="_blank" rel="noopener noreferrer">Pricing</a>
             <a href={ROUTES.ABOUT} className="nav-link">About</a>
             <a href={ROUTES.ESTIMATOR} className="nav-link">Estimator</a>
             {isLoggedIn && isAdmin && (
@@ -156,6 +157,7 @@ const Header = () => {
                   <button type="button" className="nav-dropdown-overlay" onClick={() => setShowMoreMenu(false)} aria-label="Close" />
                   <div className="nav-dropdown-menu">
                     <a href={ROUTES.EVENTS} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Events</a>
+                    <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="nav-dropdown-link" target="_blank" rel="noopener noreferrer" onClick={() => setShowMoreMenu(false)}>Pricing</a>
                     <a href={ROUTES.ABOUT} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>About</a>
                     <a href={ROUTES.ESTIMATOR} className="nav-dropdown-link" onClick={() => setShowMoreMenu(false)}>Estimator</a>
                     {isLoggedIn && isAdmin && (
@@ -261,6 +263,7 @@ const Header = () => {
                       {item.label}
                     </a>
                   ))}
+                  <a href="https://gray-beach-085790c0f.2.azurestaticapps.net/" className="phone-dropdown-item" target="_blank" rel="noopener noreferrer" onClick={() => setShowMobileDropdown(false)}>Pricing</a>
                   {isLoggedIn && isAdmin && (
                     <a href={ROUTES.ADMIN} className="phone-dropdown-item" onClick={() => setShowMobileDropdown(false)}>Admin</a>
                   )}

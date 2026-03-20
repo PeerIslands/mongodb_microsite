@@ -7,6 +7,30 @@ import type {
   EventMutationResponse,
 } from '@/types/models/event';
 
+// Guest registration form fields
+export interface GuestEventRegistrationDto {
+  event_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  company?: string;
+  designation?: string;
+  phone?: string;
+}
+
+export interface GuestEventRegistrationResponse {
+  id: string;
+  event_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  company?: string;
+  designation?: string;
+  phone?: string;
+  status: string;
+  registered_at: string;
+}
+
 // Event Registration Types
 export interface CreateEventRegistrationDto {
   event_id: string;
@@ -104,6 +128,23 @@ export const eventsService = {
     return response.data;
   },
 
+  // Guest registration — no login required
+  guestRegisterForEvent: async (data: GuestEventRegistrationDto) => {
+    const response = await apiClient.post<GuestEventRegistrationResponse>(
+      '/api/v1/event-registrations/public',
+      data
+    );
+    return response.data;
+  },
+
+  // Verify a returning guest's access by email
+  verifyGuestAccess: async (event_id: string, email: string): Promise<{ email: string; first_name: string }> => {
+    const response = await apiClient.post<{ email: string; first_name: string }>(
+      '/api/v1/event-registrations/public/verify-access',
+      { event_id, email }
+    );
+    return response.data;
+  },
 
   // Get registrations for a specific user
   getUserRegistrations: async (status?: string) => {

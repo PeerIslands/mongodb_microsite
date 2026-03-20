@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
@@ -23,7 +23,9 @@ import {
   UserList,
   HomePopupForm,
 } from '@/features/admin/components';
+import EventDomainManager from '@/features/admin/components/EventDomainManager';
 import LeafLoader from '@/components/LeafLoader';
+import { eventDomainsService } from '@/api/services/eventDomains.service';
 
 type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup' | 'pricing';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
@@ -50,6 +52,8 @@ const AdminDashboard = () => {
   const [eventView, setEventView] = useState<SubView>('list');
   const [emailTemplateView, setEmailTemplateView] = useState<SubView>('list');
   const [testimonialView, setTestimonialView] = useState<SubView>('list');
+  const [eventSubTab, setEventSubTab] = useState<'events' | 'domains'>('events');
+  const [pendingDomainCount, setPendingDomainCount] = useState(0);
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
@@ -58,6 +62,12 @@ const AdminDashboard = () => {
   const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Loading...');
+
+  useEffect(() => {
+    eventDomainsService.getPendingCount()
+      .then(setPendingDomainCount)
+      .catch(() => {});
+  }, []);
 
   // Loading message map for each tab
   const getLoadingMessage = (view: MainView): string => {
@@ -228,6 +238,9 @@ const AdminDashboard = () => {
             onClick={() => handleMainViewChange(item.key)}
           >
             {item.icon} {item.label}
+            {item.key === 'events' && pendingDomainCount > 0 && (
+              <span className="admin-nav-badge">{pendingDomainCount}</span>
+            )}
           </button>
         ))}
       </div>
@@ -265,6 +278,9 @@ const AdminDashboard = () => {
                 onClick={() => handleMainViewChange(item.key)}
               >
                 {item.icon} {item.label}
+                {item.key === 'events' && pendingDomainCount > 0 && (
+                  <span className="admin-nav-badge">{pendingDomainCount}</span>
+                )}
               </button>
             </SwiperSlide>
           ))}
@@ -332,14 +348,43 @@ const AdminDashboard = () => {
 
         {mainView === 'events' && (
           <>
-            {eventView === 'list' && (
-              <EventList onAddNew={handleEventAddNew} onEdit={handleEventEdit} onLoadComplete={handleLoadComplete} />
+            {/* Events sub-tab navigation */}
+            <div className="admin-events-subtabs">
+              <button
+                className={`admin-events-subtab ${eventSubTab === 'events' ? 'admin-events-subtab--active' : ''}`}
+                onClick={() => setEventSubTab('events')}
+              >
+                Events
+              </button>
+              <button
+                className={`admin-events-subtab ${eventSubTab === 'domains' ? 'admin-events-subtab--active' : ''}`}
+                onClick={() => setEventSubTab('domains')}
+              >
+                Email Domains
+                {pendingDomainCount > 0 && (
+                  <span className="admin-events-subtab-badge">{pendingDomainCount}</span>
+                )}
+              </button>
+            </div>
+
+            {eventSubTab === 'events' && (
+              <>
+                {eventView === 'list' && (
+                  <EventList onAddNew={handleEventAddNew} onEdit={handleEventEdit} onLoadComplete={handleLoadComplete} />
+                )}
+                {(eventView === 'add' || eventView === 'edit') && (
+                  <EventForm 
+                    editingId={editingEventId} 
+                    onCancel={handleEventBackToList}
+                    onSuccess={handleEventBackToList}
+                  />
+                )}
+              </>
             )}
-            {(eventView === 'add' || eventView === 'edit') && (
-              <EventForm 
-                editingId={editingEventId} 
-                onCancel={handleEventBackToList}
-                onSuccess={handleEventBackToList}
+
+            {eventSubTab === 'domains' && (
+              <EventDomainManager
+                onPendingCountChange={setPendingDomainCount}
               />
             )}
           </>

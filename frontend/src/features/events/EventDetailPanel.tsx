@@ -10,6 +10,8 @@ import { eventResourceRequestService } from '@/api/services/eventResourceRequest
 import { isAuthenticated, getUserEmail } from '@/utils/sessionStorage';
 import type { EventCardData } from './EventCard';
 import RegistrationConfirmModal from '@/features/events/RegistrationConfirmModal';
+import GuestRegistrationForm from '@/features/events/GuestRegistrationForm';
+import GuestAccessVerifyForm from '@/features/events/GuestAccessVerifyForm';
 import PdfPreviewModal from '@/features/events/PdfPreviewModal';
 import '@/styles/features/events/EventDetailPanel.css';
 
@@ -171,9 +173,13 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
   const navigate = useNavigate();
   const { openLoginModal } = useAuthModal();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showGuestForm, setShowGuestForm] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessageText, setSuccessMessageText] = useState('');
+  // Set to the guest's email after a successful guest registration or verified access
+  const [guestRegisteredEmail, setGuestRegisteredEmail] = useState<string | null>(null);
+  const [showVerifyForm, setShowVerifyForm] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -222,6 +228,14 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
       document.body.style.overflow = '';
     };
   }, [isOpen, handleEscapeKey]);
+
+  // Reset guest registration state when the panel closes or changes event
+  useEffect(() => {
+    if (!isOpen) {
+      setGuestRegisteredEmail(null);
+      setShowVerifyForm(false);
+    }
+  }, [isOpen, event?.id]);
 
   // Refetch event by ID when panel opens so we show latest thumbnail/video (list can be stale after admin update)
   useEffect(() => {
@@ -277,41 +291,34 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
     setShowConfirmModal(true);
   };
 
-  // Auto-register for the event after user completes login (no confirm modal)
-  const handleAutoRegisterAfterLogin = useCallback(async () => {
-    if (!event?.id) return;
 
-    setShowConfirmModal(false);
-    setErrorMessage(null);
-    setIsRegistering(true);
-
-    try {
-      await eventsService.registerForEvent(event.id);
-      setSuccessMessageText('You have been registered for this event.');
-      setShowSuccessMessage(true);
-      onRegistrationSuccess?.();
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-        onClose();
-      }, 3000);
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setErrorMessage('You are already registered for this event.');
-      } else {
-        setErrorMessage('Failed to register. Please try again.');
-      }
-    } finally {
-      setIsRegistering(false);
-    }
-  }, [event?.id, onRegistrationSuccess, onClose]);
-
-  // Handle register button click - requires login
+  // Handle register button click
+  // Logged-in users → existing confirm modal (uses their account)
+  // Logged-out users → guest registration form (no login needed)
   const handleRegisterClick = () => {
     if (isLoggedIn()) {
       showRegistrationModal();
     } else {
-      // Open login modal; after successful login, auto-register for this event
-      openLoginModal(handleAutoRegisterAfterLogin);
+      setShowGuestForm(true);
+    }
+  };
+
+  // Handle successful guest registration
+  const handleGuestRegistrationSuccess = (email: string) => {
+    setShowGuestForm(false);
+    setGuestRegisteredEmail(email);
+    onRegistrationSuccess?.();
+
+    if (event?.is_past) {
+      // Past event — panel stays open; resources section becomes visible automatically
+    } else {
+      // Future event — form already showed "email sent" copy; just close the panel briefly
+      setSuccessMessageText('You have been registered! Check your email for confirmation.');
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        onClose();
+      }, 4000);
     }
   };
 
@@ -418,14 +425,13 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
 
   // Request event PDF resource (name + email to admin, same as newsletter access)
   const handleRequestResource = () => {
-    if (!isLoggedIn()) {
-      openLoginModal(() => {
-        // After login, user can click again
-      });
+    const emailToUse = isLoggedIn() ? getUserEmail() : guestRegisteredEmail;
+    if (!emailToUse) {
+      openLoginModal(() => {});
       return;
     }
-    const email = getUserEmail();
-    if (!email || !event?.id) return;
+    const email = emailToUse;
+    if (!event?.id) return;
     setIsRequestingResource(true);
     setErrorMessage(null);
     eventResourceRequestService
@@ -596,8 +602,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
             </section>
           )}
 
-          {/* Media Section: Video/External embed + PDF tabs (past events with media; only for logged-in registered users) */}
-          {displayEvent.is_past && (displayEvent.video_url || displayEvent.external_video_url || displayEvent.pdf_url) && isLoggedIn() && isRegistered && (() => {
+          {/* Media Section: Video/External embed + PDF tabs (past events; logged-in registered users OR verified/newly-registered guests) */}
+          {displayEvent.is_past && (displayEvent.video_url || displayEvent.external_video_url || displayEvent.pdf_url) && ((isLoggedIn() && isRegistered) || guestRegisteredEmail) && (() => {
             const hasVideo = !!(displayEvent.video_url || displayEvent.external_video_url);
             const hasPdf = !!displayEvent.pdf_url;
 
@@ -692,7 +698,16 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
 
         {/* Footer with Register Button or Cancel Registration (upcoming only) or Submit enquiry (past only) */}
         <footer className="event-detail-panel__footer">
-          {isRegistered ? (
+          {/* Guest just registered for a past event — show enquiry button */}
+          {!isRegistered && guestRegisteredEmail && displayEvent.is_past ? (
+            <button
+              type="button"
+              className="event-detail-panel__enquiry-btn"
+              onClick={() => { onClose(); navigate('/contact'); }}
+            >
+              Submit enquiry
+            </button>
+          ) : isRegistered ? (
             displayEvent.is_past ? (
               <button
                 type="button"
@@ -710,31 +725,68 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
               </button>
             )
           ) : (
-            <button 
-              className="event-detail-panel__register-btn"
-              onClick={handleRegisterClick}
-            >
-              Register Now
-              <svg 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                fill="none"
+            <>
+              {/* Link sits on the LEFT; only shown for past events to logged-out users */}
+              {displayEvent.is_past && !isLoggedIn() && (
+                <button
+                  type="button"
+                  className="event-detail-panel__verify-access-btn"
+                  onClick={() => setShowVerifyForm(true)}
+                >
+                  Already registered? Verify access
+                </button>
+              )}
+
+              <button 
+                className="event-detail-panel__register-btn"
+                onClick={handleRegisterClick}
               >
-                <path 
-                  d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
-                  stroke="currentColor" 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                Register Now
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path 
+                    d="M2.75 8H13.25M13.25 8L8.75 3.5M13.25 8L8.75 12.5" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </>
           )}
         </footer>
       </aside>
 
-      {/* Registration Confirmation Modal */}
+      {/* Guest access verification (returning users who already registered) */}
+      <GuestAccessVerifyForm
+        isOpen={showVerifyForm}
+        onClose={() => setShowVerifyForm(false)}
+        onVerified={(verifiedEmail) => {
+          setShowVerifyForm(false);
+          setGuestRegisteredEmail(verifiedEmail);
+        }}
+        eventId={event.id}
+        eventTitle={event.title}
+      />
+
+      {/* Guest Registration Form — no login required */}
+      <GuestRegistrationForm
+        isOpen={showGuestForm}
+        onClose={() => setShowGuestForm(false)}
+        onSuccess={handleGuestRegistrationSuccess}
+        onLoginInstead={() => {
+          setShowGuestForm(false);
+          openLoginModal(showRegistrationModal);
+        }}
+        eventId={event.id}
+        eventTitle={event.title}
+        eventDate={formattedDate}
+        eventTime={event.time}
+        eventTimezone={event.timezone}
+        isPastEvent={!!displayEvent.is_past}
+      />
+
+      {/* Registration Confirmation Modal (kept for logged-in flow if needed) */}
       <RegistrationConfirmModal
         isOpen={showConfirmModal}
         onClose={handleCloseModal}
