@@ -544,7 +544,7 @@ async def update_lead_status(
             detail="Cannot set lead status on estimation without enquiry"
         )
     
-    result = await db.estimations.update_one(
+    await db.estimations.update_one(
         {"_id": obj_id},
         {
             "$set": {

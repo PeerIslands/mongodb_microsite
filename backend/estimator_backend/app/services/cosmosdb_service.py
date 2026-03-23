@@ -56,7 +56,8 @@ class CosmosDBService:
                             collection = db[coll_name]
                             doc_count = collection.estimated_document_count()
                             total_docs += doc_count
-                        except:
+                        except Exception:
+                            # Best-effort stats only; skip collections we cannot inspect.
                             pass
                     
                     # Try to get database-level size
@@ -69,7 +70,8 @@ class CosmosDBService:
                         )
                         if db_size_bytes > 0:
                             total_size_gb = db_size_bytes / (1024 ** 3)
-                    except:
+                    except Exception:
+                        # Some deployments do not expose dbStats; leave size as unavailable.
                         pass
                     
                     database_list.append({
@@ -223,7 +225,8 @@ class CosmosDBService:
                             try:
                                 doc_count = collection.estimated_document_count()
                                 total_docs += doc_count
-                            except:
+                            except Exception:
+                                # Best-effort count fallback; ignore collections that still fail.
                                 pass
                         
                         # Get a sample document to check for nesting
@@ -235,7 +238,8 @@ class CosmosDBService:
                                         if key != '_id' and isinstance(value, (dict, list)):
                                             has_nested_docs = True
                                             break
-                            except:
+                            except Exception:
+                                # Sampling is optional; skip collections we cannot read.
                                 pass
                         
                         all_collections_info.append({
@@ -369,7 +373,8 @@ class CosmosDBService:
                 "is_cosmosdb": True,
                 "wire_version": server_info.get("maxWireVersion"),
             }
-        except:
+        except Exception:
+            # Some deployments block server_info; return a minimal CosmosDB fallback.
             return {
                 "api_version": "CosmosDB MongoDB API",
                 "is_cosmosdb": True,

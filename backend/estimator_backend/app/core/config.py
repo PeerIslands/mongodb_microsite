@@ -31,6 +31,7 @@ class Settings(BaseSettings):
                 if isinstance(parsed, list):
                     return parsed
             except (json.JSONDecodeError, ValueError):
+                # Fall back to comma-separated list parsing below.
                 pass
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v

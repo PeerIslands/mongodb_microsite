@@ -3,7 +3,6 @@ Document Service - Extract text from uploaded documents (PDF, TXT, etc.).
 """
 
 import io
-from typing import Union
 
 from PyPDF2 import PdfReader
 

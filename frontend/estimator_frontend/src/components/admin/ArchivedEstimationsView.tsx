@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { getArchivedEstimationsAdmin, updateLeadStatus, unarchiveEstimation, updateColdStatus } from "@estimator/lib/api";
 import KanbanView from "./KanbanView";
-import ArchiveConfirmModal from "./ArchiveConfirmModal";
 import styles from "./AllEstimationsView.module.css";
 
 interface Estimation {
@@ -171,25 +170,6 @@ export default function ArchivedEstimationsView() {
   const handleUnarchiveCancel = () => {
     setShowUnarchiveModal(false);
     setEstimationToUnarchive(null);
-  };
-
-  const getStatusLabel = (status?: string) => {
-    switch (status) {
-      case "new":
-        return "New Lead";
-      case "under_review":
-        return "Under Review";
-      case "quote_sent":
-        return "Quote Sent";
-      case "converted":
-        return "Converted";
-      case "rejected":
-        return "Rejected";
-      case "cold":
-        return "Cold Lead";
-      default:
-        return "";
-    }
   };
 
   const getStatusClass = (status?: string) => {

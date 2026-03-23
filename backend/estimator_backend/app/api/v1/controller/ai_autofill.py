@@ -4,7 +4,6 @@ AI Autofill Controller - Endpoints for AI-assisted form filling.
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, status, Depends
 from fastapi.responses import FileResponse
-from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Dict, Any, List
 from pydantic import BaseModel
 import json
@@ -13,7 +12,6 @@ import os
 from estimator_backend.app.services.llm_service import LLMService
 from estimator_backend.app.services.document_service import DocumentService
 from estimator_backend.app.services.cosmosdb_service import CosmosDBService
-from estimator_backend.app.core.database import get_database
 from estimator_backend.app.api.v1.dependencies.auth import get_optional_current_user
 
 router = APIRouter()
