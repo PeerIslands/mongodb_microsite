@@ -127,8 +127,9 @@ class CosmosDBExtractor:
                     try:
                         doc_count = collection.estimated_document_count()
                         total_docs += doc_count
-                    except:
-                        pass
+                    except Exception as e:
+                        # Best-effort: if even the estimated count fails, log and continue
+                        print(f"    ⚠️  Could not estimate document count for {coll_name}: {str(e)}")
                 
                 # Sample document for schema analysis
                 if not has_nested_docs:
