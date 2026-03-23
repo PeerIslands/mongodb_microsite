@@ -139,8 +139,9 @@ class CosmosDBExtractor:
                                 if key != '_id' and isinstance(value, (dict, list)):
                                     has_nested_docs = True
                                     break
-                    except:
-                        pass
+                    except Exception as e:
+                        # Best-effort sampling only; log and continue without nested-doc detection for this collection
+                        print(f"    ⚠️  Could not sample document for nested schema analysis in {coll_name}: {str(e)}", file=sys.stderr)
                 
                 container_details.append({
                     "name": coll_name,
