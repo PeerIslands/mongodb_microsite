@@ -1,5 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from importlib import import_module
+
+from app.core.database import Database as MicrositeDatabase
 
 from estimator_backend.app.core.config import get_settings
 
@@ -35,5 +36,4 @@ def get_database() -> AsyncIOMotorDatabase:
     """
     if db.db is not None:
         return db.db
-    microsite_database_module = import_module("app.core.database")
-    return microsite_database_module.Database.get_db()
+    return MicrositeDatabase.get_db()

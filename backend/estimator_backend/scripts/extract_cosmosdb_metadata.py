@@ -127,11 +127,8 @@ class CosmosDBExtractor:
                     try:
                         doc_count = collection.estimated_document_count()
                         total_docs += doc_count
-                    except Exception as e:
-                        print(
-                            f"    ⚠️  Could not estimate document count for {coll_name}: {str(e)}",
-                            file=sys.stderr,
-                        )
+                    except:
+                        pass
                 
                 # Sample document for schema analysis
                 if not has_nested_docs:
@@ -142,11 +139,8 @@ class CosmosDBExtractor:
                                 if key != '_id' and isinstance(value, (dict, list)):
                                     has_nested_docs = True
                                     break
-                    except Exception as e:
-                        print(
-                            f"    ⚠️  Could not sample document for nested schema analysis in {coll_name}: {str(e)}",
-                            file=sys.stderr,
-                        )
+                    except:
+                        pass
                 
                 container_details.append({
                     "name": coll_name,
