@@ -20,6 +20,7 @@ class SavedEstimationCreate(BaseModel):
     user_name: Optional[str] = Field(None, description="User's full name")
     user_email: Optional[str] = Field(None, description="User's email address")
     user_designation: Optional[str] = Field(None, description="User's job title/designation")
+    user_phone: Optional[str] = Field(None, description="User's phone number")
     user_company: Optional[str] = Field(None, description="User's company name")
     guest_verification_token: Optional[str] = Field(None, description="Short-lived guest email verification token")
     email_verified: Optional[bool] = Field(None, description="Whether the guest email was verified")
@@ -47,6 +48,7 @@ class SavedEstimation(BaseModel):
     user_name: Optional[str] = None
     user_email: Optional[str] = None
     user_designation: Optional[str] = None
+    user_phone: Optional[str] = None
     user_company: Optional[str] = None
     email_verified: bool = False
     # Enquiry
@@ -69,6 +71,7 @@ class SavedEstimation(BaseModel):
                 "user_name": "John Doe",
                 "user_email": "john@company.com",
                 "user_designation": "CTO",
+                "user_phone": "+14155550123",
                 "user_company": "Acme Corp",
                 "name": "Production Migration Q1 2024",
                 "estimation_type": "detailed",
@@ -92,6 +95,7 @@ class SavedEstimationResponse(BaseModel):
     user_name: Optional[str] = None
     user_email: Optional[str] = None
     user_designation: Optional[str] = None
+    user_phone: Optional[str] = None
     user_company: Optional[str] = None
     email_verified: bool = False
     created_at: datetime
@@ -117,6 +121,7 @@ class SavedEstimationList(BaseModel):
     user_name: Optional[str] = None
     user_email: Optional[str] = None
     user_designation: Optional[str] = None
+    user_phone: Optional[str] = None
     user_company: Optional[str] = None
     email_verified: bool = False
     enquiry: Optional[str] = None

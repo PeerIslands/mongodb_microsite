@@ -58,6 +58,7 @@ export type EstimationPayload = {
   user_name?: string;
   user_email?: string;
   user_designation?: string;
+  user_phone?: string;
   user_company?: string;
   guest_verification_token?: string;
   email_verified?: boolean;
@@ -75,6 +76,7 @@ export type SavedEstimationRecord = {
   user_name?: string;
   user_email?: string;
   user_designation?: string;
+  user_phone?: string;
   user_company?: string;
   email_verified?: boolean;
   enquiry?: string;
@@ -397,6 +399,7 @@ export async function getSavedEstimations(): Promise<Array<{
   user_name?: string;
   user_email?: string;
   user_designation?: string;
+  user_phone?: string;
   user_company?: string;
   created_at: string;
 }>> {
@@ -421,6 +424,7 @@ export async function getAllEstimationsAdmin(): Promise<Array<{
   user_name?: string;
   user_email?: string;
   user_designation?: string;
+  user_phone?: string;
   user_company?: string;
   enquiry?: string;
   has_enquiry: boolean;

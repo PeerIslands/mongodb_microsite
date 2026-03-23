@@ -26,6 +26,7 @@ interface UserInfo {
   name: string;
   email: string;
   designation: string;
+  phone: string;
   company: string;
 }
 
@@ -46,6 +47,7 @@ const mapMicrositeProfileToUserInfo = (profile: UserProfile): UserInfo => ({
   name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.user_email,
   email: profile.user_email,
   designation: profile.job_function || "",
+  phone: profile.business_phone || "",
   company: profile.company || "",
 });
 
@@ -274,6 +276,7 @@ export default function HomeClient() {
         name: email,
         email,
         designation: "",
+        phone: "",
         company: "",
       };
       setUserInfo(fallbackUserInfo);
@@ -304,6 +307,7 @@ export default function HomeClient() {
           user_name: info.name,
           user_email: info.email,
           user_designation: info.designation,
+          user_phone: info.phone,
           user_company: info.company,
           guest_verification_token: verificationToken,
         });
@@ -357,6 +361,7 @@ export default function HomeClient() {
           user_name: resolvedUserInfo?.name,
           user_email: resolvedUserInfo?.email,
           user_designation: resolvedUserInfo?.designation,
+          user_phone: resolvedUserInfo?.phone,
           user_company: resolvedUserInfo?.company,
           guest_verification_token: guestVerificationToken || undefined,
         });

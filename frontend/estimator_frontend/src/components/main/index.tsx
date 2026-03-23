@@ -26,6 +26,7 @@ type FormRendererProps = {
     name?: string;
     email?: string;
     designation?: string;
+    phone?: string;
     company?: string;
   };
   clientName?: string;
@@ -285,6 +286,7 @@ export default function FormRenderer({
           user_name: userInfo?.name,
           user_email: userInfo?.email,
           user_designation: userInfo?.designation,
+          user_phone: userInfo?.phone,
           user_company: userInfo?.company,
           guest_verification_token: guestVerificationToken || undefined,
           // All detailed estimations are quote requests

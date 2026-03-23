@@ -103,6 +103,15 @@
   box-sizing: border-box;
 }
 
+select.input {
+  appearance: none;
+}
+
+select.input option {
+  background: #18232f;
+  color: #ffffff;
+}
+
 .input::placeholder {
   color: var(--text-muted, rgba(239, 237, 253, 0.5));
 }
@@ -111,6 +120,19 @@
   border-color: var(--accent-primary, #5b6cff);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.2);
+}
+
+.phoneInputWrapper {
+  display: flex;
+  width: 100%;
+}
+
+.phoneInputWrapper :global(.PhoneInputInput) {
+  width: 100%;
+}
+
+.phoneInputWrapper :global(.PhoneInputCountry) {
+  margin-right: 10px;
 }
 
 .inputError {

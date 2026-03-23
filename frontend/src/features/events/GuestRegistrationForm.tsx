@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { eventsService } from '@/api/services/events.service';
 import axios from 'axios';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import '@/styles/features/events/GuestRegistrationForm.css';
 
 interface GuestRegistrationFormProps {
@@ -34,6 +36,22 @@ const GuestRegistrationForm = ({
   eventTimezone,
   isPastEvent = false,
 }: GuestRegistrationFormProps) => {
+  const jobFunctionOptions = [
+    'IT Executive (CIO, CTO, VP Engineering, etc.)',
+    'Business Executive (CEO, COO, CMO, etc.)',
+    'Architect',
+    'Business Development / Alliance Manager',
+    'DBA',
+    'Technical Operations',
+    'Director / Development Manager',
+    'Product / Project Manager',
+    'Software Developer / Engineer',
+    'Business Analyst',
+    'Data Scientist',
+    'Student',
+    'Other',
+  ];
+
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -83,6 +101,10 @@ const GuestRegistrationForm = ({
     e.preventDefault();
     if (!form.first_name.trim() || !form.last_name.trim() || !form.email.trim()) {
       setError('First name, last name and email are required.');
+      return;
+    }
+    if (form.phone.trim() && !isValidPhoneNumber(form.phone.trim())) {
+      setError('Please enter a valid phone number.');
       return;
     }
     setIsSubmitting(true);
@@ -244,24 +266,36 @@ const GuestRegistrationForm = ({
             <div className="guest-reg-row">
               <div className="guest-reg-field">
                 <label htmlFor="gr-designation">Designation / Job Title</label>
-                <input
+                <select
                   id="gr-designation"
-                  type="text"
                   value={form.designation}
-                  onChange={handleChange('designation')}
-                  placeholder="Senior Engineer"
-                  autoComplete="organization-title"
-                />
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, designation: e.target.value }));
+                    setError(null);
+                  }}
+                >
+                  <option value="">Select job function</option>
+                  {jobFunctionOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
               <div className="guest-reg-field">
                 <label htmlFor="gr-phone">Phone Number</label>
-                <input
+                <PhoneInput
                   id="gr-phone"
-                  type="tel"
                   value={form.phone}
-                  onChange={handleChange('phone')}
+                  international
+                  onChange={(value) => {
+                    setForm(prev => ({ ...prev, phone: value || '' }));
+                    setError(null);
+                  }}
                   placeholder="+1 555 000 0000"
-                  autoComplete="tel"
+                  className="guest-reg-phone-input-wrapper"
+                  numberInputProps={{
+                    className: 'guest-reg-phone-input-field',
+                    autoComplete: 'tel',
+                  }}
                 />
               </div>
             </div>

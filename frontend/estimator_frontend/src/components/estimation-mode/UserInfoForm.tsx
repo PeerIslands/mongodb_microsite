@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 import { sendGuestEmailOtp, verifyGuestEmailOtp } from "@estimator/lib/api";
 import styles from "./UserInfoForm.module.css";
@@ -9,6 +11,7 @@ interface UserInfo {
   name: string;
   email: string;
   designation: string;
+  phone: string;
   company: string;
 }
 
@@ -19,10 +22,27 @@ interface UserInfoFormProps {
 }
 
 export default function UserInfoForm({ onSubmit, onCancel, mode }: UserInfoFormProps) {
+  const jobFunctionOptions = [
+    "IT Executive (CIO, CTO, VP Engineering, etc.)",
+    "Business Executive (CEO, COO, CMO, etc.)",
+    "Architect",
+    "Business Development / Alliance Manager",
+    "DBA",
+    "Technical Operations",
+    "Director / Development Manager",
+    "Product / Project Manager",
+    "Software Developer / Engineer",
+    "Business Analyst",
+    "Data Scientist",
+    "Student",
+    "Other",
+  ];
+
   const [formData, setFormData] = useState<UserInfo>({
     name: "",
     email: "",
     designation: "",
+    phone: "",
     company: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof UserInfo, string>>>({});
@@ -68,6 +88,12 @@ export default function UserInfoForm({ onSubmit, onCancel, mode }: UserInfoFormP
 
     if (!formData.designation.trim()) {
       newErrors.designation = "Designation is required";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!isValidPhoneNumber(formData.phone.trim())) {
+      newErrors.phone = "Please enter a valid phone number";
     }
 
     if (!formData.company.trim()) {
@@ -205,15 +231,39 @@ export default function UserInfoForm({ onSubmit, onCancel, mode }: UserInfoFormP
               <label htmlFor="designation" className={styles.label}>
                 Designation <span className={styles.required}>*</span>
               </label>
-              <input
+              <select
                 id="designation"
-                type="text"
                 className={`${styles.input} ${errors.designation ? styles.inputError : ""}`}
                 value={formData.designation}
                 onChange={(e) => handleChange("designation", e.target.value)}
-                placeholder="Senior Developer, CTO, etc."
-              />
+              >
+                <option value="">Select job function</option>
+                {jobFunctionOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
               {errors.designation && <span className={styles.errorText}>{errors.designation}</span>}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="phone" className={styles.label}>
+                Phone Number <span className={styles.required}>*</span>
+              </label>
+              <PhoneInput
+                id="phone"
+                international
+                className={styles.phoneInputWrapper}
+                value={formData.phone}
+                onChange={(value) => handleChange("phone", value || "")}
+                placeholder="Enter phone number"
+                numberInputProps={{
+                  className: `${styles.input} ${errors.phone ? styles.inputError : ""}`,
+                  autoComplete: "tel",
+                }}
+              />
+              {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
             </div>
 
             <div className={styles.formGroup}>
@@ -246,6 +296,7 @@ export default function UserInfoForm({ onSubmit, onCancel, mode }: UserInfoFormP
               <div><strong>Name:</strong> {formData.name}</div>
               <div><strong>Email:</strong> {formData.email}</div>
               <div><strong>Designation:</strong> {formData.designation}</div>
+              <div><strong>Phone:</strong> {formData.phone}</div>
               <div><strong>Company:</strong> {formData.company}</div>
             </div>
 
