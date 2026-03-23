@@ -26,6 +26,7 @@ import {
 import EventDomainManager from '@/features/admin/components/EventDomainManager';
 import LeafLoader from '@/components/LeafLoader';
 import { eventDomainsService } from '@/api/services/eventDomains.service';
+import { getLeadStatusCounts } from '@estimator/lib/api';
 
 type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup' | 'pricing';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
   const [testimonialView, setTestimonialView] = useState<SubView>('list');
   const [eventSubTab, setEventSubTab] = useState<'events' | 'domains'>('events');
   const [pendingDomainCount, setPendingDomainCount] = useState(0);
+  const [estimatorNewLeadsCount, setEstimatorNewLeadsCount] = useState(0);
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
@@ -67,6 +69,21 @@ const AdminDashboard = () => {
     eventDomainsService.getPendingCount()
       .then(setPendingDomainCount)
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const loadEstimatorNewLeads = async () => {
+      try {
+        const counts = await getLeadStatusCounts();
+        setEstimatorNewLeadsCount(counts.new || 0);
+      } catch {
+        // Silently fail so admin content remains usable even if estimator stats are unavailable.
+      }
+    };
+
+    loadEstimatorNewLeads();
+    const interval = setInterval(loadEstimatorNewLeads, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Loading message map for each tab
@@ -241,6 +258,9 @@ const AdminDashboard = () => {
             {item.key === 'events' && pendingDomainCount > 0 && (
               <span className="admin-nav-badge">{pendingDomainCount}</span>
             )}
+            {item.key === 'pricing' && estimatorNewLeadsCount > 0 && (
+              <span className="admin-nav-badge">{estimatorNewLeadsCount}</span>
+            )}
           </button>
         ))}
       </div>
@@ -280,6 +300,9 @@ const AdminDashboard = () => {
                 {item.icon} {item.label}
                 {item.key === 'events' && pendingDomainCount > 0 && (
                   <span className="admin-nav-badge">{pendingDomainCount}</span>
+                )}
+                {item.key === 'pricing' && estimatorNewLeadsCount > 0 && (
+                  <span className="admin-nav-badge">{estimatorNewLeadsCount}</span>
                 )}
               </button>
             </SwiperSlide>

@@ -11,11 +11,7 @@ import {
   isAdmin,
   isAuthenticated,
 } from "@/utils/sessionStorage";
-import type {
-  LoginCredentials,
-  RegisterData,
-  UserResponse,
-} from "@estimator/lib/api";
+import type { UserResponse } from "@estimator/lib/api";
 
 type AuthState = {
   user: UserResponse | null;
@@ -26,8 +22,6 @@ type AuthState = {
 };
 
 type AuthActions = {
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
   clearError: () => void;
@@ -67,14 +61,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
   devtools(
     (set) => ({
       ...buildAuthState(),
-
-      login: async (_credentials) => {
-        throw new Error("Use microsite login instead.");
-      },
-
-      register: async (_data) => {
-        throw new Error("Use microsite signup instead.");
-      },
 
       logout: () => {
         clearSession();

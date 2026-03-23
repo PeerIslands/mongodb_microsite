@@ -19,22 +19,6 @@ export type UserResponse = {
   created_at: string;
 };
 
-export type TokenResponse = {
-  access_token: string;
-  token_type: string;
-  user: UserResponse;
-};
-
-export type LoginCredentials = {
-  username: string;
-  password: string;
-};
-
-export type RegisterData = {
-  username: string;
-  password: string;
-};
-
 export type GuestEmailSendOTPResponse = {
   success: boolean;
   message: string;
@@ -172,61 +156,6 @@ export async function healthCheck(): Promise<{
   return apiClient("/health", {
     method: "GET",
   });
-}
-
-/**
- * Register a new user
- */
-export async function register(data: RegisterData): Promise<TokenResponse> {
-  void data;
-  throw new Error("Use microsite signup instead.");
-}
-
-/**
- * Login user
- */
-export async function login(credentials: LoginCredentials): Promise<TokenResponse> {
-  void credentials;
-  throw new Error("Use microsite login instead.");
-}
-
-/**
- * Get current user info
- */
-export async function getCurrentUser(): Promise<UserResponse> {
-  const token = getAuthToken();
-  if (!token && typeof window !== "undefined") {
-    throw new Error("Not authenticated");
-  }
-
-  const email = typeof window !== "undefined" ? sessionStorage.getItem("userEmail") : null;
-  const userId = typeof window !== "undefined" ? sessionStorage.getItem("userId") : null;
-  const admin = typeof window !== "undefined" ? sessionStorage.getItem("isAdmin") === "true" : false;
-
-  if (!email) {
-    throw new Error("User session not available");
-  }
-
-  return {
-    _id: userId || email,
-    username: email,
-    role: admin ? "admin" : "user",
-    created_at: new Date().toISOString(),
-  };
-}
-
-/**
- * Save token to localStorage
- */
-export function saveAuthToken(token: string): void {
-  void token;
-}
-
-/**
- * Remove token from localStorage
- */
-export function removeAuthToken(): void {
-  // Microsite auth owns session lifecycle.
 }
 
 export async function sendGuestEmailOtp(email: string, name?: string): Promise<GuestEmailSendOTPResponse> {
