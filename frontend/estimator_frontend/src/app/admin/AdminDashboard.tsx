@@ -10,6 +10,8 @@ import EnquiriesView from "@estimator/components/admin/EnquiriesView";
 import RemindersView from "@estimator/components/admin/RemindersView";
 import styles from "./AdminDashboard.module.css";
 
+const ADMIN_PRICING_LAST_VIEWED_KEY = "admin_pricing_last_viewed_at";
+
 type AdminDashboardProps = {
   embedded?: boolean;
 };
@@ -61,7 +63,19 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
     const loadNewLeadsCount = async () => {
       try {
         const estimations = await getAllEstimationsAdmin();
-        const newLeads = estimations.filter(e => e.has_enquiry && e.lead_status === "new");
+        const lastViewedAt = Number(window.localStorage.getItem(ADMIN_PRICING_LAST_VIEWED_KEY) || "0");
+        const newLeads = estimations.filter((e) => {
+          if (!e.has_enquiry || e.lead_status !== "new") {
+            return false;
+          }
+
+          const createdAt = Date.parse(e.created_at || "");
+          if (!lastViewedAt || Number.isNaN(createdAt)) {
+            return true;
+          }
+
+          return createdAt > lastViewedAt;
+        });
         setNewLeadsCount(newLeads.length);
       } catch (error) {
         // Silently fail - user might not be logged in or session expired
@@ -206,6 +220,8 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
       <button
         className={styles.notificationButton}
         onClick={() => {
+          window.localStorage.setItem(ADMIN_PRICING_LAST_VIEWED_KEY, String(Date.now()));
+          setNewLeadsCount(0);
           setShowEnquiries(!showEnquiries);
           setShowReminders(false);
         }}
@@ -331,7 +347,19 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
         <EnquiriesView onEnquiryRead={() => {
           // Reload new leads count when status changes
           getAllEstimationsAdmin().then(estimations => {
-            const newLeads = estimations.filter(e => e.has_enquiry && e.lead_status === "new");
+            const lastViewedAt = Number(window.localStorage.getItem(ADMIN_PRICING_LAST_VIEWED_KEY) || "0");
+            const newLeads = estimations.filter((e) => {
+              if (!e.has_enquiry || e.lead_status !== "new") {
+                return false;
+              }
+
+              const createdAt = Date.parse(e.created_at || "");
+              if (!lastViewedAt || Number.isNaN(createdAt)) {
+                return true;
+              }
+
+              return createdAt > lastViewedAt;
+            });
             setNewLeadsCount(newLeads.length);
           }).catch(() => {
             // Silently fail

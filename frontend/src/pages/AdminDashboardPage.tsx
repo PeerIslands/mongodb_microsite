@@ -26,7 +26,7 @@ import {
 import EventDomainManager from '@/features/admin/components/EventDomainManager';
 import LeafLoader from '@/components/LeafLoader';
 import { eventDomainsService } from '@/api/services/eventDomains.service';
-import { getLeadStatusCounts } from '@estimator/lib/api';
+import { getAllEstimationsAdmin } from '@estimator/lib/api';
 
 type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup' | 'pricing';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
@@ -43,6 +43,8 @@ const navItems: { key: MainView; icon: string; label: string }[] = [
   { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
   { key: 'users', icon: '👥', label: 'Users' },
 ];
+
+const ADMIN_PRICING_LAST_VIEWED_KEY = 'admin_pricing_last_viewed_at';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -74,8 +76,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     const loadEstimatorNewLeads = async () => {
       try {
-        const counts = await getLeadStatusCounts();
-        setEstimatorNewLeadsCount(counts.new || 0);
+        const lastViewedAt = Number(window.localStorage.getItem(ADMIN_PRICING_LAST_VIEWED_KEY) || '0');
+        const estimations = await getAllEstimationsAdmin();
+        const unseenNewLeads = estimations.filter((estimation) => {
+          if (!estimation.has_enquiry || estimation.lead_status !== 'new') {
+            return false;
+          }
+
+          const createdAt = Date.parse(estimation.created_at || '');
+          if (!lastViewedAt || Number.isNaN(createdAt)) {
+            return true;
+          }
+
+          return createdAt > lastViewedAt;
+        });
+        setEstimatorNewLeadsCount(unseenNewLeads.length);
       } catch {
         // Silently fail so admin content remains usable even if estimator stats are unavailable.
       }
@@ -208,6 +223,8 @@ const AdminDashboard = () => {
   // Main view change
   const handleMainViewChange = (view: MainView) => {
     if (view === 'pricing') {
+      window.localStorage.setItem(ADMIN_PRICING_LAST_VIEWED_KEY, String(Date.now()));
+      setEstimatorNewLeadsCount(0);
       navigate('/admin/pricing');
       return;
     }
