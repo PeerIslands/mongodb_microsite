@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -26,7 +27,7 @@ import EventDomainManager from '@/features/admin/components/EventDomainManager';
 import LeafLoader from '@/components/LeafLoader';
 import { eventDomainsService } from '@/api/services/eventDomains.service';
 
-type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup';
+type MainView = 'cases' | 'accelerators' | 'blogs' | 'events' | 'analytics' | 'emailtemplates' | 'testimonials' | 'users' | 'homepopup' | 'pricing';
 type SubView = 'list' | 'add' | 'edit' | 'upload';
 
 const navItems: { key: MainView; icon: string; label: string }[] = [
@@ -36,12 +37,14 @@ const navItems: { key: MainView; icon: string; label: string }[] = [
   { key: 'events', icon: '📅', label: 'Events' },
   { key: 'testimonials', icon: '💬', label: 'Testimonials' },
   { key: 'homepopup', icon: '🪟', label: 'Home Popup' },
+  { key: 'pricing', icon: '💲', label: 'Pricing' },
   { key: 'analytics', icon: '📊', label: 'Analytics' },
   { key: 'emailtemplates', icon: '📭', label: 'Newsletters' },
   { key: 'users', icon: '👥', label: 'Users' },
 ];
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [mainView, setMainView] = useState<MainView>('cases');
   const [caseView, setCaseView] = useState<SubView>('list');
   const [accView, setAccView] = useState<SubView>('list');
@@ -78,6 +81,7 @@ const AdminDashboard = () => {
       testimonials: 'Loading Testimonials...',
       users: 'Loading Users...',
       homepopup: 'Loading Home Popup...',
+      pricing: 'Loading Pricing...',
     };
     return messages[view];
   };
@@ -186,6 +190,11 @@ const AdminDashboard = () => {
 
   // Main view change
   const handleMainViewChange = (view: MainView) => {
+    if (view === 'pricing') {
+      navigate('/admin/pricing');
+      return;
+    }
+
     // Only show loader if switching to a different tab
     // Skip loader for analytics (static) and emailtemplates (has its own loader)
     if (view !== mainView && view !== 'analytics' && view !== 'emailtemplates' && view !== 'homepopup') {

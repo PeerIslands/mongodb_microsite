@@ -10,9 +10,14 @@ export interface EventResourceRequest {
   _id: string;
   event_id: string;
   event_title?: string;
+  requester_type?: 'authenticated' | 'guest';
   user_email: string;
   user_name?: string;
   user_id?: string;
+  guest_registration_id?: string;
+  company?: string;
+  designation?: string;
+  phone?: string;
   status: 'pending' | 'approved' | 'denied';
   requested_at: string;
   resolved_at?: string;

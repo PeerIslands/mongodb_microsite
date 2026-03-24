@@ -101,7 +101,9 @@
   color: #ff6b6b;
 }
 
-.guest-reg-field input {
+.guest-reg-field input,
+.guest-reg-field select,
+.guest-reg-phone-input-field {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -112,13 +114,38 @@
   transition: border-color 0.2s, background 0.2s;
 }
 
-.guest-reg-field input::placeholder {
+.guest-reg-field input::placeholder,
+.guest-reg-phone-input-field::placeholder {
   color: rgba(255, 255, 255, 0.25);
 }
 
-.guest-reg-field input:focus {
+.guest-reg-field input:focus,
+.guest-reg-field select:focus,
+.guest-reg-phone-input-field:focus {
   border-color: rgba(0, 237, 100, 0.5);
   background: rgba(0, 237, 100, 0.04);
+}
+
+.guest-reg-field select {
+  appearance: none;
+}
+
+.guest-reg-field select option {
+  background: #18232f;
+  color: #ffffff;
+}
+
+.guest-reg-phone-input-wrapper {
+  display: flex;
+  width: 100%;
+}
+
+.guest-reg-phone-input-wrapper .PhoneInputInput {
+  width: 100%;
+}
+
+.guest-reg-phone-input-wrapper .PhoneInputCountry {
+  margin-right: 0.65rem;
 }
 
 .guest-reg-error {

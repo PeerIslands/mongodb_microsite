@@ -49,11 +49,18 @@ from app.api.v1.repositories.event_domain_repository import EventDomainRepositor
 from app.api.v1.models.event_guest_registration import (
     GuestEventRegistrationCreate,
     GuestEventRegistrationResponse,
+    SendGuestAccessOTPRequest,
+    SendGuestAccessOTPResponse,
     VerifyGuestAccessRequest,
+    VerifyGuestAccessOTPRequest,
     VerifyGuestAccessResponse,
 )
 from app.api.v1.repositories.event_guest_registration_repository import EventGuestRegistrationRepository
 from app.api.v1.models.user import UserModel
+from app.api.v1.services.event_guest_access_verification_service import (
+    EventGuestAccessVerificationError,
+    EventGuestAccessVerificationService,
+)
 from app.api.v1.exceptions.event_registration_exceptions import (
     EventRegistrationNotFoundError,
     DuplicateRegistrationError,
@@ -64,6 +71,15 @@ from app.api.v1.exceptions.event_registration_exceptions import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/event-registrations")
+
+
+def _is_past_event(event: dict) -> bool:
+    event_date_str = event.get("date", "")
+    try:
+        event_date = datetime.strptime(event_date_str, "%Y-%m-%d").date()
+        return event_date < date.today()
+    except (ValueError, TypeError):
+        return False
 
 
 # =============================================================================
@@ -187,6 +203,100 @@ async def verify_guest_access(
     return VerifyGuestAccessResponse(
         email=doc["email"],
         first_name=doc.get("first_name", ""),
+    )
+
+
+@router.post(
+    "/public/send-access-otp",
+    response_model=SendGuestAccessOTPResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Send guest access OTP for a past event",
+    description="Sends a one-time access code to the email that was already used to register for a past event.",
+)
+async def send_guest_access_otp(
+    request: SendGuestAccessOTPRequest,
+    guest_repo: EventGuestRegistrationRepository = Depends(get_event_guest_registration_repository),
+    event_repository=Depends(get_event_repository),
+):
+    event = await event_repository.get_by_id(request.event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not _is_past_event(event):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access verification is only available for completed events.",
+        )
+
+    guest_registration = await guest_repo.find_by_event_and_email(request.event_id, str(request.email))
+    if not guest_registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No registration found for this email address.",
+        )
+
+    display_name = " ".join(
+        part for part in [
+            (guest_registration.get("first_name") or "").strip(),
+            (guest_registration.get("last_name") or "").strip(),
+        ] if part
+    ) or guest_registration.get("first_name") or None
+
+    service = EventGuestAccessVerificationService(guest_repo.db)
+    try:
+        result = await service.send_otp(
+            event_id=request.event_id,
+            email=str(request.email),
+            name=display_name,
+            event_title=event.get("title", "On-demand webinar"),
+        )
+        return SendGuestAccessOTPResponse(**result)
+    except EventGuestAccessVerificationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/public/verify-access-otp",
+    response_model=VerifyGuestAccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify guest access OTP for a past event",
+    description="Verifies the OTP sent to a previously registered guest for a past event and grants access to the webinar media.",
+)
+async def verify_guest_access_otp(
+    request: VerifyGuestAccessOTPRequest,
+    guest_repo: EventGuestRegistrationRepository = Depends(get_event_guest_registration_repository),
+    event_repository=Depends(get_event_repository),
+):
+    event = await event_repository.get_by_id(request.event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not _is_past_event(event):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access verification is only available for completed events.",
+        )
+
+    guest_registration = await guest_repo.find_by_event_and_email(request.event_id, str(request.email))
+    if not guest_registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No registration found for this email address.",
+        )
+
+    service = EventGuestAccessVerificationService(guest_repo.db)
+    try:
+        await service.verify_otp(
+            event_id=request.event_id,
+            email=str(request.email),
+            otp_code=request.otp_code,
+        )
+    except EventGuestAccessVerificationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return VerifyGuestAccessResponse(
+        email=guest_registration["email"],
+        first_name=guest_registration.get("first_name", ""),
     )
 
 

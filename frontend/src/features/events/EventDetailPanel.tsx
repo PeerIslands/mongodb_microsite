@@ -180,6 +180,8 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
   // Set to the guest's email after a successful guest registration or verified access
   const [guestRegisteredEmail, setGuestRegisteredEmail] = useState<string | null>(null);
   const [showVerifyForm, setShowVerifyForm] = useState(false);
+  const [verifyInitialEmail, setVerifyInitialEmail] = useState('');
+  const [verifyAutoSendOtp, setVerifyAutoSendOtp] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -731,7 +733,11 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
                 <button
                   type="button"
                   className="event-detail-panel__verify-access-btn"
-                  onClick={() => setShowVerifyForm(true)}
+                  onClick={() => {
+                    setVerifyInitialEmail('');
+                    setVerifyAutoSendOtp(false);
+                    setShowVerifyForm(true);
+                  }}
                 >
                   Already registered? Verify access
                 </button>
@@ -763,10 +769,14 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
         onClose={() => setShowVerifyForm(false)}
         onVerified={(verifiedEmail) => {
           setShowVerifyForm(false);
+          setVerifyAutoSendOtp(false);
           setGuestRegisteredEmail(verifiedEmail);
         }}
         eventId={event.id}
         eventTitle={event.title}
+        initialEmail={verifyInitialEmail}
+        autoSendOtp={verifyAutoSendOtp}
+        lockEmail={verifyAutoSendOtp}
       />
 
       {/* Guest Registration Form — no login required */}
@@ -774,6 +784,12 @@ const EventDetailPanel = ({ event, isOpen, onClose, isRegistered = false, regist
         isOpen={showGuestForm}
         onClose={() => setShowGuestForm(false)}
         onSuccess={handleGuestRegistrationSuccess}
+        onExistingRegistration={(existingEmail) => {
+          setShowGuestForm(false);
+          setVerifyInitialEmail(existingEmail);
+          setVerifyAutoSendOtp(true);
+          setShowVerifyForm(true);
+        }}
         onLoginInstead={() => {
           setShowGuestForm(false);
           openLoginModal(showRegistrationModal);

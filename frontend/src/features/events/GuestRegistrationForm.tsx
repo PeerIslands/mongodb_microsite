@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { eventsService } from '@/api/services/events.service';
 import axios from 'axios';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import '@/styles/features/events/GuestRegistrationForm.css';
 
 interface GuestRegistrationFormProps {
@@ -8,6 +10,8 @@ interface GuestRegistrationFormProps {
   onClose: () => void;
   /** Called with the registered email once registration is confirmed */
   onSuccess: (email: string) => void;
+  /** Called when a past-event guest is already registered and should verify via OTP instead */
+  onExistingRegistration?: (email: string) => void;
   /** Optionally called when the user clicks "Log in instead" */
   onLoginInstead?: () => void;
   eventId: string;
@@ -23,6 +27,7 @@ const GuestRegistrationForm = ({
   isOpen,
   onClose,
   onSuccess,
+  onExistingRegistration,
   onLoginInstead,
   eventId,
   eventTitle,
@@ -31,6 +36,22 @@ const GuestRegistrationForm = ({
   eventTimezone,
   isPastEvent = false,
 }: GuestRegistrationFormProps) => {
+  const jobFunctionOptions = [
+    'IT Executive (CIO, CTO, VP Engineering, etc.)',
+    'Business Executive (CEO, COO, CMO, etc.)',
+    'Architect',
+    'Business Development / Alliance Manager',
+    'DBA',
+    'Technical Operations',
+    'Director / Development Manager',
+    'Product / Project Manager',
+    'Software Developer / Engineer',
+    'Business Analyst',
+    'Data Scientist',
+    'Student',
+    'Other',
+  ];
+
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -82,6 +103,10 @@ const GuestRegistrationForm = ({
       setError('First name, last name and email are required.');
       return;
     }
+    if (form.phone.trim() && !isValidPhoneNumber(form.phone.trim())) {
+      setError('Please enter a valid phone number.');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
@@ -113,7 +138,11 @@ const GuestRegistrationForm = ({
         if (err.response?.status === 403 && err.response?.data?.detail === 'domain_not_whitelisted') {
           setDomainBlocked(true);
         } else if (err.response?.status === 409) {
-          setError('This email is already registered for this event.');
+          if (isPastEvent && onExistingRegistration) {
+            onExistingRegistration(form.email.trim());
+          } else {
+            setError('This email is already registered for this event.');
+          }
         } else {
           setError('Failed to register. Please try again.');
         }
@@ -237,24 +266,36 @@ const GuestRegistrationForm = ({
             <div className="guest-reg-row">
               <div className="guest-reg-field">
                 <label htmlFor="gr-designation">Designation / Job Title</label>
-                <input
+                <select
                   id="gr-designation"
-                  type="text"
                   value={form.designation}
-                  onChange={handleChange('designation')}
-                  placeholder="Senior Engineer"
-                  autoComplete="organization-title"
-                />
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, designation: e.target.value }));
+                    setError(null);
+                  }}
+                >
+                  <option value="">Select job function</option>
+                  {jobFunctionOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
               <div className="guest-reg-field">
                 <label htmlFor="gr-phone">Phone Number</label>
-                <input
+                <PhoneInput
                   id="gr-phone"
-                  type="tel"
                   value={form.phone}
-                  onChange={handleChange('phone')}
+                  international
+                  onChange={(value) => {
+                    setForm(prev => ({ ...prev, phone: value || '' }));
+                    setError(null);
+                  }}
                   placeholder="+1 555 000 0000"
-                  autoComplete="tel"
+                  className="guest-reg-phone-input-wrapper"
+                  numberInputProps={{
+                    className: 'guest-reg-phone-input-field',
+                    autoComplete: 'tel',
+                  }}
                 />
               </div>
             </div>

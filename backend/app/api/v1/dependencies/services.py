@@ -6,10 +6,6 @@ Updated to include Accelerator repository and service.
 Updated to include authentication dependency for protected endpoints.
 """
 
-from functools import lru_cache
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 

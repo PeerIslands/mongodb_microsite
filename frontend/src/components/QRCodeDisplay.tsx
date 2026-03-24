@@ -46,12 +46,12 @@ const QRCodeDisplay = ({ qrCodeData, secret, issuer, accountName }: QRCodeDispla
         <div className="qr-code-wrapper">
           <QRCodeSVG
             value={qrCodeData}
-            size={180}
-            level="M"
+            size={200}
+            level="H"
             includeMargin={true}
             className="qr-code"
-            fgColor="#FFFFFF"
-            bgColor="transparent"
+            fgColor="#000000"
+            bgColor="#FFFFFF"
           />
         </div>
 

@@ -108,11 +108,11 @@
   color: #ffffff;
   text-decoration: none;
   font-family: 'Inter', sans-serif;
-  font-size: clamp(13px, 1.2vw, 15px);
+  font-size: clamp(12px, 0.95vw, 14px);
   font-weight: 400;
   font-style: normal;
   text-transform: capitalize;
-  letter-spacing: 0.53px;
+  letter-spacing: 0.35px;
   line-height: 1.6;
   transition: color 0.2s;
   display: inline-flex;
@@ -120,34 +120,18 @@
   justify-content: center;
   position: relative;
   white-space: nowrap;
-  padding: 0 clamp(10px, 1.5vw, 18px);
+  padding: 0 clamp(8px, 1.05vw, 14px);
 }
 
 .nav-link:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.nav-link.admin-link {
+.nav-link-active {
   color: #ffffff;
-  text-decoration: none;
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(13px, 1.2vw, 15px);
-  font-weight: 400;
-  font-style: normal;
-  text-transform: capitalize;
-  letter-spacing: 0.53px;
-  line-height: 1.6;
-  transition: color 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  white-space: nowrap;
-  padding: 0 clamp(10px, 1.5vw, 18px);
-}
-
-.nav-link.admin-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, rgba(91, 108, 255, 0.2) 0%, rgba(91, 108, 255, 0.1) 100%);
+  border-radius: 999px;
+  box-shadow: inset 0 -2px 0 #5b6cff;
 }
 
 .dropdown-arrow {
@@ -176,7 +160,7 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: clamp(15px, 2vw, 25px);
+  gap: clamp(12px, 1.5vw, 20px);
   flex-shrink: 0;
   z-index: 11; /* Above nav */
   position: relative;
@@ -214,9 +198,9 @@
   color: #ffffff;
   border: none;
   border-radius: 64px;
-  padding: clamp(14px, 2vw, 23px) clamp(16px, 2vw, 23px);
+  padding: clamp(12px, 1.5vw, 18px) clamp(14px, 1.6vw, 20px);
   font-family: 'Inter', sans-serif;
-  font-size: clamp(14px, 1.2vw, 16px);
+  font-size: clamp(13px, 1.05vw, 15px);
   font-weight: 400;
   text-align: center;
   line-height: 0;
@@ -334,9 +318,9 @@
     width: auto;
     height: auto;
     min-width: auto;
-    padding: clamp(14px, 2vw, 23px) clamp(16px, 2vw, 23px);
+    padding: clamp(12px, 1.5vw, 18px) clamp(14px, 1.6vw, 20px);
     border-radius: 64px;
-    font-size: clamp(14px, 1.2vw, 16px);
+    font-size: clamp(13px, 1.05vw, 15px);
   }
   
   .demo-button::before {

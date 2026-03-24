@@ -16,6 +16,9 @@ const BlogsPage = lazy(() => import('@/pages/BlogsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const AdminPricingPage = lazy(() => import('@/pages/AdminPricingPage'));
+const EstimatorPage = lazy(() => import('@/pages/EstimatorPage'));
+const EstimatorEstimatePage = lazy(() => import('@/pages/EstimatorEstimatePage'));
 const EventsPage = lazy(() => import('@/pages/EventsPage'));
 const AboutPage = lazy(() => import('@/pages/AboutPage'));
 const CalendarDownloadPage = lazy(() => import('@/pages/CalendarDownloadPage'));
@@ -102,6 +105,22 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTES.ESTIMATOR,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EstimatorPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ROUTES.ESTIMATOR_FLOW,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <EstimatorEstimatePage />
+              </Suspense>
+            ),
+          },
+          {
             path: ROUTES.EVENTS,
             element: (
               <Suspense fallback={<PageLoader />}>
@@ -148,6 +167,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminDashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'pricing',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminPricingPage />
               </Suspense>
             ),
           },

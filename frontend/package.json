@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && npm run copy-config",
-    "copy-config": "cp staticwebapp.config.json build/staticwebapp.config.json",
+    "copy-config": "node -e \"require('fs').copyFileSync('staticwebapp.config.json', 'build/staticwebapp.config.json')\"",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
@@ -27,7 +27,8 @@
     "react-phone-number-input": "^3.4.14",
     "react-router-dom": "^6.20.0",
     "react-toastify": "^11.0.5",
-    "swiper": "^12.0.3"
+    "swiper": "^12.0.3",
+    "zustand": "^5.0.12"
   },
   "overrides": {
     "@toast-ui/react-editor": {
