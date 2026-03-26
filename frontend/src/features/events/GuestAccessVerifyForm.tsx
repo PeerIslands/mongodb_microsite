@@ -159,8 +159,15 @@ const GuestAccessVerifyForm = ({
 
         <h2 id="gav-title" className="gav-title">Verify Your Access</h2>
         <p className="gav-event-name">{eventTitle}</p>
+        {autoSendOtp && (
+          <div className="gav-existing-registration" role="status">
+            This email is already registered for this event. We sent a verification code to your email.
+          </div>
+        )}
         <p className="gav-desc">
-          Enter the email address you used when you registered for this event. We will email you a one-time code to unlock the recording and resources.
+          {autoSendOtp
+            ? 'Enter the verification code to continue and unlock the recording and resources.'
+            : 'Enter the email address you used when you registered for this event. We will email you a one-time code to unlock the recording and resources.'}
         </p>
 
         <form onSubmit={handleSubmit} className="gav-form" noValidate>

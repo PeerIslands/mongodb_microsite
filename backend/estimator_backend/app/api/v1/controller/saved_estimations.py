@@ -4,7 +4,7 @@ from typing import List
 from bson import ObjectId
 from datetime import datetime
 
-from estimator_backend.app.core.database import get_database
+from app.core.database import get_database
 from estimator_backend.app.api.v1.dependencies.auth import (
     get_current_admin_user,
     get_current_user,

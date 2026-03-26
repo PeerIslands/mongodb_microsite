@@ -10,6 +10,8 @@ import EnquiriesView from "@estimator/components/admin/EnquiriesView";
 import RemindersView from "@estimator/components/admin/RemindersView";
 import styles from "./AdminDashboard.module.css";
 
+const ADMIN_PRICING_LAST_VIEWED_KEY = "admin_pricing_last_viewed_at";
+
 type AdminDashboardProps = {
   embedded?: boolean;
 };
@@ -61,7 +63,19 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
     const loadNewLeadsCount = async () => {
       try {
         const estimations = await getAllEstimationsAdmin();
-        const newLeads = estimations.filter(e => e.has_enquiry && e.lead_status === "new");
+        const lastViewedAt = Number(window.localStorage.getItem(ADMIN_PRICING_LAST_VIEWED_KEY) || "0");
+        const newLeads = estimations.filter((e) => {
+          if (!e.has_enquiry || e.lead_status !== "new") {
+            return false;
+          }
+
+          const createdAt = Date.parse(e.created_at || "");
+          if (!lastViewedAt || Number.isNaN(createdAt)) {
+            return true;
+          }
+
+          return createdAt > lastViewedAt;
+        });
         setNewLeadsCount(newLeads.length);
       } catch (error) {
         // Silently fail - user might not be logged in or session expired
@@ -188,6 +202,39 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
     setError(null);
   };
 
+  const renderNotificationActions = () => (
+    <div className={styles.notificationActions}>
+      <button
+        className={styles.notificationButton}
+        onClick={() => {
+          setShowReminders(!showReminders);
+          setShowEnquiries(false);
+        }}
+        title={`${reminderCount} inactivity reminder${reminderCount === 1 ? '' : 's'}`}
+      >
+        <span className={styles.inboxIcon}>📥</span>
+        {reminderCount > 0 && (
+          <span className={styles.notificationDot}>{reminderCount}</span>
+        )}
+      </button>
+      <button
+        className={styles.notificationButton}
+        onClick={() => {
+          window.localStorage.setItem(ADMIN_PRICING_LAST_VIEWED_KEY, String(Date.now()));
+          setNewLeadsCount(0);
+          setShowEnquiries(!showEnquiries);
+          setShowReminders(false);
+        }}
+        title={`${newLeadsCount} new lead${newLeadsCount === 1 ? '' : 's'}`}
+      >
+        <span className={styles.bellIcon}>🔔</span>
+        {newLeadsCount > 0 && (
+          <span className={styles.notificationDot}>{newLeadsCount}</span>
+        )}
+      </button>
+    </div>
+  );
+
   // Show loading while checking auth on initial mount
   if (!isAuthChecked) {
     return (
@@ -217,32 +264,7 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
             <p className={styles.subtitle}>Manage migration rules and configuration</p>
           </div>
           <div className={styles.headerActions}>
-            <button
-              className={styles.notificationButton}
-              onClick={() => {
-                setShowReminders(!showReminders);
-                setShowEnquiries(false);
-              }}
-              title={`${reminderCount} inactivity reminder${reminderCount === 1 ? '' : 's'}`}
-            >
-              <span className={styles.inboxIcon}>📥</span>
-              {reminderCount > 0 && (
-                <span className={styles.notificationDot}>{reminderCount}</span>
-              )}
-            </button>
-            <button
-              className={styles.notificationButton}
-              onClick={() => {
-                setShowEnquiries(!showEnquiries);
-                setShowReminders(false);
-              }}
-              title={`${newLeadsCount} new lead${newLeadsCount === 1 ? '' : 's'}`}
-            >
-              <span className={styles.bellIcon}>🔔</span>
-              {newLeadsCount > 0 && (
-                <span className={styles.notificationDot}>{newLeadsCount}</span>
-              )}
-            </button>
+            {renderNotificationActions()}
             <button
               className={styles.archiveButton}
               onClick={() => navigate("/admin/pricing/archived")}
@@ -261,6 +283,18 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
               ← Back to Estimator
             </button>
           </div>
+        </div>
+      )}
+
+      {embedded && (
+        <div className={styles.embeddedNotifications}>
+          <div>
+            <h2 className={styles.embeddedTitle}>Estimator Notifications</h2>
+            <p className={styles.embeddedSubtitle}>
+              Track new estimator leads and inactivity reminders directly from this Pricing tab.
+            </p>
+          </div>
+          {renderNotificationActions()}
         </div>
       )}
 
@@ -313,7 +347,19 @@ export default function AdminDashboard({ embedded = false }: AdminDashboardProps
         <EnquiriesView onEnquiryRead={() => {
           // Reload new leads count when status changes
           getAllEstimationsAdmin().then(estimations => {
-            const newLeads = estimations.filter(e => e.has_enquiry && e.lead_status === "new");
+            const lastViewedAt = Number(window.localStorage.getItem(ADMIN_PRICING_LAST_VIEWED_KEY) || "0");
+            const newLeads = estimations.filter((e) => {
+              if (!e.has_enquiry || e.lead_status !== "new") {
+                return false;
+              }
+
+              const createdAt = Date.parse(e.created_at || "");
+              if (!lastViewedAt || Number.isNaN(createdAt)) {
+                return true;
+              }
+
+              return createdAt > lastViewedAt;
+            });
             setNewLeadsCount(newLeads.length);
           }).catch(() => {
             // Silently fail

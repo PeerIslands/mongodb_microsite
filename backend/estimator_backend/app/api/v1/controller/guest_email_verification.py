@@ -7,7 +7,7 @@ from estimator_backend.app.api.v1.schemas.guest_email_verification import (
     GuestEmailVerifyOTPRequest,
     GuestEmailVerifyOTPResponse,
 )
-from estimator_backend.app.core.database import get_database
+from app.core.database import get_database
 from estimator_backend.app.services.guest_email_verification_service import (
     GuestEmailVerificationError,
     GuestEmailVerificationService,

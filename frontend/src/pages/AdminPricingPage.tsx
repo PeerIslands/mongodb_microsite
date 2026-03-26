@@ -4,11 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import EstimatorAdminDashboard from '@estimator/app/admin/AdminDashboard';
 import { useAuthStore } from '@estimator/store/authStore';
 
+const ADMIN_PRICING_LAST_VIEWED_KEY = 'admin_pricing_last_viewed_at';
+
 const AdminPricingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     useAuthStore.getState().syncFromMicrosite();
+    window.localStorage.setItem(ADMIN_PRICING_LAST_VIEWED_KEY, String(Date.now()));
   }, []);
 
   return (
