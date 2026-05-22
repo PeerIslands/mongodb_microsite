@@ -23,6 +23,14 @@ export const userService = {
     return response.data;
   },
 
+  /** Exchange Azure AD ID token (from MSAL) for app JWT — internal users only. */
+  async loginWithAzure(idToken: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/api/v1/auth/azure/token', {
+      id_token: idToken,
+    });
+    return response.data;
+  },
+
   // Get user by ID
   async getUserById(userId: string): Promise<User> {
     const response = await apiClient.get<User>(`/api/v1/users/${userId}`);

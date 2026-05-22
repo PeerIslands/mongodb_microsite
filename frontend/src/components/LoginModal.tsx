@@ -4,6 +4,8 @@ import { useToast } from '@/contexts/ToastContext';
 import apiClient from '@/api/client';
 import { analytics } from '@/utils/analytics';
 import { setSessionData } from '@/utils/sessionStorage';
+import { isAzureSsoConfigured } from '@/config/azureMsal';
+import { INTERNAL_EMAIL_DOMAIN } from '@/config/internalUser';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import BackupCodesDisplay from './BackupCodesDisplay';
 import '@/styles/components/LoginModal.css';
@@ -38,7 +40,12 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
   const [resendingSetup, setResendingSetup] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
-  const { login, loading, clearError } = useAuth();
+  /** When true, show email/password (external). When false and SSO configured, show Microsoft-only entry. */
+  const [showExternalLogin, setShowExternalLogin] = useState(false);
+  /** Incomplete registration after Microsoft SSO — back button returns to SSO panel. */
+  const [incompleteFromSso, setIncompleteFromSso] = useState(false);
+
+  const { login, loginWithMicrosoft, loading, clearError } = useAuth();
   const { showToast } = useToast();
 
   // Clear errors when modal opens/closes
@@ -63,8 +70,13 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
       setTotpSecret('');
       setResendingSetup(false);
       setBackupCodes([]);
+      setShowExternalLogin(false);
+      setIncompleteFromSso(false);
     }
   }, [isOpen]);
+
+  const showExternalPasswordForm = !isAzureSsoConfigured() || showExternalLogin;
+  const showSsoEntryOnly = isAzureSsoConfigured() && !showExternalLogin;
 
   if (!isOpen) return null;
 
@@ -117,6 +129,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
     } else {
       // Check if registration is incomplete (TOTP not set up)
       if (result.registrationIncomplete) {
+        if (result.userEmail) {
+          setEmail(result.userEmail);
+        }
+        setIncompleteFromSso(false);
         const msg = result.message || 'Please complete MFA setup to access your account';
         showToast(msg, 'warning');
         
@@ -127,6 +143,47 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
       
       // Show error toast with message from API
       const errorMsg = result.error || 'Login failed. Please try again.';
+      showToast(errorMsg, 'error');
+    }
+  };
+
+  const handleMicrosoftLogin = async () => {
+    const result = await loginWithMicrosoft();
+
+    if (result.success) {
+      if (result.requiresTotp && result.sessionToken) {
+        setSessionToken(result.sessionToken);
+        setStep('verify-totp');
+        showToast('Enter code from your authenticator app', 'info');
+        return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+
+      await analytics.updateSessionUser();
+
+      showToast('Login successful! Welcome back.', 'success');
+      onClose();
+
+      if (onLoginSuccess) {
+        await onLoginSuccess();
+      }
+
+      setTimeout(() => {
+        globalThis.location.reload();
+      }, 500);
+    } else if (result.registrationIncomplete) {
+      if (result.userEmail) {
+        setEmail(result.userEmail);
+      }
+      setIncompleteFromSso(true);
+      const msg = result.message || 'Please complete MFA setup to access your account';
+      showToast(msg, 'warning');
+      setStep('incomplete-registration');
+    } else {
+      const errorMsg = result.error || 'Microsoft sign-in failed. Please try again.';
       showToast(errorMsg, 'error');
     }
   };
@@ -337,7 +394,12 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
             {step === 'backup-codes' && 'Save Backup Codes'}
           </h2>
           <p className="modal-subtitle">
-            {step === 'credentials' && 'Login to your account'}
+            {step === 'credentials' &&
+              (isAzureSsoConfigured()
+                ? showSsoEntryOnly
+                  ? `Peer Islands employees — sign in with Microsoft (${INTERNAL_EMAIL_DOMAIN})`
+                  : 'External accounts — email and password'
+                : 'Login to your account')}
             {step === 'verify-totp' && 'Step 2 of 2'}
             {step === 'incomplete-registration' && 'Set up Two-Factor Authentication'}
             {step === 'backup-codes' && 'Step 4 - Save for account recovery'}
@@ -349,6 +411,53 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
         {/* =================================================================== */}
         {step === 'credentials' && (
           <>
+            {showSsoEntryOnly && (
+              <div className="login-sso-panel">
+                <p className="login-sso-hint">
+                  Use your Peer Islands Microsoft work account. First-time sign-in creates your account automatically.
+                </p>
+                <button
+                  type="button"
+                  className="login-microsoft-button"
+                  onClick={handleMicrosoftLogin}
+                  disabled={loading}
+                >
+                  <svg className="login-microsoft-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#f25022" d="M1 1h10v10H1z" />
+                    <path fill="#7fba00" d="M13 1h10v10H13z" />
+                    <path fill="#00a4ef" d="M1 13h10v10H1z" />
+                    <path fill="#ffb900" d="M13 13h10v10H13z" />
+                  </svg>
+                  Sign in with Microsoft
+                </button>
+                <button
+                  type="button"
+                  className="login-external-toggle"
+                  onClick={() => setShowExternalLogin(true)}
+                  disabled={loading}
+                >
+                  External user? Sign in with email and password
+                </button>
+              </div>
+            )}
+
+            {showExternalPasswordForm && (
+              <>
+                {isAzureSsoConfigured() && (
+                  <>
+                    <p className="login-external-hint">
+                      External accounts only. Peer Islands employees should use Microsoft sign-in instead.
+                    </p>
+                    <button
+                      type="button"
+                      className="login-back-to-sso"
+                      onClick={() => setShowExternalLogin(false)}
+                      disabled={loading}
+                    >
+                      ← Sign in with Microsoft (Peer Islands)
+                    </button>
+                  </>
+                )}
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="email" className="form-label">Email</label>
@@ -444,10 +553,26 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
                 {loading ? 'Logging in...' : 'Login'}
               </button>
             </form>
+              </>
+            )}
 
             <div className="modal-footer">
               <p className="signup-prompt">
-                Don't have an account? <a href="#signup" onClick={handleSignupClick} className="signup-link">Sign up</a>
+                {showSsoEntryOnly ? (
+                  <>
+                    Need an external account?{' '}
+                    <a href="#signup" onClick={handleSignupClick} className="signup-link">
+                      Sign up
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    Don&apos;t have an account?{' '}
+                    <a href="#signup" onClick={handleSignupClick} className="signup-link">
+                      Sign up
+                    </a>
+                  </>
+                )}
               </p>
             </div>
           </>
@@ -475,7 +600,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
 
             <button
               type="button"
-              onClick={() => setStep('credentials')}
+              onClick={() => {
+                setStep('credentials');
+                setShowExternalLogin(true);
+              }}
               className="back-to-login-button"
               disabled={verifying}
             >
@@ -561,6 +689,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
                 setTotpSecret('');
                 setUserId('');
                 setVerificationError('');
+                setShowExternalLogin(!incompleteFromSso);
+                setIncompleteFromSso(false);
               }}
               className="back-to-login-button"
               disabled={verifying || resendingSetup}

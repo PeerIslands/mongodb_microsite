@@ -135,8 +135,15 @@ class UserService:
         if await self._repository.email_exists(request.user_email):
             raise UserAlreadyExistsError(request.user_email)
 
-        # Step 3: Check if internal
-        is_internal = self.is_internal_user(request.user_email)
+        # Internal accounts: register via Microsoft SSO (JIT), not this password/TOTP flow
+        if self.is_internal_user(request.user_email):
+            raise UserValidationError(
+                "user_email",
+                "Peer Islands employees must use Login → Sign in with Microsoft instead of this registration form.",
+            )
+
+        # Step 3: External users only from here
+        is_internal = False
 
         # Step 4: Encrypt password
         encrypted_password = self.encrypt_password(request.user_password)

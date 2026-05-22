@@ -22,6 +22,18 @@
   }
 }
 
+.signup-internal-sso-callout {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(91, 108, 255, 0.12);
+  border: 1px solid rgba(91, 108, 255, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
 .signup-modal-content {
   background: linear-gradient(135deg, rgba(91, 108, 255, 0.08) 0%, rgba(91, 108, 255, 0.03) 100%);
   backdrop-filter: blur(20px);

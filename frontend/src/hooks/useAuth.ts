@@ -2,6 +2,21 @@ import { useState } from 'react';
 import { userService } from '@/api/services/user.service';
 import type { User, SignupResponse } from '@/types/models/user';
 import { setSessionData, clearSession } from '@/utils/sessionStorage';
+import { acquireAzureIdTokenPopup } from '@/config/azureMsal';
+
+type LoginFlowResult = {
+  success: boolean;
+  requiresTotp?: boolean;
+  sessionToken?: string;
+  registrationIncomplete?: boolean;
+  registrationStatus?: string;
+  redirectTo?: string;
+  message?: string;
+  userEmail?: string;
+  isAdmin?: boolean;
+  isInternal?: boolean;
+  error?: string;
+};
 
 interface UseAuthReturn {
   user: User | null;
@@ -9,16 +24,17 @@ interface UseAuthReturn {
   loading: boolean;
   error: string | null;
   signup: (
-    firstName: string, 
-    lastName: string, 
-    email: string, 
+    firstName: string,
+    lastName: string,
+    email: string,
     password: string,
     company: string,
     jobFunction: string,
     businessPhone: string,
     country: string
   ) => Promise<{ success: boolean; data?: SignupResponse; error?: string }>;
-  login: (email: string, password: string) => Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<LoginFlowResult>;
+  loginWithMicrosoft: () => Promise<LoginFlowResult>;
   logout: () => void;
   clearError: () => void;
 }
@@ -30,9 +46,9 @@ export const useAuth = (): UseAuthReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const signup = async (
-    firstName: string, 
-    lastName: string, 
-    email: string, 
+    firstName: string,
+    lastName: string,
+    email: string,
     password: string,
     company: string,
     jobFunction: string,
@@ -41,7 +57,7 @@ export const useAuth = (): UseAuthReturn => {
   ): Promise<{ success: boolean; data?: SignupResponse; error?: string }> => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await userService.signup({
         first_name: firstName,
@@ -53,32 +69,31 @@ export const useAuth = (): UseAuthReturn => {
         business_phone: businessPhone,
         country: country,
       });
-      
-      // User ID is stored in sessionStorage via setSessionData when login completes
-      
+
       setLoading(false);
-      
-      // UPDATED: Return full response data (includes totp_setup)
+
       return { success: true, data: response };
     } catch (err: unknown) {
-      const errorMessage = (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.detail || (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.message || 'Signup failed. Please try again.';
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.detail ||
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.message ||
+        'Signup failed. Please try again.';
       setError(errorMessage);
       setLoading(false);
       return { success: false, error: errorMessage };
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; requiresTotp?: boolean; sessionToken?: string; registrationIncomplete?: boolean; registrationStatus?: string; redirectTo?: string; message?: string; isAdmin?: boolean; isInternal?: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<LoginFlowResult> => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await userService.login({
         user_email: email,
         user_password: password,
       });
-      
-      // Check if registration is incomplete (user hasn't completed TOTP setup)
+
       if (response.registration_incomplete) {
         setLoading(false);
         return {
@@ -87,37 +102,93 @@ export const useAuth = (): UseAuthReturn => {
           registrationStatus: response.registration_status,
           redirectTo: response.redirect_to,
           message: response.message || 'Please complete MFA setup to access your account',
+          userEmail: response.user_email,
         };
       }
-      
-      // Check if TOTP verification is required
+
       if (response.requires_totp) {
-        // Don't store tokens yet - need TOTP verification first
         setLoading(false);
-        return { 
+        return {
           success: true,
           requiresTotp: true,
           sessionToken: response.session_token,
         };
       }
-      
-      // Standard login (no TOTP) - store tokens immediately in sessionStorage
+
       setSessionData({
         authToken: response.access_token!,
         userEmail: response.user_email!,
         isAdmin: response.is_admin || false,
         isInternal: response.is_internal || false,
-        userId: response.user_email!, // Use email as userId if no separate ID
+        userId: response.user_email!,
       });
-      
+
       setLoading(false);
-      return { 
-        success: true, 
-        isAdmin: response.is_admin, 
-        isInternal: response.is_internal 
+      return {
+        success: true,
+        isAdmin: response.is_admin,
+        isInternal: response.is_internal,
       };
     } catch (err: unknown) {
-      const errorMessage = (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.detail || (err as {response?: {data?: {detail?: string; message?: string}}})?.response?.data?.message || 'Login failed. Please check your credentials.';
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.detail ||
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.message ||
+        'Login failed. Please check your credentials.';
+      setError(errorMessage);
+      setLoading(false);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const loginWithMicrosoft = async (): Promise<LoginFlowResult> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const idToken = await acquireAzureIdTokenPopup();
+      const response = await userService.loginWithAzure(idToken);
+
+      if (response.registration_incomplete) {
+        setLoading(false);
+        return {
+          success: false,
+          registrationIncomplete: true,
+          registrationStatus: response.registration_status,
+          redirectTo: response.redirect_to,
+          message: response.message || 'Please complete MFA setup to access your account',
+          userEmail: response.user_email,
+        };
+      }
+
+      if (response.requires_totp) {
+        setLoading(false);
+        return {
+          success: true,
+          requiresTotp: true,
+          sessionToken: response.session_token,
+        };
+      }
+
+      setSessionData({
+        authToken: response.access_token!,
+        userEmail: response.user_email!,
+        isAdmin: response.is_admin || false,
+        isInternal: response.is_internal || false,
+        userId: response.user_email!,
+      });
+
+      setLoading(false);
+      return {
+        success: true,
+        isAdmin: response.is_admin,
+        isInternal: response.is_internal,
+      };
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.detail ||
+        (err as { response?: { data?: { detail?: string; message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : null) ||
+        'Microsoft sign-in failed. Please try again.';
       setError(errorMessage);
       setLoading(false);
       return { success: false, error: errorMessage };
@@ -141,8 +212,8 @@ export const useAuth = (): UseAuthReturn => {
     error,
     signup,
     login,
+    loginWithMicrosoft,
     logout,
     clearError,
   };
 };
-

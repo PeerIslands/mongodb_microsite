@@ -140,6 +140,65 @@ class UserRepository:
 
         return user_id
 
+    async def create_internal_sso_user(
+        self,
+        user_id: str,
+        first_name: str,
+        last_name: str,
+        user_email: str,
+        company: str,
+        job_function: str,
+        business_phone: str,
+        country: str,
+        encrypted_password: str,
+    ) -> str:
+        """
+        JIT provision an internal user who signed in with Azure AD (no password login).
+
+        Account is active with registration completed; TOTP is not used for SSO users.
+        """
+        if await self.email_exists(user_email):
+            raise UserAlreadyExistsError(user_email)
+
+        now = datetime.now(timezone.utc)
+
+        user = UserModel(
+            _id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+            user_email=user_email,
+            company=company,
+            job_function=job_function,
+            business_phone=business_phone,
+            country=country,
+            is_internal=True,
+            is_admin=False,
+            totp_enabled=False,
+            totp_setup_at=None,
+            totp_last_used=None,
+            registration_status="completed",
+            registration_started_at=now,
+            registration_completed_at=now,
+            account_active=True,
+            can_login=True,
+            is_deleted=False,
+            deleted_at=None,
+            original_email=None,
+            created_at=now,
+        )
+
+        login_creds = LoginCredsModel(
+            _id=user_id,
+            user_email=user_email,
+            user_password=encrypted_password,
+            created_at=now,
+        )
+
+        await self.users_collection.insert_one(user.to_dict())
+        await self.login_creds_collection.insert_one(login_creds.to_dict())
+
+        return user_id
+
     async def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
         Get a user by their ID.

@@ -4,10 +4,16 @@ Updated to support TOTP verification during login.
 """
 
 import jwt
+from jwt.exceptions import PyJWTError
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional
 
+from app.core.azure_oidc import (
+    decode_and_validate_azure_id_token,
+    display_name_from_claims,
+    email_from_id_token_claims,
+)
 from app.core.config import settings
 from app.api.v1.models.user import (
     SignInRequest,
@@ -19,6 +25,7 @@ from app.api.v1.repositories.user_repository import UserRepository
 from app.api.v1.repositories.totp_repository import TOTPRepository
 from app.api.v1.services.totp_service import TOTPService
 from app.api.v1.exceptions.user_exceptions import AuthenticationError
+from app.api.v1.services.user_service import UserService
 import bcrypt
 
 
@@ -232,6 +239,16 @@ class AuthService:
             # User email does not exist → authentication failed
             raise AuthenticationError("Invalid email or password")
 
+        # Internal accounts: password login disabled when Azure SSO is configured
+        if (
+            settings.AZURE_TENANT_ID
+            and settings.AZURE_CLIENT_ID
+            and user.get("is_internal")
+        ):
+            raise AuthenticationError(
+                "Peer Islands accounts must use Sign in with Microsoft."
+            )
+
         # Step 4: Get login credentials and compare password
         creds = await self._repository.get_login_creds(user["_id"])
         if not creds:
@@ -398,6 +415,101 @@ class AuthService:
             user_email=user_email,
             is_internal=user.get("is_internal", False),
             is_admin=user.get("is_admin", False),
+            message="Login successful",
+        )
+
+    async def sign_in_with_azure_id_token(self, id_token: str) -> SignInResponse:
+        """
+        Validate Azure AD ID token, ensure internal user, JIT provision if needed, issue JWT.
+        Skips TOTP (Microsoft identity is treated as sufficient for this path).
+        """
+        if not settings.AZURE_TENANT_ID or not settings.AZURE_CLIENT_ID:
+            raise AuthenticationError("Azure AD sign-in is not configured")
+
+        try:
+            claims = decode_and_validate_azure_id_token(id_token)
+        except (PyJWTError, ValueError) as e:
+            raise AuthenticationError("Invalid or expired Microsoft sign-in") from e
+
+        email_raw = email_from_id_token_claims(claims)
+        if not email_raw:
+            raise AuthenticationError("Could not read email from Microsoft account")
+
+        if not email_raw.lower().endswith(UserService.INTERNAL_DOMAIN):
+            raise AuthenticationError(
+                "Azure sign-in is only available for internal accounts"
+            )
+
+        user = await self._repository.get_user_by_email(email_raw)
+
+        if not user:
+            first_name, last_name = display_name_from_claims(claims)
+            user_id = self._repository.generate_id()
+            salt = bcrypt.gensalt(rounds=12)
+            random_secret = secrets.token_urlsafe(48)
+            encrypted_password = bcrypt.hashpw(
+                random_secret.encode("utf-8"), salt
+            ).decode("utf-8")
+            await self._repository.create_internal_sso_user(
+                user_id=user_id,
+                first_name=first_name,
+                last_name=last_name,
+                user_email=email_raw,
+                company="Peer Islands",
+                job_function="Internal",
+                business_phone="N/A",
+                country="N/A",
+                encrypted_password=encrypted_password,
+            )
+            user = await self._repository.get_user_by_email(email_raw)
+            if not user:
+                raise AuthenticationError("Failed to create user account")
+
+        user_email = user["user_email"]
+        is_internal = user.get("is_internal", False)
+        is_admin = user.get("is_admin", False)
+
+        if not is_internal:
+            raise AuthenticationError(
+                "Azure sign-in is only available for internal accounts"
+            )
+
+        can_login = user.get("can_login", False)
+        registration_status = user.get("registration_status", "pending_mfa")
+        account_active = user.get("account_active", False)
+
+        if not account_active and registration_status == "completed":
+            raise AuthenticationError(
+                "Your account has been blocked by an administrator. Please contact support for assistance."
+            )
+
+        if not can_login or registration_status == "pending_mfa":
+            return SignInResponse(
+                success=False,
+                registration_incomplete=True,
+                registration_status=registration_status,
+                redirect_to="/complete-registration",
+                user_email=user_email,
+                message="Please complete MFA setup to access your account",
+            )
+
+        token_payload = {
+            "sub": user_email,
+            "id": user["_id"],
+            "user_email": user_email,
+            "is_internal": is_internal,
+            "is_admin": is_admin,
+        }
+        access_token = self.create_access_token(data=token_payload)
+
+        return SignInResponse(
+            success=True,
+            requires_totp=False,
+            access_token=access_token,
+            token_type="bearer",
+            user_email=user_email,
+            is_internal=is_internal,
+            is_admin=is_admin,
             message="Login successful",
         )
 

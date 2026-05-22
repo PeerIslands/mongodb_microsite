@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Frontend manual test cases — MongoDB Microsite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f4f0;
+      --surface: #fffefb;
+      --text: #1c1917;
+      --muted: #57534e;
+      --border: #e7e5e4;
+      --accent: #0d9488;
+      --accent-soft: rgba(13, 148, 136, 0.12);
+      --code-bg: #f5f5f4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 2.5rem clamp(1rem, 4vw, 3rem) 4rem;
+      font-family: "DM Sans", system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(13, 148, 136, 0.15), transparent);
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.75rem;
+      color: var(--text);
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      max-width: 65ch;
+    }
+
+    .lede code {
+      font-size: 0.88em;
+    }
+
+    h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 2.25rem 0 1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h2::before {
+      content: "";
+      display: block;
+      width: 4px;
+      height: 1.1em;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      margin: 0.75rem 0 0;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--accent-soft);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #0f766e;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    td:first-child {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight: 600;
+      color: #44403c;
+      width: 1%;
+    }
+
+    code {
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+    }
+
+    ul.notes {
+      margin: 0.75rem 0 0;
+      padding-left: 1.25rem;
+      color: var(--muted);
+    }
+
+    ul.notes li {
+      margin-bottom: 0.5rem;
+    }
+
+    ul.notes strong {
+      color: var(--text);
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 1rem;
+      }
+
+      h2 {
+        break-after: avoid;
+      }
+
+      table {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Frontend manual test cases</h1>
+      <p class="lede">
+        Use these to verify login, signup, and Azure AD SSO in the browser.<br />
+        Prerequisites: backend running, <code>VITE_API_BASE_URL</code> reachable from the browser, and for SSO:
+        <code>VITE_AZURE_CLIENT_ID</code>, <code>VITE_AZURE_TENANT_ID</code> set (and matching backend <code>AZURE_*</code>).
+      </p>
+    </header>
+
+    <h2>Environment checks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Check</th>
+          <th>How</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>API reachable</td>
+          <td>DevTools → Network: requests go to your <code>VITE_API_BASE_URL</code> and return 200/4xx (not blocked/CORS).</td>
+        </tr>
+        <tr>
+          <td>CORS</td>
+          <td>Backend <code>BACKEND_CORS_ORIGINS</code> includes your frontend origin (e.g. <code>http://localhost:5173</code>).</td>
+        </tr>
+        <tr>
+          <td>SSO visible</td>
+          <td>With both <code>VITE_AZURE_*</code> set, <strong>Login</strong> shows <strong>Sign in with Microsoft</strong> on the first screen.</td>
+        </tr>
+        <tr>
+          <td>SSO hidden</td>
+          <td>Remove tenant or client id → rebuild/restart dev server → Microsoft entry should not appear.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Login — internal (Peer Islands / Microsoft)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>L-INT-1</td>
+          <td>Open site → <strong>Login</strong></td>
+          <td>Default view: Microsoft button + short copy for Peer Islands; <strong>no</strong> email/password until you choose external.</td>
+        </tr>
+        <tr>
+          <td>L-INT-2</td>
+          <td>Click <strong>Sign in with Microsoft</strong></td>
+          <td>Microsoft popup; sign in with a work account whose email ends with <code>@peerislands.io</code>.</td>
+        </tr>
+        <tr>
+          <td>L-INT-3</td>
+          <td>After successful sign-in</td>
+          <td>Toast success, modal closes, page reloads, header shows logged-in state.</td>
+        </tr>
+        <tr>
+          <td>L-INT-4</td>
+          <td>First-time user (no DB row)</td>
+          <td>Same flow; account is created server-side (JIT); then same as L-INT-3.</td>
+        </tr>
+        <tr>
+          <td>L-INT-5</td>
+          <td><strong>Back</strong> from login modal and reopen</td>
+          <td>SSO-first view again (not stuck on external form).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Login — external (email + password)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>L-EXT-1</td>
+          <td><strong>Login</strong> → <strong>External user? Sign in with email and password</strong></td>
+          <td>Email + password form appears; hint that external accounts use this path.</td>
+        </tr>
+        <tr>
+          <td>L-EXT-2</td>
+          <td><strong>← Sign in with Microsoft (Peer Islands)</strong></td>
+          <td>Returns to Microsoft-only view.</td>
+        </tr>
+        <tr>
+          <td>L-EXT-3</td>
+          <td>Valid external user email/password</td>
+          <td>Login succeeds (or TOTP step if enabled on account).</td>
+        </tr>
+        <tr>
+          <td>L-EXT-4</td>
+          <td>TOTP when required</td>
+          <td>After password, TOTP screen; valid code completes login.</td>
+        </tr>
+        <tr>
+          <td>L-EXT-5</td>
+          <td>Wrong password</td>
+          <td>Error toast / message; no session.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Login — internal must not use password (when Azure is configured)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>L-BLK-1</td>
+          <td><strong>Login</strong> → external path → enter <code>@peerislands.io</code> + password</td>
+          <td>Backend rejects; toast/error indicates <strong>Microsoft sign-in</strong> (copy may vary).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Signup</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>S-1</td>
+          <td><strong>Sign up</strong> (from header/modal)</td>
+          <td>Callout (if SSO env set): Peer Islands use <strong>Login → Microsoft</strong>; form is for <strong>external</strong> users.</td>
+        </tr>
+        <tr>
+          <td>S-2</td>
+          <td>Fill form with <strong>external</strong> email (not <code>@peerislands.io</code>)</td>
+          <td>Proceeds to TOTP / MFA steps as today.</td>
+        </tr>
+        <tr>
+          <td>S-3</td>
+          <td>Submit with <code>@peerislands.io</code> (SSO configured)</td>
+          <td>Toast blocks signup; message to use Microsoft login instead.</td>
+        </tr>
+        <tr>
+          <td>S-4</td>
+          <td>Switch <strong>Login</strong> ↔ <strong>Sign up</strong></td>
+          <td>Modals switch without full page errors.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Footer / copy</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>C-1</td>
+          <td>Login, SSO-first screen</td>
+          <td>Footer: <strong>Need an external account? Sign up</strong> (or equivalent).</td>
+        </tr>
+        <tr>
+          <td>C-2</td>
+          <td>Login, external email path</td>
+          <td>Footer: <strong>Don’t have an account? Sign up</strong>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Popup / CSP / redirect</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>P-1</td>
+          <td>Microsoft sign-in</td>
+          <td>If popup blocked, browser shows blocked-popup UI; allow popups for localhost.</td>
+        </tr>
+        <tr>
+          <td>P-2</td>
+          <td>After Azure consent</td>
+          <td>Redirect/popup closes; app receives token and calls <code>/api/v1/auth/azure/token</code>.</td>
+        </tr>
+        <tr>
+          <td>P-3</td>
+          <td>Wrong redirect URI in Entra</td>
+          <td>Azure error in popup (e.g. AADSTS50011); fix URIs in Azure portal to match <code>redirectUri</code> (usually site origin).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Regression (quick)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Steps</th>
+          <th>Expected</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>R-1</td>
+          <td>Logout (if you have it) → Login external → login</td>
+          <td>Session restored.</td>
+        </tr>
+        <tr>
+          <td>R-2</td>
+          <td><strong>Forgot password</strong> from external login path</td>
+          <td>Navigates to forgot-password flow (existing behavior).</td>
+        </tr>
+        <tr>
+          <td>R-3</td>
+          <td>Mobile width</td>
+          <td>Login modal usable; buttons tappable.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Notes</h2>
+    <ul class="notes">
+      <li>
+        Use <code>http://localhost:5173</code> (or your Vite URL) in Azure <strong>SPA redirect URIs</strong>; avoid
+        <code>0.0.0.0</code> as <code>VITE_API_BASE_URL</code> in the browser—prefer <code>http://127.0.0.1:8000</code> or
+        <code>http://localhost:8000</code>.
+      </li>
+      <li>Internal domain in app logic is <code>@peerislands.io</code>; keep test accounts aligned.</li>
+    </ul>
+
+    <footer>
+      MongoDB Microsite — manual QA checklist. Open this file in a browser or print (Ctrl/Cmd+P).
+    </footer>
+  </div>
+</body>
+</html>

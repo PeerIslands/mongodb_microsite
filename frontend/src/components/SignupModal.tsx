@@ -7,6 +7,8 @@ import 'react-phone-number-input/style.css';
 import QRCodeDisplay from './QRCodeDisplay';
 import TOTPVerificationInput from './TOTPVerificationInput';
 import BackupCodesDisplay from './BackupCodesDisplay';
+import { isAzureSsoConfigured } from '@/config/azureMsal';
+import { isInternalEmail } from '@/config/internalUser';
 import '@/styles/components/SignupModal.css';
 
 interface SignupModalProps {
@@ -182,6 +184,14 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onAuthSuccess: _onAuthS
       showToast('Please enter a valid phone number.', 'error');
       return;
     }
+
+    if (isInternalEmail(email) && isAzureSsoConfigured()) {
+      showToast(
+        'Peer Islands employees should use Login → Sign in with Microsoft to create an account, not this form.',
+        'warning'
+      );
+      return;
+    }
     
     // Call signup API
     const result = await signup(
@@ -344,6 +354,13 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onAuthSuccess: _onAuthS
         {/* =================================================================== */}
         {step === 'registration' && (
           <>
+            {isAzureSsoConfigured() && (
+              <div className="signup-internal-sso-callout" role="note">
+                <strong>Peer Islands employees:</strong> use{' '}
+                <strong>Login → Sign in with Microsoft</strong> to create your account (no separate signup here).
+                This form is for <strong>external</strong> users and includes MFA setup with TOTP.
+              </div>
+            )}
             <form className="signup-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">

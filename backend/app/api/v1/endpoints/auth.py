@@ -5,6 +5,7 @@ Handles user authentication and token generation.
 
 Endpoints:
 - POST /sign_in - Authenticate user and generate JWT token
+- POST /auth/azure/token - Exchange Azure AD ID token for app JWT (internal SSO)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,6 +15,7 @@ from app.api.v1.models.user import (
     SignInResponse,
     VerifyLoginTOTPRequest,
     VerifyLoginTOTPResponse,
+    AzureIdTokenRequest,
     ErrorResponse,
 )
 from app.api.v1.services.auth_service import AuthService
@@ -136,6 +138,32 @@ async def verify_login_totp(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+    except AuthenticationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.message,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+@router.post(
+    "/auth/azure/token",
+    response_model=SignInResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Azure AD authentication successful"},
+        401: {"model": ErrorResponse, "description": "Invalid token or not allowed"},
+        503: {"model": ErrorResponse, "description": "Azure AD not configured"},
+    },
+    summary="Exchange Azure AD ID token for app JWT",
+    description="Validates the Microsoft ID token from MSAL and returns the same JWT as password login.",
+)
+async def sign_in_with_azure(
+    request: AzureIdTokenRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> SignInResponse:
+    try:
+        return await auth_service.sign_in_with_azure_id_token(request.id_token)
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

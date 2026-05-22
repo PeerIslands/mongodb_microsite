@@ -280,6 +280,11 @@ class SignInRequest(BaseModel):
     user_password: str = Field(..., min_length=1, description="User's password")
 
 
+class AzureIdTokenRequest(BaseModel):
+    """Request body for Azure AD SSO: validated ID token from MSAL."""
+    id_token: str = Field(..., min_length=1, description="Azure AD ID token (JWT)")
+
+
 class VerifyLoginTOTPRequest(BaseModel):
     """
     Request model for TOTP verification during login.

@@ -118,6 +118,11 @@ class Settings(BaseSettings):
     EVENT_GUEST_ACCESS_OTP_MAX_ATTEMPTS: int = 5
 
     
+    # Azure AD SSO (Entra ID) — SPA + backend ID token validation
+    # Single-tenant app: set tenant ID and the same app (client) ID as the SPA.
+    AZURE_TENANT_ID: str = ""
+    AZURE_CLIENT_ID: str = ""
+
     # Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: str = ""
     AZURE_OPENAI_ENDPOINT: str = ""

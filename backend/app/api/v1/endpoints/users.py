@@ -28,6 +28,7 @@ from app.api.v1.dependencies.services import get_user_service, get_current_activ
 from app.api.v1.exceptions.user_exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
+    UserValidationError,
 )
 
 
@@ -83,6 +84,11 @@ async def save_user(
     except UserAlreadyExistsError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
+            detail=e.message,
+        )
+    except UserValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message,
         )
     except Exception as e:
